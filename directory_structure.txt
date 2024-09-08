@@ -1,0 +1,12 @@
+.
+./output
+./dataset
+./dataset/test
+./dataset/training
+./dataset/evaluation
+./store
+./store/version
+./store/tmp
+./src
+./obj
+./headers
