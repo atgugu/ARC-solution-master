@@ -270,7 +270,7 @@ Image compose(Image_ a, Image_ b, int id) { //id = 0
   } else assert(id >= 0 && id < 5);
   return badImg;
 }
-
+/*
 Image outerProductIS(Image_ a, Image_ b) {
   if (a.w*b.w > MAXSIDE || a.h*b.h > MAXSIDE || a.w*b.w*a.h*b.h > MAXAREA) return badImg;
   point rpos = {a.p.x*b.w+b.p.x,
@@ -282,6 +282,44 @@ Image outerProductIS(Image_ a, Image_ b) {
 	for (int l = 0; l < b.w; l++)
 	  ret(i*b.h+k, j*b.w+l) = a(i,j) * !!b(k,l);
   return ret;
+}
+*/
+
+Image outerProductIS(Image_ a, Image_ b) {
+    // Early exit for invalid dimensions
+    if (a.w * b.w > MAXSIDE || a.h * b.h > MAXSIDE || a.w * b.w * a.h * b.h > MAXAREA) {
+        return badImg;
+    }
+
+    // Precompute sizes and starting positions
+    const int result_w = a.w * b.w;
+    const int result_h = a.h * b.h;
+    const point rpos = {a.p.x * b.w + b.p.x, a.p.y * b.h + b.p.y};
+
+    // Initialize the result image with the precomputed dimensions
+    Image ret = core::empty(rpos, {result_w, result_h});
+
+    // Optimize the nested loops by flattening the structure where possible
+    for (int i = 0; i < a.h; ++i) {
+        for (int j = 0; j < a.w; ++j) {
+            // Cache the value of a(i,j) since it's accessed multiple times in the inner loop
+            const int a_val = a(i, j);
+
+            // Only proceed if a(i,j) is non-zero (to save unnecessary calculations)
+            if (a_val == 0) continue;
+
+            for (int k = 0; k < b.h; ++k) {
+                for (int l = 0; l < b.w; ++l) {
+                    // Multiply the value from a and the non-zero check of b(k,l)
+                    if (b(k, l)) {
+                        ret(i * b.h + k, j * b.w + l) = a_val;
+                    }
+                }
+            }
+        }
+    }
+
+    return ret;
 }
 Image outerProductSI(Image_ a, Image_ b) {
   if (a.w*b.w > MAXSIDE || a.h*b.h > MAXSIDE || a.w*b.w*a.h*b.h > MAXAREA) return badImg;
