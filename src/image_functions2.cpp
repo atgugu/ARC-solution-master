@@ -11,21 +11,21 @@ using namespace std;
 vImage splitAll(Image_ img) {
   vector<Image> ret;
   Image done = core::empty(img.p,img.sz);
-  for (int i = 0; i < img.h; i++) {
-    for (int j = 0; j < img.w; j++) {
+  for (int i = 0; i < img.h; ++i) {
+    for (int j = 0; j < img.w; ++j) {
       if (!done(i,j)) {
 	Image toadd = core::empty(img.p,img.sz);
 	function<void(int,int,int)> dfs = [&](int r, int c, int col) {
 	  if (r < 0 || r >= img.h || c < 0 || c >= img.w || img(r,c) != col || done(r,c)) return;
 	  toadd(r,c) = img(r,c)+1;
 	  done(r,c) = 1;
-	  for (int d = 0; d < 4; d++)
+	  for (int d = 0; d < 4; ++d)
 	    dfs(r+(d==0)-(d==1),c+(d==2)-(d==3),col);
 	};
 	dfs(i,j,img(i,j));
 	toadd = compress(toadd);
-	for (int i = 0; i < toadd.h; i++) {
-	  for (int j = 0; j < toadd.w; j++) {
+	for (int i = 0; i < toadd.h; ++i) {
+	  for (int j = 0; j < toadd.w; ++j) {
 	    toadd(i,j) = max(0, toadd(i,j)-1);
 	  }
 	}
@@ -41,8 +41,8 @@ vImage splitAll(Image_ img) {
 
 
 Image eraseCol(Image img, int col) {
-  for (int i = 0; i < img.h; i++)
-    for (int j = 0; j < img.w; j++)
+  for (int i = 0; i < img.h; ++i)
+    for (int j = 0; j < img.w; ++j)
       if (img(i,j) == col) img(i,j) = 0;
   return img;
 }
@@ -51,8 +51,8 @@ Image eraseCol(Image img, int col) {
 // Looks for 4 corners
 vImage insideMarked(Image_ in) {
   vector<Image> ret;
-  for (int i = 0; i+1 < in.h; i++) {
-    for (int j = 0; j+1 < in.w; j++) {
+  for (int i = 0; i+1 < in.h; ++i) {
+    for (int j = 0; j+1 < in.w; ++j) {
       for (int h = 1; i+h+1 < in.h; h++) {
 	for (int w = 1; j+w+1 < in.w; w++) {
 	  char col = in(i,j);
@@ -60,7 +60,7 @@ vImage insideMarked(Image_ in) {
 	  int ok = 1;
 	  for (int k = 0; k < 4; k++) {
 	    int x = j+k%2*w, y = i+k/2*h;
-	    for (int d = 0; d < 4; d++) {
+	    for (int d = 0; d < 4; ++d) {
 	      if ((d != 3-k) == (in(y+d/2,x+d%2) != col)) {
 		ok = 0;
 		goto fail;
@@ -81,8 +81,8 @@ vImage insideMarked(Image_ in) {
 
 Image makeBorder(Image_ img, int bcol = 1) {
   Image ret = hull0(img);
-  for (int i = 0; i < ret.h; i++) {
-    for (int j = 0; j < ret.w; j++) {
+  for (int i = 0; i < ret.h; ++i) {
+    for (int j = 0; j < ret.w; ++j) {
       if (img(i,j) == 0) {
 	int ok = 0;
 	for (int ni : {i-1,i,i+1}) {
@@ -110,8 +110,8 @@ Image makeBorder2(Image_ img, int usemaj = 1) {
   point rsz = img.sz+point{2,2};
   if (max(rsz.x,rsz.y) > MAXSIDE || rsz.x*rsz.y > MAXAREA) return badImg;
   Image ret = core::full(img.p-point{1,1}, rsz, bcol);
-  for (int i = 0; i < img.h; i++)
-    for (int j = 0; j < img.w; j++)
+  for (int i = 0; i < img.h; ++i)
+    for (int j = 0; j < img.w; ++j)
       ret(i+1,j+1) = img(i,j);
   return ret;
 }
@@ -121,8 +121,8 @@ Image makeBorder2(Image_ img, Image_ bord) {
   point rsz = img.sz+bord.sz+bord.sz;
   if (max(rsz.x,rsz.y) > MAXSIDE || rsz.x*rsz.y > MAXAREA) return badImg;
   Image ret = core::full(img.p-bord.sz, rsz, bcol);
-  for (int i = 0; i < img.h; i++)
-    for (int j = 0; j < img.w; j++)
+  for (int i = 0; i < img.h; ++i)
+    for (int j = 0; j < img.w; ++j)
       ret(i+bord.h,j+bord.w) = img(i,j);
   return ret;
 }
@@ -131,15 +131,15 @@ Image makeBorder2(Image_ img, Image_ bord) {
 //Delete black rows / cols
 Image compress2(Image_ img) {
   vector<int> row(img.h), col(img.w);
-  for (int i = 0; i < img.h; i++)
-    for (int j = 0; j < img.w; j++)
+  for (int i = 0; i < img.h; ++i)
+    for (int j = 0; j < img.w; ++j)
       if (img(i,j)) row[i] = col[j] = 1;
   vector<int> rows, cols;
-  for (int i = 0; i < img.h; i++) if (row[i]) rows.push_back(i);
-  for (int j = 0; j < img.w; j++) if (col[j]) cols.push_back(j);
+  for (int i = 0; i < img.h; ++i) if (row[i]) rows.push_back(i);
+  for (int j = 0; j < img.w; ++j) if (col[j]) cols.push_back(j);
   Image ret = core::empty(point{(int)cols.size(), (int)rows.size()});
-  for (int i = 0; i < ret.h; i++)
-    for (int j = 0; j < ret.w; j++)
+  for (int i = 0; i < ret.h; ++i)
+    for (int j = 0; j < ret.w; ++j)
       ret(i,j) = img(rows[i],cols[j]);
   return ret;
 }
@@ -150,18 +150,18 @@ Image compress3(Image_ img) {
   if (img.w*img.h <= 0) return badImg;
   vector<int> row(img.h), col(img.w);
   row[0] = col[0] = 1;
-  for (int i = 0; i < img.h; i++) {
-    for (int j = 0; j < img.w; j++) {
+  for (int i = 0; i < img.h; ++i) {
+    for (int j = 0; j < img.w; ++j) {
       if (i && img(i,j) != img(i-1,j)) row[i] = 1;
       if (j && img(i,j) != img(i,j-1)) col[j] = 1;
     }
   }
   vector<int> rows, cols;
-  for (int i = 0; i < img.h; i++) if (row[i]) rows.push_back(i);
-  for (int j = 0; j < img.w; j++) if (col[j]) cols.push_back(j);
+  for (int i = 0; i < img.h; ++i) if (row[i]) rows.push_back(i);
+  for (int j = 0; j < img.w; ++j) if (col[j]) cols.push_back(j);
   Image ret = core::empty(point{(int)cols.size(), (int)rows.size()});
-  for (int i = 0; i < ret.h; i++)
-    for (int j = 0; j < ret.w; j++)
+  for (int i = 0; i < ret.h; ++i)
+    for (int j = 0; j < ret.w; ++j)
       ret(i,j) = img(rows[i],cols[j]);
   return ret;
 }
@@ -175,22 +175,24 @@ Image greedyFill(Image& ret, vector<pair<int,vector<int>>>&piece, Spec&done, int
   const int dw = ret.w-bw+1, dh = ret.h-bh+1;
   if (dw < 1 || dh < 1) return badImg;
 
-  vector<int> dones(dw*dh, -1);
-  priority_queue<tuple<int,int,int>> pq;
-  auto recalc = [&](int i, int j) {
-    int cnt = 0;
-    for (int y = 0; y < bh; y++)
-      for (int x = 0; x < bw; x++)
-	cnt += done(i+y,j+x);
-    if (cnt != dones[i*dw+j]) {
-      dones[i*dw+j] = cnt;
-      pq.emplace(cnt,j,i);
-    }
+  auto recalc = [&,done]() mutable {
+    vector<int> dones(dw*dh, -1);
+    priority_queue<tuple<int,int,int>> pq;
+    for (int i = 0; i+bh <= ret.h; ++i)
+      for (int j = 0; j+bw <= ret.w; ++j) {
+	int cnt = 0;
+	for (int y = 0; y < bh; ++y)
+	  for (int x = 0; x < bw; ++x)
+	    cnt += done(i+y,j+x);
+	if (cnt != dones[i*dw+j]) {
+	  dones[i*dw+j] = cnt;
+	  pq.emplace(cnt,j,i);
+	}
+      }
+    return make_tuple(dones, pq);
   };
-  for (int i = 0; i+bh <= ret.h; i++)
-    for (int j = 0; j+bw <= ret.w; j++)
-      recalc(i,j);
 
+  auto [dones,pq] = recalc();
   while (pq.size()) {
     auto [ds,j,i] = pq.top();
     pq.pop();
@@ -198,13 +200,13 @@ Image greedyFill(Image& ret, vector<pair<int,vector<int>>>&piece, Spec&done, int
     int found = 0;
     for (auto [cnt,mask] : piece) {
       int ok = 1;
-      for (int y = 0; y < bh; y++)
-	for (int x = 0; x < bw; x++)
+      for (int y = 0; y < bh; ++y)
+	for (int x = 0; x < bw; ++x)
 	  if (done(i+y,j+x) && ret(i+y,j+x) != mask[y*bw+x])
 	    ok = 0;
       if (ok) {
-	for (int y = 0; y < bh; y++) {
-	  for (int x = 0; x < bw; x++) {
+	for (int y = 0; y < bh; ++y) {
+	  for (int x = 0; x < bw; ++x) {
 	    if (!done(i+y,j+x)) {
 	      done(i+y,j+x) = donew;
 	      if (donew > 1) donew--;
@@ -212,9 +214,11 @@ Image greedyFill(Image& ret, vector<pair<int,vector<int>>>&piece, Spec&done, int
 	    }
 	  }
 	}
-	for (int y = max(i-bh+1,0); y < min(i+bh, dh); y++)
-	  for (int x = max(j-bw+1,0); x < min(j+bw, dw); x++)
-	    recalc(y,x);
+	[&](){
+	  auto [ndones,npq] = recalc();
+	  swap(dones, ndones);
+	  swap(pq, npq);
+	}();
 	found = 1;
 	break;
       }
@@ -235,8 +239,8 @@ Image greedyFillBlack(Image_ img, int N = 3) {
   done.mask.assign(done.w*done.h,0);
 
   int donew = 1e6;
-  for (int i = 0; i < ret.h; i++) {
-    for (int j = 0; j < ret.w; j++) {
+  for (int i = 0; i < ret.h; ++i) {
+    for (int j = 0; j < ret.w; ++j) {
       if (img(i,j)) {
 	ret(i,j) = img(i,j);
 	done(i,j) = donew;
@@ -249,13 +253,13 @@ Image greedyFillBlack(Image_ img, int N = 3) {
   const int bw = N, bh = N;
   for (int r = 0; r < 8; r++) {
     Image rot = rigid(img,r);
-    for (int i = 0; i+bh <= rot.h; i++) {
-      for (int j = 0; j+bw <= rot.w; j++) {
+    for (int i = 0; i+bh <= rot.h; ++i) {
+      for (int j = 0; j+bw <= rot.w; ++j) {
 	mask.reserve(bw*bh);
 	mask.resize(0);
 	int ok = 1;
-	for (int y = 0; y < bh; y++)
-	  for (int x = 0; x < bw; x++) {
+	for (int y = 0; y < bh; ++y)
+	  for (int x = 0; x < bw; ++x) {
 	    char c = rot(i+y,j+x);
 	    mask.push_back(c);
 	    if (!c) ok = 0;
@@ -285,8 +289,8 @@ Image extend2(Image_ img, Image_ room) {
 
   point d = room.p-img.p;
   int donew = 1e6;
-  for (int i = 0; i < ret.h; i++) {
-    for (int j = 0; j < ret.w; j++) {
+  for (int i = 0; i < ret.h; ++i) {
+    for (int j = 0; j < ret.w; ++j) {
       int x = j+d.x, y = i+d.y;
       if (x >= 0 && y >= 0 && x < img.w && y < img.h) {
 	ret(i,j) = img(y,x);
@@ -300,12 +304,12 @@ Image extend2(Image_ img, Image_ room) {
   const int bw = 3, bh = 3;
   for (int r = 0; r < 8; r++) {
     Image rot = rigid(img,r);
-    for (int i = 0; i+bh <= rot.h; i++) {
-      for (int j = 0; j+bw <= rot.w; j++) {
+    for (int i = 0; i+bh <= rot.h; ++i) {
+      for (int j = 0; j+bw <= rot.w; ++j) {
 	mask.reserve(bw*bh);
 	mask.resize(0);
-	for (int y = 0; y < bh; y++)
-	  for (int x = 0; x < bw; x++)
+	for (int y = 0; y < bh; ++y)
+	  for (int x = 0; x < bw; ++x)
 	    mask.push_back(rot(i+y,j+x));
 	++piece_cnt[mask];
       }
@@ -326,9 +330,9 @@ Image connect(Image_ img, int id) {
 
   //Horizontal
   if (id == 0 || id == 2) {
-    for (int i = 0; i < img.h; i++) {
+    for (int i = 0; i < img.h; ++i) {
       int last = -1, lastc = -1;
-      for (int j = 0; j < img.w; j++) {
+      for (int j = 0; j < img.w; ++j) {
 	if (img(i,j)) {
 	  if (img(i,j) == lastc) {
 	    for (int k = last+1; k < j; k++)
@@ -343,12 +347,12 @@ Image connect(Image_ img, int id) {
 
   //Vertical
   if (id == 1 || id == 2) {
-    for (int j = 0; j < img.w; j++) {
+    for (int j = 0; j < img.w; ++j) {
       int last = -1, lastc = -1;
-      for (int i = 0; i < img.h; i++) {
+      for (int i = 0; i < img.h; ++i) {
 	if (img(i,j)) {
 	  if (img(i,j) == lastc) {
-	    for (int k = last+1; k < i; k++)
+	    for (int k = last+1; k < i; ++k)
 	      ret(k,j) = lastc;
 	  }
 	  lastc = img(i,j);
@@ -377,16 +381,16 @@ Image replaceTemplate(Image_ in, Image_ need_, Image_ marked_, int overlapping =
     Image_ need = needr[r];
     Image_ marked = markedr[r];
 
-    for (int i = 0; i+need.h <= ret.h; i++) {
-      for (int j = 0; j+need.w <= ret.w; j++) {
+    for (int i = 0; i+need.h <= ret.h; ++i) {
+      for (int j = 0; j+need.w <= ret.w; ++j) {
 	int ok = 1;
-	for (int y = 0; y < need.h; y++)
-	  for (int x = 0; x < need.w; x++)
+	for (int y = 0; y < need.h; ++y)
+	  for (int x = 0; x < need.w; ++x)
 	    if ((overlapping ? in : ret)(i+y,j+x) != need(y,x)) ok = 0;
 
 	if (overlapping == 2) {
-	  for (int y = -1; y <= need.h; y++) {
-	    for (int x = -1; x <= need.w; x++) {
+	  for (int y = -1; y <= need.h; ++y) {
+	    for (int x = -1; x <= need.w; ++x) {
 	      if (x >= 0 && y >= 0 && x < need.w && y < need.h) continue;
 
 	      char nn = need(clamp(y,0,need.h-1),
@@ -397,8 +401,8 @@ Image replaceTemplate(Image_ in, Image_ need_, Image_ marked_, int overlapping =
 	}
 
 	if (ok) {
-	  for (int y = 0; y < need.h; y++)
-	    for (int x = 0; x < need.w; x++)
+	  for (int y = 0; y < need.h; ++y)
+	    for (int x = 0; x < need.w; ++x)
 	      ret(i+y,j+x) = marked(y,x);
 	}
       }
@@ -425,16 +429,16 @@ Image swapTemplate(Image_ in, Image_ a, Image_ b, int rigids = 0) {
       Image_ need = k ? ar[r] : br[r];
       Image_ to   = k ? br[r] : ar[r];
 
-      for (int i = 0; i+need.h <= ret.h; i++) {
-	for (int j = 0; j+need.w <= ret.w; j++) {
+      for (int i = 0; i+need.h <= ret.h; ++i) {
+	for (int j = 0; j+need.w <= ret.w; ++j) {
 
 	  int ok = 1;
-	  for (int y = 0; y < need.h; y++)
-	    for (int x = 0; x < need.w; x++)
+	  for (int y = 0; y < need.h; ++y)
+	    for (int x = 0; x < need.w; ++x)
 	      if (done(i+y,j+x) || ret(i+y,j+x) != need(y,x)) ok = 0;
 	  if (ok) {
-	    for (int y = 0; y < need.h; y++) {
-	      for (int x = 0; x < need.w; x++) {
+	    for (int y = 0; y < need.h; ++y) {
+	      for (int x = 0; x < need.w; ++x) {
 		ret(i+y,j+x) = to(y,x);
 		done(i+y,j+x) = 1;
 	      }
@@ -456,8 +460,8 @@ Image spreadCols(Image img, int skipmaj = 0) {
 
   Image done = hull0(img);
   queue<tuple<int,int,int>> q;
-  for (int i = 0; i < img.h; i++) {
-    for (int j = 0; j < img.w; j++) {
+  for (int i = 0; i < img.h; ++i) {
+    for (int j = 0; j < img.w; ++j) {
       if (img(i,j)) {
 	if (img(i,j) != skipcol)
 	  q.emplace(j,i,img(i,j));
@@ -468,7 +472,7 @@ Image spreadCols(Image img, int skipmaj = 0) {
   while (q.size()) {
     auto [j,i,c] = q.front();
     q.pop();
-    for (int d = 0; d < 4; d++) {
+    for (int d = 0; d < 4; ++d) {
       int ni = i+(d==0)-(d==1);
       int nj = j+(d==2)-(d==3);
       if (ni >= 0 && nj >= 0 && ni < img.h && nj < img.w && !done(ni,nj)) {
@@ -485,11 +489,11 @@ Image spreadCols(Image img, int skipmaj = 0) {
 vImage splitColumns(Image_ img) {
   if (img.w*img.h <= 0) return {};
   vector<Image> ret(img.w);
-  for (int j = 0; j < img.w; j++) {
+  for (int j = 0; j < img.w; ++j) {
     ret[j].p = {j,0};
     ret[j].sz = {1,img.h};
     ret[j].mask.resize(img.h);
-    for (int i = 0; i < img.h; i++)
+    for (int i = 0; i < img.h; ++i)
       ret[j].mask[i] = img(i,j);
   }
   return ret;
@@ -497,11 +501,11 @@ vImage splitColumns(Image_ img) {
 vImage splitRows(Image_ img) {
   if (img.w*img.h <= 0) return {};
   vector<Image> ret(img.h);
-  for (int i = 0; i < img.h; i++) {
+  for (int i = 0; i < img.h; ++i) {
     ret[i].p = {0,i};
     ret[i].sz = {img.w,1};
     ret[i].mask.resize(img.w);
-    for (int j = 0; j < img.w; j++)
+    for (int j = 0; j < img.w; ++j)
       ret[i].mask[j] = img(i,j);
   }
   return ret;
@@ -541,7 +545,7 @@ Image smear(Image_ img, int id) {
   for (auto [dx,dy] : d[id]) {
     int di = dy*w+dx;
 
-    for (int i = 0; i < ret.h; i++) {
+    for (int i = 0; i < ret.h; ++i) {
       int step = i == 0 || i == ret.h-1 ? 1 : max(ret.w-1,1);
       for (int j = 0; j < ret.w; j += step) {
 	if (i-dy < 0 || j-dx < 0 || i-dy >= img.h || j-dx >= img.w) {
@@ -595,8 +599,8 @@ vImage gravity(Image_ in, int d) {
     while (1) {
       p.x += dx;
       p.y += dy;
-      for (int i = 0; i < p.h; i++) {
-	for (int j = 0; j < p.w; j++) {
+      for (int i = 0; i < p.h; ++i) {
+	for (int j = 0; j < p.w; ++j) {
 	  if (p(i,j) == 0) continue;
 	  int x = j+p.x-out.x;
 	  int y = i+p.y-out.y;
@@ -621,13 +625,13 @@ Image myStack(vImage_ lens, int id) {
   int n = lens.size();
   if (!n) return badImg;
   vector<pair<int,int>> order(n);
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; ++i) {
     order[i] = {lens[i].w*lens[i].h,i};
   }
   sort(order.begin(), order.end());
 
   Image out = lens[order[0].second];
-  for (int i = 1; i < n; i++)
+  for (int i = 1; i < n; ++i)
     out = myStack(out,lens[order[i].second],id);
   return out;
 }
@@ -637,14 +641,14 @@ Image stackLine(vImage_ shapes) {
   if (!n) return badImg;
   else if (n == 1) return shapes[0];
   vector<int> xs(n), ys(n);
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; ++i) {
     xs[i] = shapes[i].x;
     ys[i] = shapes[i].y;
   }
   sort(xs.begin(), xs.end());
   sort(ys.begin(), ys.end());
   int xmin = 1e9, ymin = 1e9;
-  for (int i = 1; i < n; i++) {
+  for (int i = 1; i < n; ++i) {
     xmin = min(xmin, xs[i]-xs[i-1]);
     ymin = min(ymin, ys[i]-ys[i-1]);
   }
@@ -652,13 +656,13 @@ Image stackLine(vImage_ shapes) {
   if (xmin < ymin) dx = 0, dy = 1;
 
   vector<pair<int,int>> order(n);
-  for (int i = 0; i < shapes.size(); i++) {
+  for (int i = 0; i < shapes.size(); ++i) {
     order[i] = {shapes[i].x*dx+shapes[i].y*dy,i};
   }
   sort(order.begin(), order.end());
 
   Image out = shapes[order[0].second];
-  for (int i = 1; i < n; i++)
+  for (int i = 1; i < n; ++i)
     out = myStack(out,shapes[order[i].second],dy);
   return out;
 }
@@ -669,13 +673,13 @@ Image composeGrowingSlow(vImage_ imgs) {
   if (!n) return badImg;
 
   vector<pair<int,int>> order(n);
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; ++i) {
     order[i] = {core::count(imgs[i]), i};
   }
   sort(order.rbegin(), order.rend());
 
   Image ret = imgs[order[0].second];
-  for (int i = 1; i < n; i++)
+  for (int i = 1; i < n; ++i)
     ret = compose(ret, imgs[order[i].second], 0);
   return ret;
 }
@@ -699,7 +703,7 @@ Image composeGrowing(vImage_ imgs) {
     return badImg;
 
   vector<pair<int,int>> order(n);
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; ++i) {
     order[i] = {core::count(imgs[i]), i};
   }
   sort(order.rbegin(), order.rend());
@@ -708,8 +712,8 @@ Image composeGrowing(vImage_ imgs) {
   for (auto [cnt,imgi] : order) {
     Image_ img = imgs[imgi];
     int dx = img.x-ret.x, dy = img.y-ret.y;
-    for (int i = 0; i < img.h; i++) {
-      for (int j = 0; j < img.w; j++) {
+    for (int i = 0; i < img.h; ++i) {
+      for (int j = 0; j < img.w; ++j) {
 	if (img(i,j))
 	  ret(i+dy,j+dx) = img(i,j);
       }
@@ -729,14 +733,14 @@ Image pickUnique(vImage_ imgs, int id) {
   //Pick the one with the unique color
   vector<int> mask(n);
   vector<int> cnt(10);
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; ++i) {
     mask[i] = core::colMask(imgs[i]);
     for (int c = 0; c < 10; c++) {
       if (mask[i]>>c&1) cnt[c]++;
     }
   }
   int reti = -1;
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; ++i) {
     for (int c = 0; c < 10; c++) {
       if (mask[i]>>c&1) {
 	if (cnt[c] == 1) {
