@@ -11,7 +11,7 @@ from random import *
 import time
 import random
 random.seed(1)
-version = str(10)
+version = str(33)
 if len(sys.argv) == 2: version = sys.argv[1]
 print("Updating to version", version)
 

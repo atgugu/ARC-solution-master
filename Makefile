@@ -1,7 +1,7 @@
 
 DEBUG = -Wshadow -Wall -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG -g -Wno-sign-compare -Wno-shadow -Wno-char-subscripts -Wno-unused-variable
 
-FLAGS = -std=c++17 -g -O2 #-fopenmp # $(DEBUG)
+FLAGS = -std=c++17 -O3 -Ofast -march=native -mtune=native -funroll-loops -finline-functions -fomit-frame-pointer -ffast-math -fno-stack-protector -fno-math-errno -funsafe-math-optimizations -fno-trapping-math -fno-signed-zeros -fno-finite-math-only -fassociative-math -freciprocal-math -ffinite-math-only -fexcess-precision=fast -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno
 LIBS = -lstdc++ -lstdc++fs
 
 .DEFAULT_GOAL := run
