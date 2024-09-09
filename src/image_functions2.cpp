@@ -767,45 +767,6 @@ Image composeGrowing(vImage_ imgs) {
     return ret;
 }
 
-/*
-Image composeGrowing(vImage_ imgs) {
-  int n = imgs.size();
-  if (!n) return badImg;
-  if (n == 1) return imgs[0];
-
-  int minx = 1e9, miny = 1e9, maxx = -1e9, maxy = -1e9;
-  for (Image_ img : imgs) {
-    minx = min(minx, img.x);
-    miny = min(miny, img.y);
-    maxx = max(maxx, img.x+img.w);
-    maxy = max(maxy, img.y+img.h);
-  }
-
-  point rsz = {maxx-minx, maxy-miny};
-  if (max(rsz.x, rsz.y) > MAXSIDE || rsz.x*rsz.y > MAXAREA || rsz.x <= 0 || rsz.y <= 0)
-    return badImg;
-
-  vector<pair<int,int>> order(n);
-  for (int i = 0; i < n; ++i) {
-    order[i] = {core::count(imgs[i]), i};
-  }
-  sort(order.rbegin(), order.rend());
-
-  Image ret = core::empty(point{minx, miny}, rsz);
-  for (auto [cnt,imgi] : order) {
-    Image_ img = imgs[imgi];
-    int dx = img.x-ret.x, dy = img.y-ret.y;
-    for (int i = 0; i < img.h; ++i) {
-      for (int j = 0; j < img.w; ++j) {
-	if (img(i,j))
-	  ret(i+dy,j+dx) = img(i,j);
-      }
-    }
-  }
-  //assert(ret == composeGrowingSlow(imgs));
-  return ret;
-}
-*/
 
 Image pickUnique(vImage_ imgs, int id) {
   assert(id == 0);
