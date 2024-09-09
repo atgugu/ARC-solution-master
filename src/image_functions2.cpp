@@ -678,7 +678,96 @@ Image composeGrowingSlow(vImage_ imgs) {
   return ret;
 }
 
+// Optimized radix sort for integer keys
+void radixSort(std::vector<std::pair<int, int>>& arr) {
+    int maxVal = 0;
+    for (const auto& p : arr) {
+        maxVal = std::max(maxVal, p.first);
+    }
 
+    int exp = 1;
+    while (maxVal / exp > 0) {
+        std::vector<std::vector<std::pair<int, int>>> buckets(10);
+        for (const auto& p : arr) {
+            buckets[(p.first / exp) % 10].push_back(p);
+        }
+
+        int index = 0;
+        for (const auto& bucket : buckets) {
+            for (const auto& p : bucket) {
+                arr[index++] = p;
+            }
+        }
+
+        exp *= 10;
+    }
+}
+
+Image composeGrowing(vImage_ imgs) {
+    int n = imgs.size();
+    if (!n) return badImg;
+    if (n == 1) return imgs[0];
+
+    int minx = 1e9, miny = 1e9, maxx = -1e9, maxy = -1e9;
+
+    for (const Image_& img : imgs) {
+        minx = std::min(minx, img.x);
+        miny = std::min(miny, img.y);
+        maxx = std::max(maxx, img.x + img.w);
+        maxy = std::max(maxy, img.y + img.h);
+    }
+
+    point rsz = {maxx - minx, maxy - miny};
+    if (std::max(rsz.x, rsz.y) > MAXSIDE || rsz.x * rsz.y > MAXAREA || rsz.x <= 0 || rsz.y <= 0)
+        return badImg;
+
+    std::vector<std::pair<int, int>> order(n);
+    for (int i = 0; i < n; ++i) {
+        order[i] = {core::count(imgs[i]), i};
+    }
+
+    // Radix sort for integer keys
+    int maxVal = 0;
+    for (const auto& p : order) {
+        maxVal = std::max(maxVal, p.first);
+    }
+
+    int exp = 1;
+    while (maxVal / exp > 0) {
+        std::vector<std::vector<std::pair<int, int>>> buckets(10);
+        for (const auto& p : order) {
+            buckets[(p.first / exp) % 10].push_back(p);
+        }
+
+        int index = 0;
+        for (const auto& bucket : buckets) {
+            for (const auto& p : bucket) {
+                order[index++] = p;
+            }
+        }
+
+        exp *= 10;
+    }
+
+    Image ret = core::empty(point{minx, miny}, rsz);
+    for (const auto& [cnt, imgi] : order) {
+        const Image_& img = imgs[imgi];
+        int dx = img.x - ret.x, dy = img.y - ret.y;
+
+        // Direct pixel access
+        for (int i = 0; i < img.h; ++i) {
+            for (int j = 0; j < img.w; ++j) {
+                if (img(i, j)) {
+                    ret(i + dy, j + dx) = img(i, j);
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
+/*
 Image composeGrowing(vImage_ imgs) {
   int n = imgs.size();
   if (!n) return badImg;
@@ -716,7 +805,7 @@ Image composeGrowing(vImage_ imgs) {
   //assert(ret == composeGrowingSlow(imgs));
   return ret;
 }
-
+*/
 
 Image pickUnique(vImage_ imgs, int id) {
   assert(id == 0);
