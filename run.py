@@ -9,8 +9,9 @@ import os
 import sys
 from random import *
 import time
-
-version = str(randint(0,10**9))
+import random
+random.seed(1)
+version = str(6)
 if len(sys.argv) == 2: version = sys.argv[1]
 print("Updating to version", version)
 

@@ -35,7 +35,7 @@ pair<vector<int>,double> solveSingle(vector<vector<int>>&seeds, const vector<int
     }
   };
 
-  for (int w = 1; w <= 30; w++) {
+  for (int w = 1; w <= 30; ++w) {
     add(vector<int>(n,w), w);
   }
 

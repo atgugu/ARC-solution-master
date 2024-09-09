@@ -506,6 +506,7 @@ Image center(Image_ img) {
   return core::full(img.p+(img.sz-sz)/2, sz);
 }
 
+/*
 Image transform(Image_ img, int A00, int A01, int A10, int A11) {
   if (img.w*img.h == 0) return img;
   Image c = center(img);
@@ -534,6 +535,52 @@ Image transform(Image_ img, int A00, int A01, int A10, int A11) {
       ret(go.y,go.x) = img(i,j);
     }
   }
+  return ret;
+}
+*/
+
+Image transform(Image_ img, int A00, int A01, int A10, int A11) {
+  if (img.w * img.h == 0) return img;  // Return early if empty
+
+  Image c = center(img);
+  point off = point{1 - c.w, 1 - c.h} + (img.p - c.p) * 2;
+
+  // Transformation function without bit shifts
+  auto t = [&](point p) -> point {
+    p = p * 2 + off;
+    int new_x = A00 * p.x + A01 * p.y - off.x;
+    int new_y = A10 * p.x + A11 * p.y - off.y;
+    return {new_x / 2, new_y / 2};  // Division replaced with arithmetic
+  };
+
+  // Precompute the corners for boundary determination
+  point corner[4] = {
+    t({0, 0}),
+    t({img.w - 1, 0}),
+    t({0, img.h - 1}),
+    t({img.w - 1, img.h - 1})
+  };
+
+  // Initialize the bounding box using the first corner
+  point a = corner[0], b = corner[0];
+  for (int i = 1; i < 4; ++i) {
+    a.x = min(a.x, corner[i].x);
+    a.y = min(a.y, corner[i].y);
+    b.x = max(b.x, corner[i].x);
+    b.y = max(b.y, corner[i].y);
+  }
+
+  // Allocate output image once based on calculated bounds
+  Image ret = core::empty(img.p, b - a + point{1, 1});
+
+  // Main loop with reduced operations
+  for (int i = 0; i < img.h; ++i) {
+    for (int j = 0; j < img.w; ++j) {
+      point go = t({j, i}) - a;
+      ret(go.y, go.x) = img(i, j);
+    }
+  }
+
   return ret;
 }
 
