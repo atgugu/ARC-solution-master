@@ -168,7 +168,6 @@ Image compress3(Image_ img) {
 
 
 //TODO: return badImg if fail
-
 Image greedyFill(Image& ret, vector<pair<int,vector<int>>>&piece, Spec&done, int bw, int bh, int&donew) {
   sort(piece.rbegin(), piece.rend());
 
@@ -224,7 +223,6 @@ Image greedyFill(Image& ret, vector<pair<int,vector<int>>>&piece, Spec&done, int
   }
   return ret;
 }
-
 
 
 

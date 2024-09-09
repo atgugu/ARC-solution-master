@@ -914,69 +914,84 @@ Image splitPickMaxes(Image_ a, int id) {
 //Smallest piece should be as big as possible
 
 Image heuristicCut(Image_ img) {
-  int ret = core::majorityCol(img, 1);
-  int ret_score = -1;
+    int ret = core::majorityCol(img, 1);
+    int ret_score = -1;
 
-  int mask = core::colMask(img);
-  Image done = core::empty(img.p,img.sz);
-  for (int col = 0; col < 10; col++) {
-    if ((mask>>col&1) == 0) continue;
-    fill(done.mask.begin(), done.mask.end(), 0);
-    function<void(int,int)> edgy = [&](int r, int c) {
-      if (r < 0 || r >= img.h || c < 0 || c >= img.w || img(r,c) != col || done(r,c)) return;
-      done(r,c) = 1;
-      for (int nr : {r-1,r,r+1})
-	for (int nc : {c-1,c,c+1})
-	  edgy(nr,nc);
-    };
-    int top = 0, bot = 0, left = 0, right = 0;
-    for (int i = 0; i < img.h; ++i) {
-      for (int j = 0; j < img.w; ++j) {
-	if (img(i,j) == col) {
-	  if (i == 0) top = 1;
-	  if (j == 0) left = 1;
-	  if (i == img.h-1) bot = 1;
-	  if (j == img.w-1) right = 1;
-	}
-	if ((i == 0 || j == 0 || i == img.h-1 || j == img.w-1) && img(i,j) == col && !done(i,j)) {
-	  edgy(i,j);
-	}
-      }
+    int mask = core::colMask(img);
+    Image done = core::empty(img.p, img.sz);
+
+    for (int col = 0; col < 10; col++) {
+        if ((mask >> col & 1) == 0) continue;
+        fill(done.mask.begin(), done.mask.end(), 0);
+
+        // Define edgy function to mark edges
+        function<void(int, int)> edgy = [&](int r, int c) {
+            if (r < 0 || r >= img.h || c < 0 || c >= img.w || img(r, c) != col || done(r, c)) return;
+            done(r, c) = 1;
+            for (int nr : {r - 1, r, r + 1}) {
+                for (int nc : {c - 1, c, c + 1}) {
+                    edgy(nr, nc);
+                }
+            }
+        };
+
+        int top = 0, bot = 0, left = 0, right = 0;
+
+        // Check edges
+        for (int i = 0; i < img.h; i++) {
+            for (int j = 0; j < img.w; j++) {
+                if (img(i, j) == col) {
+                    if (i == 0) top = 1;
+                    if (j == 0) left = 1;
+                    if (i == img.h - 1) bot = 1;
+                    if (j == img.w - 1) right = 1;
+                }
+
+                if ((i == 0 || j == 0 || i == img.h - 1 || j == img.w - 1) && img(i, j) == col && !done(i, j)) {
+                    edgy(i, j);
+                }
+            }
+        }
+
+        if (!(top && bot || left && right)) continue;
+
+        int score = 1e9, components = 0, nocontained = 1;
+
+        // Iterate through the image and apply DFS to unmarked cells
+        for (int i = 0; i < img.h; i++) {
+            for (int j = 0; j < img.w; j++) {
+                int cnt = 0, contained = 1;
+                if (!done(i, j) && img(i, j) != col) {
+                    function<void(int, int)> dfs = [&](int r, int c) {
+                        if (r < 0 || r >= img.h || c < 0 || c >= img.w) return;
+                        if (img(r, c) == col) {
+                            if (done(r, c)) contained = 0;
+                            return;
+                        }
+                        if (done(r, c)) return;
+                        cnt++;
+                        done(r, c) = 1;
+                        for (int nr : {r - 1, r, r + 1}) {
+                            for (int nc : {c - 1, c, c + 1}) {
+                                dfs(nr, nc);
+                            }
+                        }
+                    };
+                    dfs(i, j);
+                    components++;
+                    score = min(score, cnt);
+                    if (contained) nocontained = 0;
+                }
+            }
+        }
+
+        if (components >= 2 && nocontained && score > ret_score) {
+            ret_score = score;
+            ret = col;
+        }
     }
 
-    if (!(top && bot || left && right)) continue;
-
-    int score = 1e9, components = 0, nocontained = 1;
-    for (int i = 0; i < img.h; ++i) {
-      for (int j = 0; j < img.w; ++j) {
-	int cnt = 0, contained = 1;
-	if (!done(i,j) && img(i,j) != col) {
-	  function<void(int,int)> dfs = [&](int r, int c) {
-	    if (r < 0 || r >= img.h || c < 0 || c >= img.w) return;
-	    if (img(r,c) == col) {
-	      if (done(r,c)) contained = 0;
-	      return;
-	    }
-	    if (done(r,c)) return;
-	    cnt++;
-	    done(r,c) = 1;
-	    for (int nr : {r-1,r,r+1})
-	      for (int nc : {c-1,c,c+1})
-		dfs(nr,nc);
-	  };
-	  dfs(i,j);
-	  components++;
-	  score = min(score, cnt);
-	  if (contained) nocontained = 0;
-	}
-      }
-    }
-    if (components >= 2 && nocontained && score > ret_score) {
-      ret_score = score;
-      ret = col;
-    }
-  }
-  return filterCol(img,ret);
+    return filterCol(img, ret);
 }
 
 vImage cut(Image_ img) {
