@@ -365,7 +365,7 @@ Image replaceTemplate(Image_ in, Image_ need_, Image_ marked_, int overlapping =
 
   const int rots = rigids ? 8 : 1;
   vector<Image> needr(rots), markedr(rots);
-  for (int r = 0; r < rots; r++) {
+  for (int r = 0; r < rots; ++r) {
     needr[r] = rigid(need_,r);
     markedr[r] = rigid(marked_,r);
   }

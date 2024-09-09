@@ -614,6 +614,32 @@ Image rigid(Image_ img, int id) {
 }
 
 Image invert(Image img) {
+    if (img.w == 0 || img.h == 0) return img;  // Early return for empty image
+
+    int mask = core::colMask(img);
+    int col = 1;
+
+    // Check for the first non-zero bit in the mask
+    for (int i = 1; i <= 9; ++i) {
+        if (mask & (1 << i)) {
+            col = i;
+            break;
+        }
+    }
+
+    // Invert the colors of the image
+    for (int i = 0; i < img.h; ++i) {
+        for (int j = 0; j < img.w; ++j) {
+            img(i, j) = (img(i, j) == 0) ? col : 0;
+        }
+    }
+
+    return img;
+}
+
+
+/*
+Image invert(Image img) {
   if (img.w*img.h == 0) return img;
   int mask = core::colMask(img);
   int col = 1;
@@ -625,7 +651,7 @@ Image invert(Image img) {
       img(i,j) = img(i,j) ? 0 : col;
   return img;
 }
-
+*/
 
 Image interior2(Image_ a) {
   return compose(a, invert(border(a)), 2);
