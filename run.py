@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-run_list = range(0,419)
-run_depth = 2
+run_list = range(0,416)
+run_depth = 3
 
 from subprocess import call
 from concurrent.futures import ThreadPoolExecutor as Pool

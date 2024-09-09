@@ -76,7 +76,7 @@ void run(int only_sid = -1, int arg = -1) {
 
   int skips = 0;
 
-  string sample_dir = "evaluation";
+  string sample_dir = "training";
   int samples = -1;
   if (eval) {
     sample_dir = "test";
@@ -255,7 +255,7 @@ void run(int only_sid = -1, int arg = -1) {
 	  if (filtered.size() == 3+skips*3) break;
 	}
       }
-      for (int i = 0; i < skips*3 && filtered.size(); i++)
+      for (int i = 0; i < skips*3 && filtered.size(); ++i)
 	filtered.erase(filtered.begin());
       answers = move(filtered);
     }
@@ -282,7 +282,7 @@ void run(int only_sid = -1, int arg = -1) {
 	visu.next(to_string(si) + " - test");
 	visu.add(test_in,test_out);
 	visu.next(to_string(si) + " - cands");
-	for (int i = 0; i < min((int)answers.size(), 5); i++) {
+	for (int i = 0; i < min((int)answers.size(), 5); ++i) {
 	  visu.add(test_in, answers[i].imgs.back());
 	}
       }

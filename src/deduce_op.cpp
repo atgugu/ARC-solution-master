@@ -19,15 +19,15 @@ pair<Image,Image> iOuterProductSI(Image_ img, int w, int h) {
   for (int ii = 0; ii < img.h/h; ii++) {
     for (int jj = 0; jj < img.w/w; jj++) {
       int all0 = 1;
-      for (int i = 0; i < h; i++)
-	for (int j = 0; j < w; j++)
+      for (int i = 0; i < h; ++i)
+	for (int j = 0; j < w; ++j)
 	  if (img(ii*h+i,jj*w+j)) all0 = 0;
 
       big(ii,jj) = !all0;
 
       if (!all0) {
-	for (int i = 0; i < h; i++) {
-	  for (int j = 0; j < w; j++) {
+	for (int i = 0; i < h; ++i) {
+	  for (int j = 0; j < w; ++j) {
 	    char& a = small(i,j);
 	    char b = img(ii*h+i,jj*w+j);
 	    if (a != -1 && a != b) return {badImg,badImg};
@@ -49,15 +49,15 @@ pair<Image,Image> iOuterProductIS(Image_ img, int w, int h) {
   for (int ii = 0; ii < img.h/h; ii++) {
     for (int jj = 0; jj < img.w/w; jj++) {
       int mask = 0;
-      for (int i = 0; i < h; i++)
-	for (int j = 0; j < w; j++)
+      for (int i = 0; i < h; ++i)
+	for (int j = 0; j < w; ++j)
 	  mask |= 1<<img(ii*h+i,jj*w+j);
 
       if (__builtin_popcount(mask&~1) > 1) return {badImg,badImg};
       big(ii,jj) = 31-__builtin_clz(mask);
       if (big(ii,jj)) {
-	for (int i = 0; i < h; i++) {
-	  for (int j = 0; j < w; j++) {
+	for (int i = 0; i < h; ++i) {
+	  for (int j = 0; j < w; ++j) {
 	    char& a = small(i,j);
 	    char b = img(ii*h+i,jj*w+j) > 0;
 	    if (a != -1 && a != b) return {badImg,badImg};
@@ -208,7 +208,7 @@ void addDeduceOuterProduct(Pieces&pieces, vector<pair<Image,Image>> train, vecto
 
     auto add = [&](vImage_ vi) {
       int matches = 0;
-      for (int i = 0; i < train.size(); i++) {
+      for (int i = 0; i < train.size(); ++i) {
 	Image_ target = k ? deduce_op.train_targets[i].second : deduce_op.train_targets[i].first;
 	matches += (vi[i] == target);
       }
@@ -222,7 +222,7 @@ void addDeduceOuterProduct(Pieces&pieces, vector<pair<Image,Image>> train, vecto
       int*ind = &pieces.mem[pi];
       //TODO: Use hashes to compare instead of full images
       vImage imgs;
-      for (int i = 0; i <= train.size(); i++) {
+      for (int i = 0; i <= train.size(); ++i) {
 	if (pieces.dag[i].tiny_node[ind[i]].isvec) continue;
 	Image_ img = pieces.dag[i].getImg(ind[i]);
 	imgs.push_back(img);
@@ -242,7 +242,7 @@ void addDeduceOuterProduct(Pieces&pieces, vector<pair<Image,Image>> train, vecto
 
     // TODO: Use correct depths
     vImage imgs;
-    for (int i = 0; i <= train.size(); i++)
+    for (int i = 0; i <= train.size(); ++i)
       imgs.push_back(deduce_op.reconstruct(a[i],b[i]));
     cands.emplace_back(imgs, 2, MAXDEPTH, MAXDEPTH*2);
   }

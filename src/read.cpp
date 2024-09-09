@@ -52,16 +52,16 @@ Sample::Sample(string filename) {
   fclose(fp);
 
   assert(train_input.size() == train_output.size());
-  for (int i = 0; i < (int)train_input.size(); i++) {
+  for (int i = 0; i < (int)train_input.size(); ++i) {
     train.emplace_back(train_input[i], train_output[i]);
   }
   if (test_input.size() == test_output.size()) {
-    for (int i = 0; i < (int)test_input.size(); i++) {
+    for (int i = 0; i < (int)test_input.size(); ++i) {
       test.emplace_back(test_input[i], test_output[i]);
     }
   } else {
     assert(test_output.empty());
-    for (int i = 0; i < (int)test_input.size(); i++) {
+    for (int i = 0; i < (int)test_input.size(); ++i) {
       test.emplace_back(test_input[i], badImg);
     }
   }
@@ -69,7 +69,7 @@ Sample::Sample(string filename) {
 
 vector<Sample> Sample::split() {
   vector<Sample> ret;
-  for (int i = 0; i < test.size(); i++) {
+  for (int i = 0; i < test.size(); ++i) {
     ret.push_back(*this);
     Sample&s = ret.back();
     tie(s.test_in, s.test_out) = test[i];
@@ -135,7 +135,7 @@ Image Sample::readImage() {
   ret.h = widths.size();
   assert(ret.h >= 1 && ret.h <= 30);
   ret.w = widths[0];
-  for (int i = 0; i < ret.h; i++)
+  for (int i = 0; i < ret.h; ++i)
     assert(widths[i] == ret.w);
   assert(ret.w >= 1 && ret.w <= 30);
   return ret;
@@ -190,8 +190,8 @@ void Writer::operator()(const Sample& s, vector<Image> imgs) {
     assert(img.w >= 1 && img.w <= 30 && img.h >= 1 && img.h <= 30);
     if (notfirst++) fprintf(fp, " ");
     fprintf(fp, "|");
-    for (int i = 0; i < img.h; i++) {
-      for (int j = 0; j < img.w; j++) {
+    for (int i = 0; i < img.h; ++i) {
+      for (int j = 0; j < img.w; ++j) {
 	int c = img(i,j);
 	assert(c >= 0 && c <= 9);
 	fprintf(fp, "%d", c);
@@ -215,14 +215,14 @@ void writeAnswersWithScores(const Sample&s, string fn, vector<Image> imgs, vecto
   if (imgs.empty()) imgs = {dummyImg}, scores = {-1};
   assert(imgs.size() <= 3);
 
-  for (int i = 0; i < imgs.size(); i++) {
+  for (int i = 0; i < imgs.size(); ++i) {
     Image_ img = imgs[i];
     double score = scores[i];
     assert(img.p == point({0,0}));
     assert(img.w >= 1 && img.w <= 30 && img.h >= 1 && img.h <= 30);
     fprintf(fp, "|");
-    for (int i = 0; i < img.h; i++) {
-      for (int j = 0; j < img.w; j++) {
+    for (int i = 0; i < img.h; ++i) {
+      for (int j = 0; j < img.w; ++j) {
 	int c = img(i,j);
 	assert(c >= 0 && c <= 9);
 	fprintf(fp, "%d", c);

@@ -13,13 +13,13 @@ using namespace std;
 
 int rcDiff(Image_ img) {
   vector<int> row(img.h,1), col(img.w,1);
-  for (int i = 0; i < img.h; i++)
-    for (int j = 0; j < img.w; j++)
+  for (int i = 0; i < img.h; ++i)
+    for (int j = 0; j < img.w; ++j)
       if (img(i,j) == 0) row[i] = col[j] = 0;
   int ans = 0;
-  for (int i = 0; i < img.h; i++)
+  for (int i = 0; i < img.h; ++i)
     ans += row[i];
-  for (int j = 0; j < img.w; j++)
+  for (int j = 0; j < img.w; ++j)
     ans -= col[j];
   return ans;
 }
@@ -43,7 +43,7 @@ Simplifier normalizeOrient() {
 #define VECIFY(func)				\
   vImage func(vImage_ vimg) {			\
     vImage ret(vimg.size());			\
-    for (int i = 0; i < vimg.size(); i++) 	\
+    for (int i = 0; i < vimg.size(); ++i) 	\
       ret[i] = func(vimg[i]);			\
     return ret;					\
   }
@@ -51,7 +51,7 @@ VECIFY(hull);
 
 #define FOREACH(content)			\
   vImage ret(vi.size());			\
-  for (int i = 0; i < vi.size(); i++)		\
+  for (int i = 0; i < vi.size(); ++i)		\
     ret[i] = content;				\
   return ret;
 
@@ -186,7 +186,7 @@ Image solveEval(Image in, vector<pair<Image,Image>> train, int taski) {
     in = sim.in(in);
     point ins = compress(interior(filterCol(in, 2))).sz;
     int borders = ins.x == ins.y ? ins.x : 2;
-    for (int i = 0; i < borders; i++)
+    for (int i = 0; i < borders; ++i)
       in = compose(in,makeBorder(in, 1));
     return sim.rec(in0, in);
 
@@ -553,8 +553,8 @@ Image solveEval(Image in, vector<pair<Image,Image>> train, int taski) {
 
   } else if (taski == 77) {
     Image a = compress(in);
-    for (int i = 0; i < a.h; i++) {
-      for (int j = 0; j < a.w; j++) {
+    for (int i = 0; i < a.h; ++i) {
+      for (int j = 0; j < a.w; ++j) {
 	int d = min({i,j,a.h-1-i,a.w-1-j});
 	a(i,j) = d%2 == 0 ? 5 : d%4 == 1 ? 2 : 0;
       }

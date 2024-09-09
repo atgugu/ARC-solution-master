@@ -11,7 +11,7 @@ pair<int,bool> TinyHashMap::insert(ull key, int value) {
     mask = table.size()-1;
 
     fill(table.begin(), table.end(), -1);
-    for (int i = 0; i < data.size(); i++) {
+    for (int i = 0; i < data.size(); ++i) {
       int&head = table[data[i].key&mask];
       data[i].next = head;
       head = i;
@@ -43,7 +43,7 @@ void TinyChildren::add(int fi, int to) {
     dense = new int[cap];
     fill_n(dense, cap, None);
     dense[fi] = to;
-    for (int i = 0; i < sz; i++) {
+    for (int i = 0; i < sz; ++i) {
       auto [fi, to] = old[i];
       assert(fi >= 0);
       assert(fi < cap);
@@ -107,12 +107,12 @@ void TinyChildren::legacy(vector<pair<int,int>>&ret) {
   if (sz < dense_thres) {
     //Sparse
     ret.resize(sz);
-    for (int i = 0; i < sz; i++)
+    for (int i = 0; i < sz; ++i)
       ret[i] = sparse[i];
   } else {
     //Dense
     ret.resize(0);
-    for (int i = 0; i < cap; i++) {
+    for (int i = 0; i < cap; ++i) {
       if (dense[i] != None)
 	ret.emplace_back(i, dense[i]);
     }
@@ -190,7 +190,7 @@ TinyImage::TinyImage(Image_ img, TinyBank&bank) {
   for (char c : img.mask) {
     bank.set(memstart+ sz, code[c], codelen[c]);
     sz += codelen[c];
-    //for (int i = 0; i < codelen[c]; i++)
+    //for (int i = 0; i < codelen[c]; ++i)
     //bank.set(memstart+ sz++, code[c]>>i&1);
   }
   /*for (int it = 0; it < 10; it++)
@@ -209,7 +209,7 @@ Image TinyImage::decompress(TinyBank&bank) {
   ret.mask.resize(ret.w*ret.h);
   int treep = 0, maski = 0;
   ll memstart = (ll)memi*align;
-  for (ll i = memstart; i < memstart+sz; i++) {
+  for (ll i = memstart; i < memstart+sz; ++i) {
     int bit = bank.get(i);
     int child = tree[treep]>>bit*4&15;
     if (child < 10) {

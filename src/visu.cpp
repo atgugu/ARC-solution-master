@@ -22,8 +22,8 @@ void Visu::add(Image in, Image out) {
   fprintf(fp, "Pair\n");
   for (Image_ img : {in,out}) {
     fprintf(fp, "Image %d %d\n", img.w, img.h);
-    for (int i = 0; i < img.h; i++) {
-      for (int j = 0; j < img.w; j++) {
+    for (int i = 0; i < img.h; ++i) {
+      for (int j = 0; j < img.w; ++j) {
 	int col = img(i,j);
 	fprintf(fp, "%d", col);
       }
@@ -46,8 +46,8 @@ void plot(const vector<vector<int>>&inp, const char*filename) { //filename = out
   vector<int> cols = {0x000000, 0x0074D9, 0xFF4136, 0x2ECC40, 0xFFDC00, 0xAAAAAA, 0xF012BE, 0xFF851B, 0x7FDBFF, 0x870C25};
 
   vector<unsigned char> output(W*H*3, 0x60);
-  for (int i = 0; i < h; i++) {
-    for (int j = 0; j < w; j++) {
+  for (int i = 0; i < h; ++i) {
+    for (int j = 0; j < w; ++j) {
       for (int k = 0; k < tw; k++) {
 	for (int l = 0; l < tw; l++) {
 	  for (int c = 0; c < 3; c++) {
@@ -64,8 +64,8 @@ void plot(const vector<vector<int>>&inp, const char*filename) { //filename = out
 
 void print(Image img) {
   printf("[%d %d %d %d]\n", img.p.x, img.p.y, img.w, img.h);
-  for (int i = 0; i < img.h; i++) {
-    for (int j = 0; j < img.w; j++) {
+  for (int i = 0; i < img.h; ++i) {
+    for (int j = 0; j < img.w; ++j) {
       int col = img(i,j);
       if (col)
 	printf("%d", col);

@@ -49,7 +49,7 @@ void Functions3::add(string name, int cost, const function<Image(Image_)>&f, int
     nxt.isvec = cur.isvec;
 
     int area = 0;
-    for (int i = 0; i < cur.vimg.size(); i++) {
+    for (int i = 0; i < cur.vimg.size(); ++i) {
       real_f_time.start();
       nxt.vimg[i] = f(cur.vimg[i]);
       real_f_time.stop();
@@ -111,7 +111,7 @@ void Functions3::add(const vector<point>&sizes, string name, int cost, const fun
       nxt.vimg.resize(cur.vimg.size());
 
       int area = 0;
-      for (int i = 0; i < cur.vimg.size(); i++) {
+      for (int i = 0; i < cur.vimg.size(); ++i) {
 	real_f_time.start();
 	nxt.vimg[i] = f(cur.vimg[i], arg2);
 	real_f_time.stop();
@@ -173,14 +173,14 @@ Functions3 initFuncs3(const vector<point>&sizes) {
   //funcs.add("greedyFillBlack", 10, [](Image_ img) {return greedyFillBlack(img);});
   //funcs.add("greedyFillBlack2", 10, [](Image_ img) {return greedyFillBlack2(img);});
 
-  for (int i = 1; i < 9; i++)
+  for (int i = 1; i < 9; ++i)
     funcs.add("rigid "+to_string(i), 10,
 	      [i](Image_ img) {return rigid(img, i);});
   for (int a = 0; a < 3; a++)
     for (int b = 0; b < 3; b++)
       funcs.add("count "+to_string(a)+" "+to_string(b), 10,
 		[a,b](Image_ img) {return count(img, a, b);});
-  for (int i = 0; i < 15; i++)
+  for (int i = 0; i < 15; ++i)
     funcs.add("smear "+to_string(i), 10,
 	      [i](Image_ img) {return smear(img, i);});
 
@@ -403,7 +403,7 @@ void DAG::benchmark() {
   for (int fi : funcs.listed) {
     double start_time = now();
     State nxt;
-    for (int i = 0; i < tiny_node.size(); i++) {
+    for (int i = 0; i < tiny_node.size(); ++i) {
       funcs.f_list[fi](tiny_node.getState(i), nxt);
     }
     double elapsed = now()-start_time;
@@ -480,7 +480,7 @@ void DAG::applyFuncs(vector<pair<string,int>> names, bool vec) {
     State state = tiny_node.getState(curi);
     state_time.stop();
 
-    for (int i = 0; i < fis.size(); i++) {
+    for (int i = 0; i < fis.size(); ++i) {
       auto [fi,id] = fis[i];
       if (id <= parid[curi]) continue;
 
@@ -653,7 +653,7 @@ vector<DAG> brutePieces2(Image_ test_in, const vector<pair<Image,Image>>&train, 
 
   if (out_sizes.size() && print_nodes) {
     cout << "Dag sizes: ";
-    for (int i = 0; i < dag.size(); i++)
+    for (int i = 0; i < dag.size(); ++i)
       cout << dag[i].tiny_node.size() << " ";
     cout << endl;
   }

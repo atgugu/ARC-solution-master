@@ -88,7 +88,7 @@ vector<Candidate> greedyCompose2(Pieces&pieces, vector<Image>&target, vector<poi
   vector<Image> init;
   vector<int> sz;
   {
-    for (int i = 0; i < pieces.dag.size(); i++) {
+    for (int i = 0; i < pieces.dag.size(); ++i) {
       if (i < target.size()) assert(out_sizes[i] == target[i].sz);
       init.push_back(core::full(out_sizes[i], 10));
       sz.push_back(init.back().mask.size());
@@ -112,9 +112,9 @@ vector<Candidate> greedyCompose2(Pieces&pieces, vector<Image>&target, vector<poi
     bad_mem.reserve(n*M64);
     TinyHashMap seen;
     mybitset badi(M), blacki(M);
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n; ++i) {
       int x = 0, y = 0;
-      for (int j = 0; j < sz.size(); j++) {
+      for (int j = 0; j < sz.size(); ++j) {
 	int*ind = &pieces.mem[pieces.piece[i].memi];
 	Image_ img = pieces.dag[j].getImg(ind[j]);
 	const vector<char>&p = img.mask;
@@ -143,7 +143,7 @@ vector<Candidate> greedyCompose2(Pieces&pieces, vector<Image>&target, vector<poi
   //exit(0);
 
   int max_piece_depth = 0;
-  for (int i = 0; i < n; i++)
+  for (int i = 0; i < n; ++i)
     max_piece_depth = max(max_piece_depth, pieces.piece[i].depth);
 
   //mt19937 mrand(0);
@@ -152,7 +152,7 @@ vector<Candidate> greedyCompose2(Pieces&pieces, vector<Image>&target, vector<poi
 
   auto greedyComposeCore = [&](mybitset&cur, const mybitset&careMask, const int piece_depth_thres, vImage&ret) {
     vector<int> sparsej;
-    for (int j = 0; j < M64; j++) {
+    for (int j = 0; j < M64; ++j) {
       if (~cur.data[j] & careMask.data[j]) sparsej.push_back(j);
     }
 
@@ -161,7 +161,7 @@ vector<Candidate> greedyCompose2(Pieces&pieces, vector<Image>&target, vector<poi
     pair<int,int> bestcnt = {0,0};
     //for (int i : order) {
     //  if (skip[i] || pieces.piece[img_ind[i]].depth > piece_depth_thres) continue;
-    for (int i = 0; i < img_ind.size(); i++) {
+    for (int i = 0; i < img_ind.size(); ++i) {
       if (pieces.piece[img_ind[i]].depth > piece_depth_thres) continue;
 
       for (int k : {0,1,2}) {
@@ -172,7 +172,7 @@ vector<Candidate> greedyCompose2(Pieces&pieces, vector<Image>&target, vector<poi
 
 	const ull*bad_data = &bad_mem[bad_ind[i]];
 	int cnt = 0, covered = 0, ok = 1;
-	for (int j = 0; j < M64; j++) {
+	for (int j = 0; j < M64; ++j) {
 	  ull active = ((active_data[j]^flip) | full);
 	  if (~cur.data[j] & bad_data[j] & active) {
 	    ok = 0;
@@ -190,13 +190,13 @@ vector<Candidate> greedyCompose2(Pieces&pieces, vector<Image>&target, vector<poi
 	  besti = i;
 
 	  if (k == 0) {
-	    for (int j = 0; j < M64; j++)
+	    for (int j = 0; j < M64; ++j)
 	      tmp_active[j] = ~active_data[j];
 	  } else if (k == 1) {
-	    for (int j = 0; j < M64; j++)
+	    for (int j = 0; j < M64; ++j)
 	      tmp_active[j] = active_data[j];
 	  } else {
-	    for (int j = 0; j < M64; j++)
+	    for (int j = 0; j < M64; ++j)
 	      tmp_active[j] = ~0;
 	  }
 	  best_active = tmp_active;
@@ -214,7 +214,7 @@ vector<Candidate> greedyCompose2(Pieces&pieces, vector<Image>&target, vector<poi
       for (int l = 0; l < ret.size(); l++) {
 	int*ind = &pieces.mem[pieces.piece[i].memi];
 	const vector<char>&mask = pieces.dag[l].getImg(ind[l]).mask;
-	for (int j = 0; j < sz[l]; j++) {
+	for (int j = 0; j < sz[l]; ++j) {
 	  if ((best_active[x>>6]>>(x&63)&1) && ret[l].mask[j] == 10) {
 	    //assert(cur[x-1] == 0);
 	    ret[l].mask[j] = mask[j];
@@ -223,7 +223,7 @@ vector<Candidate> greedyCompose2(Pieces&pieces, vector<Image>&target, vector<poi
 	  x++;
 	}
       }
-      for (int j = 0; j < M; j++) {
+      for (int j = 0; j < M; ++j) {
 	if (best_active[j>>6]>>(j&63)&1) cur.set(j, 1);
       }
 
@@ -246,7 +246,7 @@ vector<Candidate> greedyCompose2(Pieces&pieces, vector<Image>&target, vector<poi
 
   //vector<int> skip(img_ind.size());
   //vector<int> order;
-  //for (int i = 0; i < img_ind.size(); i++) order.push_back(i);
+  //for (int i = 0; i < img_ind.size(); ++i) order.push_back(i);
 
   for (int pdt = max_piece_depth%10; pdt <= max_piece_depth; pdt += 10) {
     int piece_depth_thres = pdt;
@@ -254,7 +254,7 @@ vector<Candidate> greedyCompose2(Pieces&pieces, vector<Image>&target, vector<poi
     for (int it0 = 0; it0 < 10; it0++) {
       for (int mask = 1; mask < min(1<<target.size(), 1<<5); mask++) {
 	vector<int> maskv;
-	for (int j = 0; j < target.size(); j++)
+	for (int j = 0; j < target.size(); ++j)
 	  if (mask>>j&1) maskv.push_back(j);
 
 	int caremask;
@@ -263,7 +263,7 @@ vector<Candidate> greedyCompose2(Pieces&pieces, vector<Image>&target, vector<poi
 	} else {
 	  continue;
 	  /*caremask = 1<<maskv[mrand()%maskv.size()];
-	    for (int i = 0; i < n; i++)
+	    for (int i = 0; i < n; ++i)
 	    skip[i] = mrand()%3;
 	    random_shuffle(order.begin(), order.end());*/
 	}
@@ -271,7 +271,7 @@ vector<Candidate> greedyCompose2(Pieces&pieces, vector<Image>&target, vector<poi
 	mybitset cur(M), careMask(M);
 	{
 	  int base = 0;
-	  for (int j = 0; j < sz.size(); j++) {
+	  for (int j = 0; j < sz.size(); ++j) {
 	    if (!(mask>>j&1))
 	      for (int k = 0; k < sz[j]; k++)
 		cur.set(base+k, 1);
@@ -311,7 +311,7 @@ vector<Candidate> greedyCompose2(Pieces&pieces, vector<Image>&target, vector<poi
 	      if (img != target[carei]) ok = 0;
 	    }
 	    if (ok) {
-	      for (int i = 0; i < cp.size(); i++) {
+	      for (int i = 0; i < cp.size(); ++i) {
 		if (i == carei) continue;
 		Image& img = cp[i];
 		for (char&c : img.mask) if (c == 10) c = 0;
@@ -359,7 +359,7 @@ vector<Candidate> composePieces2(Pieces&pieces, vector<pair<Image, Image>> train
     vector<Image> imgs;
     //assert(p.ind.size() == pieces.dag.size());
     int*ind = &pieces.mem[p.memi];
-    for (int i = 0; i < pieces.dag.size(); i++) {
+    for (int i = 0; i < pieces.dag.size(); ++i) {
       //assert(p.ind[i] >= 0 && p.ind[i] < (int)pieces.dag[i].node.size());
       imgs.push_back(pieces.dag[i].getImg(ind[i]));
     }
@@ -384,15 +384,15 @@ vector<Candidate> evaluateCands(const vector<Candidate>&cands, vector<pair<Image
     double prior = cand.max_depth+cand.cnt_pieces*1e-3;//cnt_pieces;
 
     int goods = 0;
-    for (int i = 0; i < train.size(); i++) {
+    for (int i = 0; i < train.size(); ++i) {
       goods += (imgs[i] == train[i].second);
     }
     double score = goods-prior*0.01;
 
     Image answer = imgs.back();
     if (answer.w > 30 || answer.h > 30 || answer.w*answer.h == 0) goods = 0;
-    for (int i = 0; i < answer.h; i++)
-      for (int j = 0; j < answer.w; j++)
+    for (int i = 0; i < answer.h; ++i)
+      for (int j = 0; j < answer.w; ++j)
 	if (answer(i,j) < 0 || answer(i,j) >= 10) goods = 0;
 
     if (goods)

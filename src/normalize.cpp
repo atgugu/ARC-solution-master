@@ -32,8 +32,8 @@ vector<double> shapeFeatures(Image_ img, int col) {
 	if (c) dir = point{a*2-1, b*2-1}*2;
 	else dir = point{(a*2-1)*b, (a*2-1)*!b}*3;
 	int ma = -50;
-	for (int i = 0; i < img.h; i++)
-	  for (int j = 0; j < img.w; j++)
+	for (int i = 0; i < img.h; ++i)
+	  for (int j = 0; j < img.w; ++j)
 	    if (img(i,j)) ma = max(ma, (point{i*2,j*2}-center2)*dir);
 	r.push_back(ma+1000);
       }
@@ -63,7 +63,7 @@ struct UniquePicker {
     int nins = ins.size();
     vector<vector<int>> done(nins); // inp, cole
     vector<int> cols_left(nins);
-    for (int i = 0; i < nins; i++) {
+    for (int i = 0; i < nins; ++i) {
       done[i].assign(feat[i].size(), 0);
       cols_left[i] = feat[i].size();
     }
@@ -83,10 +83,10 @@ struct UniquePicker {
 	int cols = f.size();
 	for (int fi = 0; fi < nfeats; fi++) {
 	  pair<double,int> best = {-1,-1};
-	  for (int i = 0; i < cols; i++) {
+	  for (int i = 0; i < cols; ++i) {
 	    if (done[inpi][i]) continue;
 	    double worst = 1e3;
-	    for (int j = 0; j < cols; j++) {
+	    for (int j = 0; j < cols; ++j) {
 	      if (done[inpi][j] || i == j) continue;
 	      worst = min(worst, diff(f[i][fi], f[j][fi]));
 	    }
@@ -129,10 +129,10 @@ struct UniquePicker {
   int getUnique(const vector<vector<double>>&features, const vector<int>&done, int fi) const {
     pair<double,int> best = {-1,-1};
     int n = features.size();
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n; ++i) {
       if (done[i]) continue;
       double score = 0;
-      for (int j = 0; j < features[i].size(); j++) {
+      for (int j = 0; j < features[i].size(); ++j) {
 	if (fi != -1) j = fi;
 	double fscore = 1e3;
 	for (int k = 0; k < n; k++) {
@@ -153,7 +153,7 @@ struct UniquePicker {
 
   void getMap(Image_ in, int cols[10]) const {
     int j = 0, done = 0;
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 10; ++i)
       if (save>>i&1) {
 	done |= 1<<i;
 	cols[i] = j++;
@@ -182,7 +182,7 @@ struct UniquePicker {
       cols[i] = j++;
       done |= 1<<i;
     }
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 10; ++i) {
       if ((done>>i&1) == 0) {
 	cols[i] = j++;
 	done |= 1<<i;
@@ -199,8 +199,8 @@ struct UniquePicker {
 
 Image remapCols(Image_ img, int cols[10]) {
   Image r = img;
-  for (int i = 0; i < r.h; i++)
-    for (int j = 0; j < r.w; j++)
+  for (int i = 0; i < r.h; ++i)
+    for (int j = 0; j < r.w; ++j)
       r(i,j) = cols[img(i,j)];
   return r;
 }
@@ -242,7 +242,7 @@ void remapCols(const vector<pair<Image,Image>>&train, vector<Simplifier>&sims) {
     int cols[10];
     up.getMap(in, cols);
     int icols[10];
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 10; ++i)
       icols[cols[i]] = i;
     return remapCols(out, icols);
   };
@@ -256,11 +256,11 @@ Image listCols(Image_ img, int extra) {
   int w = __builtin_popcount(mask);
   Image ret = core::full({w,2}, 9);
   int j = 0;
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < 10; ++i)
     if ((mask>>i&1) && !(extra>>i&1))
       ret(0,j++) = i;
   j = 0;
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < 10; ++i)
     if (extra>>i&1)
       ret(1,j++) = i;
   return ret;
@@ -413,8 +413,8 @@ struct OrientationPicker {
 
   pair<double,double> inertia(Image_ img, char c) const {
     double x = 0, y = 0, xx = 0, yy = 0, cnt = 0;
-    for (int i = 0; i < img.h; i++)
-      for (int j = 0; j < img.w; j++)
+    for (int i = 0; i < img.h; ++i)
+      for (int j = 0; j < img.w; ++j)
 	if (img(i,j) == c) {
 	  x += j, xx += j*j;
 	  y += i, yy += i*i;
@@ -425,8 +425,8 @@ struct OrientationPicker {
   }
 
   void colorMeans(Image_ in, double*x, double*y, double*cnt) const {
-    for (int i = 0; i < in.h; i++)
-      for (int j = 0; j < in.w; j++) {
+    for (int i = 0; i < in.h; ++i)
+      for (int j = 0; j < in.w; ++j) {
 	char c = in(i,j);
 	x[c] += j;
 	y[c] += i;

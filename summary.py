@@ -40,7 +40,7 @@ for line in combined:
 outf.close()
 exit(0)
 """
-inds = range(0,419)
+inds = range(0,416)
 
 inds = list(inds)
 compressed = ''

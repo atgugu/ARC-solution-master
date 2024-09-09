@@ -40,7 +40,7 @@ pair<vector<int>,double> solveSingle(vector<vector<int>>&seeds, const vector<int
   }
 
   vector<int> szs(n);
-  for (int i = 0; i < seeds.size(); i++) {
+  for (int i = 0; i < seeds.size(); ++i) {
     double a = i+1;
     for (int w = 1; w < 6; w++) {
       for (int x = -3; x <= 3; x++) {
@@ -75,7 +75,7 @@ point solveSize(vector<vector<point>>&seeds, const vector<point>& target) {
   int n = target.size()+1;
   vector<point> szs(n);
 
-  for (int i = 0; i < seeds.size(); i++) {
+  for (int i = 0; i < seeds.size(); ++i) {
     double a = i+1;
     for (int h = 1; h < 6; h++) {
       for (int w = 1; w < 6; w++) {
@@ -91,9 +91,9 @@ point solveSize(vector<vector<point>>&seeds, const vector<point>& target) {
   }
 
   if (1) {//best.first < target.size()) {
-    for (int i = 0; i < seeds.size(); i++) {
+    for (int i = 0; i < seeds.size(); ++i) {
       double a = i+1;
-      for (int j = 0; j < i; j++) {
+      for (int j = 0; j < i; ++j) {
 	double b = j+1;
 	for (int d = 0; d < 3; d++) {
 	  for (int k = 0; k < n; k++) {
@@ -127,7 +127,7 @@ point solveSize(vector<vector<point>>&seeds, const vector<point>& target) {
     auto [besty, scorey] = solveSingle(seedsy, targety);
 
     vector<point> combined;
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n; ++i) {
       combined.push_back({bestx[i], besty[i]});
     }
     double combloss = scorex*scorey;

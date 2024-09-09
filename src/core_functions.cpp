@@ -12,8 +12,8 @@ using namespace std;
 namespace core {
   int colMask(Image_ img) {
     int mask = 0;
-    for (int i = 0; i < img.h; i++)
-      for (int j = 0; j < img.w; j++)
+    for (int i = 0; i < img.h; ++i)
+      for (int j = 0; j < img.w; ++j)
 	mask |= 1<<img(i,j);
     return mask;
   }
@@ -24,8 +24,8 @@ namespace core {
   }
   int count(Image_ img) {
     int ans = 0;
-    for (int i = 0; i < img.h; i++)
-      for (int j = 0; j < img.w; j++)
+    for (int i = 0; i < img.h; ++i)
+      for (int j = 0; j < img.w; ++j)
 	ans += img(i,j) > 0;
     return ans;
   }
@@ -70,8 +70,8 @@ namespace core {
 
   int countComponents(Image img) {
     int ans = 0;
-    for (int i = 0; i < img.h; i++) {
-      for (int j = 0; j < img.w; j++) {
+    for (int i = 0; i < img.h; ++i) {
+      for (int j = 0; j < img.w; ++j) {
 	if (img(i,j)) {
 	  countComponents_dfs(img,i,j);
 	  /*function<void(int,int)> dfs = [&](int r, int c) {
@@ -92,8 +92,8 @@ namespace core {
 
   char majorityCol(Image_ img, int include0) { //include0 = 0
     int cnt[10] = {};
-    for (int i = 0; i < img.h; i++)
-      for (int j = 0; j < img.w; j++) {
+    for (int i = 0; i < img.h; ++i)
+      for (int j = 0; j < img.w; ++j) {
 	char c = img(i,j);
 	if (c >= 0 && c < 10)
 	  cnt[c]++;
@@ -115,8 +115,8 @@ namespace core {
     ret.p = p+img.p;
     ret.sz = sz;
     ret.mask.resize(ret.w*ret.h);
-    for (int i = 0; i < ret.h; i++)
-      for (int j = 0; j < ret.w; j++)
+    for (int i = 0; i < ret.h; ++i)
+      for (int j = 0; j < ret.w; ++j)
 	ret(i,j) = img(i+p.y, j+p.x);
     return ret;
   }
@@ -127,8 +127,8 @@ namespace core {
     for (char c = !include0; c < 10; c++) {
       if (mask>>c&1) {
 	Image s = img;
-	for (int i = 0; i < s.h; i++)
-	  for (int j = 0; j < s.w; j++)
+	for (int i = 0; i < s.h; ++i)
+	  for (int j = 0; j < s.w; ++j)
 	    s(i,j) = s(i,j) == c;
 	ret.emplace_back(s, c);
       }

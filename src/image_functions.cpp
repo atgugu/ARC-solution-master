@@ -67,8 +67,8 @@ Image Move(Image img, Image_ p) {
 Image filterCol(Image_ img, Image_ palette) {
   Image ret = img;
   int palMask = core::colMask(palette);
-  for (int i = 0; i < img.h; i++)
-    for (int j = 0; j < img.w; j++)
+  for (int i = 0; i < img.h; ++i)
+    for (int j = 0; j < img.w; ++j)
       if ((palMask>>img(i,j)&1) == 0)
 	ret(i,j) = 0;
   return ret;
@@ -91,8 +91,8 @@ Image broadcast(Image_ col, Image_ shape, int include0) { //include0 = 1
     for (int ii = 0; ii < col.h; ii++) {
       for (int jj = 0; jj < col.w; jj++) {
 	int c = col(ii,jj);
-	for (int i = ii*dh; i < ii*dh+dh; i++)
-	  for (int j = jj*dw; j < jj*dw+dw; j++)
+	for (int i = ii*dh; i < ii*dh+dh; ++i)
+	  for (int j = jj*dw; j < jj*dw+dw; ++j)
 	    ret(i,j) = c;
       }
     }
@@ -108,8 +108,8 @@ Image broadcast(Image_ col, Image_ shape, int include0) { //include0 = 1
 
   double tot = fh*fw;
   double weight[10];
-  for (int i = 0; i < shape.h; i++) {
-    for (int j = 0; j < shape.w; j++) {
+  for (int i = 0; i < shape.h; ++i) {
+    for (int j = 0; j < shape.w; ++j) {
       copy_n(w0, 10, weight);
 
       double r0 = i*fh+eps, r1 = (i+1)*fh-eps;
@@ -148,8 +148,8 @@ Image colShape(Image_ col, Image_ shape) {
   if (shape.w*shape.h == 0 || col.w*col.h == 0) return badImg;
   Image ret = broadcast(col, getSize(shape));
   ret.p = shape.p;
-  for (int i = 0; i < ret.h; i++)
-    for (int j = 0; j < ret.w; j++)
+  for (int i = 0; i < ret.h; ++i)
+    for (int j = 0; j < ret.w; ++j)
       if (!shape(i,j)) ret(i,j) = 0;
   return ret;
 }
@@ -167,8 +167,8 @@ Image compress(Image_ img, Image_ bg) { // bg = Col(0)
   int bgmask = core::colMask(bg);
 
   int xmi = 1e9, xma = 0, ymi = 1e9, yma = 0;
-  for (int i = 0; i < img.h; i++) {
-    for (int j = 0; j < img.w; j++) {
+  for (int i = 0; i < img.h; ++i) {
+    for (int j = 0; j < img.w; ++j) {
       if ((bgmask>>img(i,j)&1) == 0) {
 	xmi = min(xmi, j);
 	xma = max(xma, j);
@@ -186,8 +186,8 @@ Image compress(Image_ img, Image_ bg) { // bg = Col(0)
   ret.p = img.p + point{xmi, ymi};
   ret.sz = {xma-xmi+1, yma-ymi+1};
   ret.mask.resize(ret.h*ret.w);
-  for (int i = ymi; i <= yma; i++) {
-    for (int j = xmi; j <= xma; j++) {
+  for (int i = ymi; i <= yma; ++i) {
+    for (int j = xmi; j <= xma; ++j) {
       ret(i-ymi,j-xmi) = img(i,j);
     }
   }
@@ -199,8 +199,8 @@ Image compress(Image_ img, Image_ bg) { // bg = Col(0)
 Image embedSlow(Image_ img, Image_ shape) {
   Image ret = core::empty(shape.p, shape.sz);
   point d = shape.p-img.p;
-  for (int i = 0; i < ret.h; i++)
-    for (int j = 0; j < ret.w; j++)
+  for (int i = 0; i < ret.h; ++i)
+    for (int j = 0; j < ret.w; ++j)
       ret(i,j) = img.safe(i+d.y, j+d.x);
   return ret;
 }
@@ -214,8 +214,8 @@ Image embed(Image_ img, Image_ shape) {
   int ey = min(ret.h,img.h-d.y);
 
   int retw = ret.w, imgw = img.w, off = d.y*img.w+d.x;
-  for (int i = sy; i < ey; i++)
-    for (int j = sx; j < ex; j++)
+  for (int i = sy; i < ey; ++i)
+    for (int j = sx; j < ex; ++j)
       ret.mask[i*retw+j] = img.mask[i*imgw+j+off];
   //assert(ret == embedSlow(img,shape));
   return ret;
@@ -245,8 +245,8 @@ Image compose(Image_ a, Image_ b, const function<int(int,int)>&f, int overlap_on
   ret.mask.assign(ret.w*ret.h, 0);
   point da = ret.p-a.p;
   point db = ret.p-b.p;
-  for (int i = 0; i < ret.h; i++) {
-    for (int j = 0; j < ret.w; j++) {
+  for (int i = 0; i < ret.h; ++i) {
+    for (int j = 0; j < ret.w; ++j) {
       int ca = a.safe(i+da.y, j+da.x);
       int cb = b.safe(i+db.y, j+db.x);
       ret(i,j) = f(ca,cb);
@@ -276,8 +276,8 @@ Image outerProductIS(Image_ a, Image_ b) {
   point rpos = {a.p.x*b.w+b.p.x,
 		a.p.y*b.h+b.p.y};
   Image ret = core::empty(rpos, {a.w*b.w, a.h*b.h});
-  for (int i = 0; i < a.h; i++)
-    for (int j = 0; j < a.w; j++)
+  for (int i = 0; i < a.h; ++i)
+    for (int j = 0; j < a.w; ++j)
       for (int k = 0; k < b.h; k++)
 	for (int l = 0; l < b.w; l++)
 	  ret(i*b.h+k, j*b.w+l) = a(i,j) * !!b(k,l);
@@ -288,8 +288,8 @@ Image outerProductSI(Image_ a, Image_ b) {
   point rpos = {a.p.x*b.w+b.p.x,
 		a.p.y*b.h+b.p.y};
   Image ret = core::empty(rpos, {a.w*b.w, a.h*b.h});
-  for (int i = 0; i < a.h; i++)
-    for (int j = 0; j < a.w; j++)
+  for (int i = 0; i < a.h; ++i)
+    for (int j = 0; j < a.w; ++j)
       for (int k = 0; k < b.h; k++)
 	for (int l = 0; l < b.w; l++)
 	  ret(i*b.h+k, j*b.w+l) = (a(i,j)>0) * b(k,l);
@@ -301,8 +301,8 @@ Image outerProductSI(Image_ a, Image_ b) {
 Image Fill(Image_ a) {
   Image ret = core::full(a.p, a.sz, core::majorityCol(a));
   vector<pair<int,int>> q;
-  for (int i = 0; i < a.h; i++)
-    for (int j = 0; j < a.w; j++)
+  for (int i = 0; i < a.h; ++i)
+    for (int j = 0; j < a.w; ++j)
       if ((i == 0 || j == 0 || i == a.h-1 || j == a.w-1) && !a(i,j)) {
 	q.emplace_back(i,j);
 	ret(i,j) = 0;
@@ -329,8 +329,8 @@ Image interior(Image_ a) {
 Image border(Image_ a) {
   Image ret = core::empty(a.p, a.sz);
   vector<pair<int,int>> q;
-  for (int i = 0; i < a.h; i++)
-    for (int j = 0; j < a.w; j++)
+  for (int i = 0; i < a.h; ++i)
+    for (int j = 0; j < a.w; ++j)
       if (i == 0 || j == 0 || i == a.h-1 || j == a.w-1) {
 	if (!a(i,j))
 	  q.emplace_back(i,j);
@@ -364,7 +364,7 @@ Image border(Image_ a) {
       }
       }*/
   }
-    for (int i = 0; i < a.mask.size(); i++)
+    for (int i = 0; i < a.mask.size(); ++i)
       ret.mask[i] = ret.mask[i]*a.mask[i];
   return ret;
 }
@@ -433,8 +433,8 @@ Image replaceCols(Image_ base, Image_ cols) {
   Image ret = base;
   Image done = core::empty(base.p,base.sz);
   point d = base.p-cols.p;
-  for (int i = 0; i < base.h; i++) {
-    for (int j = 0; j < base.w; j++) {
+  for (int i = 0; i < base.h; ++i) {
+    for (int j = 0; j < base.w; ++j) {
       if (!done(i,j) && base(i,j)) {
 	int acol = base(i,j);
 	int cnt[10] = {};
@@ -483,15 +483,15 @@ Image transform(Image_ img, int A00, int A01, int A10, int A11) {
   };
   point corner[4] = {t({0,0}),t({img.w-1,0}),t({0,img.h-1}),t({img.w-1,img.h-1})};
   point a = corner[0], b = corner[0];
-  for (int i = 1; i < 4; i++) {
+  for (int i = 1; i < 4; ++i) {
     a.x = min(a.x, corner[i].x);
     a.y = min(a.y, corner[i].y);
     b.x = max(b.x, corner[i].x);
     b.y = max(b.y, corner[i].y);
   }
   Image ret = core::empty(img.p, b-a+point{1,1});
-  for (int i = 0; i < img.h; i++) {
-    for (int j = 0; j < img.w; j++) {
+  for (int i = 0; i < img.h; ++i) {
+    for (int j = 0; j < img.w; ++j) {
       point go = t({j,i})-a;
       ret(go.y,go.x) = img(i,j);
     }
@@ -502,8 +502,8 @@ Image transform(Image_ img, int A00, int A01, int A10, int A11) {
 int mirrorHeuristic(Image_ img) {
   //Meant to be used for mirroring, flip either x or y, depending on center of gravity
   int cnt = 0, sumx = 0, sumy = 0;
-  for (int i = 0; i < img.h; i++) {
-    for (int j = 0; j < img.w; j++) {
+  for (int i = 0; i < img.h; ++i) {
+    for (int j = 0; j < img.w; ++j) {
       if (img(i,j)) {
 	cnt++;
 	sumx += j;
@@ -535,8 +535,8 @@ Image invert(Image img) {
   while (col < 10 && (mask>>col&1) == 0) col++;
   if (col == 10) col = 1;
 
-  for (int i = 0; i < img.h; i++)
-    for (int j = 0; j < img.w; j++)
+  for (int i = 0; i < img.h; ++i)
+    for (int j = 0; j < img.w; ++j)
       img(i,j) = img(i,j) ? 0 : col;
   return img;
 }
@@ -595,8 +595,8 @@ Image myStack(Image_ a, Image b, int orient) {
 Image wrap(Image_ line, Image_ area) {
   if (line.w*line.h == 0 || area.w*area.h == 0) return badImg;
   Image ans = core::empty(area.sz);
-  for (int i = 0; i < line.h; i++) {
-    for (int j = 0; j < line.w; j++) {
+  for (int i = 0; i < line.h; ++i) {
+    for (int j = 0; j < line.w; ++j) {
       int x = j, y = i;
       x += y/area.h * line.w;
       y %= area.h;
@@ -620,9 +620,9 @@ Image smear(Image_ base, Image_ room, int id) {
 
   Image ret = embed(base, hull(room));
   if (mask&1) {
-    for (int i = 0; i < ret.h; i++) {
+    for (int i = 0; i < ret.h; ++i) {
       char c = 0;
-      for (int j = 0; j < ret.w; j++) {
+      for (int j = 0; j < ret.w; ++j) {
 	if (!room(i,j)) c = 0;
 	else if (base.safe(i+d.y,j+d.x)) c = base(i+d.y,j+d.x);
 	if (c) ret(i,j) = c;
@@ -631,7 +631,7 @@ Image smear(Image_ base, Image_ room, int id) {
   }
 
   if (mask>>1&1) {
-    for (int i = 0; i < ret.h; i++) {
+    for (int i = 0; i < ret.h; ++i) {
       char c = 0;
       for (int j = ret.w-1; j >= 0; j--) {
 	if (!room(i,j)) c = 0;
@@ -642,9 +642,9 @@ Image smear(Image_ base, Image_ room, int id) {
   }
 
   if (mask>>2&1) {
-    for (int j = 0; j < ret.w; j++) {
+    for (int j = 0; j < ret.w; ++j) {
       char c = 0;
-      for (int i = 0; i < ret.h; i++) {
+      for (int i = 0; i < ret.h; ++i) {
 	if (!room(i,j)) c = 0;
 	else if (base.safe(i+d.y,j+d.x)) c = base(i+d.y,j+d.x);
 	if (c) ret(i,j) = c;
@@ -653,7 +653,7 @@ Image smear(Image_ base, Image_ room, int id) {
   }
 
   if (mask>>3&1) {
-    for (int j = 0; j < ret.w; j++) {
+    for (int j = 0; j < ret.w; ++j) {
       char c = 0;
       for (int i = ret.h-1; i >= 0; i--) {
 	if (!room(i,j)) c = 0;
@@ -675,8 +675,8 @@ Image smear(Image_ base, int id) {
 Image extend(Image_ img, Image_ room) {
   if (img.w*img.h == 0) return badImg;
   Image ret = room;
-  for (int i = 0; i < ret.h; i++) {
-    for (int j = 0; j < ret.w; j++) {
+  for (int i = 0; i < ret.h; ++i) {
+    for (int j = 0; j < ret.w; ++j) {
       point p = point{j,i}+room.p-img.p;
       p.x = clamp(p.x, 0, img.w-1);
       p.y = clamp(p.y, 0, img.h-1);
@@ -696,7 +696,7 @@ Image extend(Image_ img, Image_ room) {
 Image pickMax(vImage_ v, const function<int(Image_)>& f) {
   if (v.empty()) return badImg;
   int ma = f(v[0]), maxi = 0;
-  for (int i = 1; i < v.size(); i++) {
+  for (int i = 1; i < v.size(); ++i) {
     int score = f(v[i]);
     if (score > ma) {
       ma = score;
@@ -744,8 +744,8 @@ vImage cut(Image_ img, Image_ a) {
   vector<Image> ret;
   Image done = core::empty(img.p,img.sz);
   point d = img.p-a.p;
-  for (int i = 0; i < img.h; i++) {
-    for (int j = 0; j < img.w; j++) {
+  for (int i = 0; i < img.h; ++i) {
+    for (int j = 0; j < img.w; ++j) {
       if (!done(i,j) && !a.safe(i+d.y,j+d.x)) {
 	Image toadd = core::empty(img.p,img.sz);
 	function<void(int,int)> dfs = [&](int r, int c) {
@@ -758,8 +758,8 @@ vImage cut(Image_ img, Image_ a) {
 	};
 	dfs(i,j);
 	toadd = compress(toadd);
-	for (int i = 0; i < toadd.h; i++) {
-	  for (int j = 0; j < toadd.w; j++) {
+	for (int i = 0; i < toadd.h; ++i) {
+	  for (int j = 0; j < toadd.w; ++j) {
 	    toadd(i,j) = max(0, toadd(i,j)-1);
 	  }
 	}
@@ -777,8 +777,8 @@ vImage splitCols(Image_ img, int include0) { //include0 = 0
   for (int c = !include0; c < 10; c++) {
     if (mask>>c&1) {
       Image s = img;
-      for (int i = 0; i < s.h; i++)
-	for (int j = 0; j < s.w; j++)
+      for (int i = 0; i < s.h; ++i)
+	for (int j = 0; j < s.w; ++j)
 	  s(i,j) = (s(i,j) == c ? c : 0);
       ret.push_back(s);
     }
@@ -789,7 +789,7 @@ vImage splitCols(Image_ img, int include0) { //include0 = 0
 Image compose(vImage_ imgs, int id) {
   if (imgs.empty()) return badImg;
   Image ret = imgs[0];
-  for (int i = 1; i < imgs.size(); i++)
+  for (int i = 1; i < imgs.size(); ++i)
     ret = compose(ret, imgs[i], id);
   return ret;
 }
@@ -806,7 +806,7 @@ void getRegular(vector<int>&col) {
     }
     if (s != -1) {
       int ok = 1;
-      for (int i = 0; i < colw; i++) {
+      for (int i = 0; i < colw; ++i) {
 	if (col[i] != (i%(w+1) == s)) {
 	  ok = 0;
 	  break;
@@ -824,16 +824,16 @@ Image getRegular(Image_ img) {
   //Look for regular grid division in single color
   Image ret = img;
   vector<int> col(img.w,1), row(img.h,1);
-  for (int i = 0; i < img.h; i++) {
-    for (int j = 0; j < img.w; j++) {
+  for (int i = 0; i < img.h; ++i) {
+    for (int j = 0; j < img.w; ++j) {
       if (img(i,j) != img(i,0)) row[i] = 0;
       if (img(i,j) != img(0,j)) col[j] = 0;
     }
   }
   getRegular(col);
   getRegular(row);
-  for (int i = 0; i < img.h; i++) {
-    for (int j = 0; j < img.w; j++) {
+  for (int i = 0; i < img.h; ++i) {
+    for (int j = 0; j < img.w; ++j) {
       ret(i,j) = row[i] || col[j];
     }
   }
@@ -881,13 +881,13 @@ vImage pickMaxes(vImage_ v, function<int(Image_)> f, int invert = 0) {
   if (!n) return {};
   vector<int> score(n);
   int ma = -1e9;
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; ++i) {
     score[i] = f(v[i]);
     if (!i || score[i] > ma)
       ma = score[i];
   }
   vector<Image> ret_imgs;
-  for (int i = 0; i < n; i++)
+  for (int i = 0; i < n; ++i)
     if ((score[i] == ma) ^ invert)
       ret_imgs.push_back(v[i]);
   return ret_imgs;
@@ -930,8 +930,8 @@ Image heuristicCut(Image_ img) {
 	  edgy(nr,nc);
     };
     int top = 0, bot = 0, left = 0, right = 0;
-    for (int i = 0; i < img.h; i++) {
-      for (int j = 0; j < img.w; j++) {
+    for (int i = 0; i < img.h; ++i) {
+      for (int j = 0; j < img.w; ++j) {
 	if (img(i,j) == col) {
 	  if (i == 0) top = 1;
 	  if (j == 0) left = 1;
@@ -947,8 +947,8 @@ Image heuristicCut(Image_ img) {
     if (!(top && bot || left && right)) continue;
 
     int score = 1e9, components = 0, nocontained = 1;
-    for (int i = 0; i < img.h; i++) {
-      for (int j = 0; j < img.w; j++) {
+    for (int i = 0; i < img.h; ++i) {
+      for (int j = 0; j < img.w; ++j) {
 	int cnt = 0, contained = 1;
 	if (!done(i,j) && img(i,j) != col) {
 	  function<void(int,int)> dfs = [&](int r, int c) {
@@ -1005,9 +1005,9 @@ Image repeat(Image_ a, Image_ b, int pad) { //pad = 0
   const int W = a.w+pad, H = a.h+pad;
   int ai  = ((b.y-a.y)%H+H)%H;
   int aj0 = ((b.x-a.x)%W+W)%W;
-  for (int i = 0; i < ret.h; i++) {
+  for (int i = 0; i < ret.h; ++i) {
     int aj = aj0;
-    for (int j = 0; j < ret.w; j++) {
+    for (int j = 0; j < ret.w; ++j) {
       if (ai < a.h && aj < a.w)
 	ret(i,j) = a(ai,aj);
       if (++aj == W) aj = 0;
@@ -1027,9 +1027,9 @@ Image mirror(Image_ a, Image_ b, int pad) { //pad = 0
   const int W2 = W*2, H2 = H*2;
   int ai  = ((b.y-a.y)%H2+H2)%H2;
   int aj0 = ((b.x-a.x)%W2+W2)%W2;
-  for (int i = 0; i < ret.h; i++) {
+  for (int i = 0; i < ret.h; ++i) {
     int aj = aj0;
-    for (int j = 0; j < ret.w; j++) {
+    for (int j = 0; j < ret.w; ++j) {
       int x = -1, y = -1;
       if (aj < a.w) x = aj;
       else if (aj >= W && aj < W+a.w) x = W+a.w-1-aj;
