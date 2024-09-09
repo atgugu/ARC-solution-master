@@ -175,24 +175,22 @@ Image greedyFill(Image& ret, vector<pair<int,vector<int>>>&piece, Spec&done, int
   const int dw = ret.w-bw+1, dh = ret.h-bh+1;
   if (dw < 1 || dh < 1) return badImg;
 
-  auto recalc = [&,done]() mutable {
-    vector<int> dones(dw*dh, -1);
-    priority_queue<tuple<int,int,int>> pq;
-    for (int i = 0; i+bh <= ret.h; ++i)
-      for (int j = 0; j+bw <= ret.w; ++j) {
-	int cnt = 0;
-	for (int y = 0; y < bh; ++y)
-	  for (int x = 0; x < bw; ++x)
-	    cnt += done(i+y,j+x);
-	if (cnt != dones[i*dw+j]) {
-	  dones[i*dw+j] = cnt;
-	  pq.emplace(cnt,j,i);
-	}
-      }
-    return make_tuple(dones, pq);
+  vector<int> dones(dw*dh, -1);
+  priority_queue<tuple<int,int,int>> pq;
+  auto recalc = [&](int i, int j) {
+    int cnt = 0;
+    for (int y = 0; y < bh; ++y)
+      for (int x = 0; x < bw; ++x)
+	cnt += done(i+y,j+x);
+    if (cnt != dones[i*dw+j]) {
+      dones[i*dw+j] = cnt;
+      pq.emplace(cnt,j,i);
+    }
   };
+  for (int i = 0; i+bh <= ret.h; ++i)
+    for (int j = 0; j+bw <= ret.w; ++j)
+      recalc(i,j);
 
-  auto [dones,pq] = recalc();
   while (pq.size()) {
     auto [ds,j,i] = pq.top();
     pq.pop();
@@ -214,11 +212,9 @@ Image greedyFill(Image& ret, vector<pair<int,vector<int>>>&piece, Spec&done, int
 	    }
 	  }
 	}
-	[&](){
-	  auto [ndones,npq] = recalc();
-	  swap(dones, ndones);
-	  swap(pq, npq);
-	}();
+	for (int y = max(i-bh+1,0); y < min(i+bh, dh); ++y)
+	  for (int x = max(j-bw+1,0); x < min(j+bw, dw); ++x)
+	    recalc(y,x);
 	found = 1;
 	break;
       }
