@@ -22,8 +22,8 @@ exit_names = ["SUCCESS", "TLE", "MLE", "RTE", "RUNNING"]
 start_time = time.time()
 
 
-MEMORY_LIMIT = 4*4096 * 0.95 # MB
-TIME_LIMIT   = 9*60*60 * 0.95 # Seconds
+MEMORY_LIMIT = 8*4096 * 0.95 # MB
+TIME_LIMIT = 12*60*60 * 0.95 # Seconds
 
 
 class Process:
@@ -199,6 +199,11 @@ for taski in task_list:
     combined.append(id+','+' '.join(best))
 
 outf = open('submission_part.csv', 'w')
+for line in combined:
+    print(line, file=outf)
+outf.close()
+
+outf = open('/kaggle/working/submission_part.csv', 'w')
 for line in combined:
     print(line, file=outf)
 outf.close()

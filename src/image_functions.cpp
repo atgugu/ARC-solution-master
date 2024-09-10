@@ -506,39 +506,6 @@ Image center(Image_ img) {
   return core::full(img.p+(img.sz-sz)/2, sz);
 }
 
-/*
-Image transform(Image_ img, int A00, int A01, int A10, int A11) {
-  if (img.w*img.h == 0) return img;
-  Image c = center(img);
-  point off = point{1-c.w,1-c.h}+(img.p-c.p)*2;
-  auto t = [&](point p) {
-    p = p*2+off;
-    p = {A00*p.x+A01*p.y,
-	 A10*p.x+A11*p.y};
-    p = p-off;
-    p.x >>= 1;
-    p.y >>= 1;
-    return p;
-  };
-  point corner[4] = {t({0,0}),t({img.w-1,0}),t({0,img.h-1}),t({img.w-1,img.h-1})};
-  point a = corner[0], b = corner[0];
-  for (int i = 1; i < 4; ++i) {
-    a.x = min(a.x, corner[i].x);
-    a.y = min(a.y, corner[i].y);
-    b.x = max(b.x, corner[i].x);
-    b.y = max(b.y, corner[i].y);
-  }
-  Image ret = core::empty(img.p, b-a+point{1,1});
-  for (int i = 0; i < img.h; ++i) {
-    for (int j = 0; j < img.w; ++j) {
-      point go = t({j,i})-a;
-      ret(go.y,go.x) = img(i,j);
-    }
-  }
-  return ret;
-}
-*/
-
 Image transform(Image_ img, int A00, int A01, int A10, int A11) {
   if (img.w * img.h == 0) return img;  // Return early if empty
 
