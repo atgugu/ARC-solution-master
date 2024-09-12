@@ -11,11 +11,11 @@ from random import *
 import time
 import random
 random.seed(1)
-version = str(47)
+version = str(69)
 if len(sys.argv) == 2: version = sys.argv[1]
 print("Updating to version", version)
 
-parallel = 6
+parallel = 10
 
 os.system('mkdir -p store/version/')
 os.system('mkdir -p store/tmp/')

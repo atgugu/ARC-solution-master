@@ -262,7 +262,7 @@ Functions3 initFuncs3(const vector<point>&sizes) {
 
   static int said = 0;
   if (!said) {
-    cout << "Function count: " << funcs.listed.size() << endl;
+    //cout << "Function count: " << funcs.listed.size() << endl;
     said = 1;
   }
 
@@ -531,7 +531,7 @@ void DAG::buildBinary() {
 
 
 vector<DAG> brutePieces2(Image_ test_in, const vector<pair<Image,Image>>&train, vector<point> out_sizes) {
-  int print = 1;
+  int print = 0;
 
   vector<DAG> dag(train.size()+1);
 

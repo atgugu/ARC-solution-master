@@ -10,5 +10,5 @@ using namespace std;
 
 int main() {
   vector<Sample> sample = readAll("test", -1);
-  cout << sample.size() << endl;
+  //cout << sample.size() << endl;
 }

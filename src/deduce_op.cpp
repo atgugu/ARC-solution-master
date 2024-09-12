@@ -118,8 +118,8 @@ deduceOuterProduct::deduceOuterProduct(vector<pair<Image,Image>> train) {
 
   rec_funci = -1;
   double best_score = 1e9;
-  for (int h = 1; h <= minh; h++) {
-    for (int w = 1; w <= minw; w++) {
+  for (int h = 1; h <= minh; ++h) {
+    for (int w = 1; w <= minw; ++w) {
       for (int l : {0,1}) {
 	for (int k : {0,1}) {
 	  auto f = k ? iOuterProductSI : iOuterProductIS;
@@ -173,7 +173,7 @@ deduceOuterProduct::deduceOuterProduct(vector<pair<Image,Image>> train) {
 
   assert(rec_funci != -1);
   assert(train_targets.size() == train.size());
-  for (int ti = 0; ti < train.size(); ti++) {
+  for (int ti = 0; ti < train.size(); ++ti) {
     Image a, b;
     tie(a,b) = train_targets[ti];
     //print(a);
@@ -197,7 +197,7 @@ void addDeduceOuterProduct(Pieces&pieces, vector<pair<Image,Image>> train, vecto
 
   int interestings = 0;
   for (auto [in,out] : deduce_op.train_targets) {
-    if (core::count(in) > 1 && core::count(out) > 1) interestings++;
+    if (core::count(in) > 1 && core::count(out) > 1) ++interestings;
   }
   if (interestings*2 < train.size()) return;
 

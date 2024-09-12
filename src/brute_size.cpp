@@ -43,10 +43,11 @@ pair<vector<int>,double> solveSingle(vector<vector<int>>&seeds, const vector<int
   for (int i = 0; i < seeds.size(); ++i) {
     double a = i+1;
     for (int w = 1; w < 6; w++) {
+      int aw = a*w;
       for (int x = -3; x <= 3; x++) {
 	for (int k = 0; k < n; k++)
 	  szs[k] = seeds[i][k]*w+x;
-	add(szs, a*w*(abs(x)+1));
+	add(szs, aw*(abs(x)+1));
       }
     }
   }
@@ -77,13 +78,14 @@ point solveSize(vector<vector<point>>&seeds, const vector<point>& target) {
 
   for (int i = 0; i < seeds.size(); ++i) {
     double a = i+1;
-    for (int h = 1; h < 6; h++) {
-      for (int w = 1; w < 6; w++) {
-	for (int y = -3; y <= 3; y++) {
-	  for (int x = -3; x <= 3; x++) {
-	    for (int k = 0; k < n; k++)
+    for (int h = 1; h < 6; ++h) {
+      for (int w = 1; w < 6; ++w) {
+        int awh = a*w*h;
+	for (int y = -3; y <= 3; ++y) {
+	  for (int x = -3; x <= 3; ++x) {
+	    for (int k = 0; k < n; ++k)
 	      szs[k] = {seeds[i][k].x*w+x, seeds[i][k].y*h+y};
-	    add(szs, a*w*h*(abs(x)+1)*(abs(y)+1));
+	    add(szs, awh*(abs(x)+1)*(abs(y)+1));
 	  }
 	}
       }
@@ -94,14 +96,14 @@ point solveSize(vector<vector<point>>&seeds, const vector<point>& target) {
     for (int i = 0; i < seeds.size(); ++i) {
       double a = i+1;
       for (int j = 0; j < i; ++j) {
-	double b = j+1;
-	for (int d = 0; d < 3; d++) {
-	  for (int k = 0; k < n; k++) {
+  double ab = a*(j+1);
+	for (int d = 0; d < 3; ++d) {
+	  for (int k = 0; k < n; ++k) {
 	    szs[k] = seeds[i][k];
 	    if (d == 0 || d == 2) szs[k].x = szs[k].x+seeds[j][k].x;
 	    if (d == 1 || d == 2) szs[k].y = szs[k].y+seeds[j][k].y;
 	  }
-	  add(szs, a*b);
+	  add(szs, ab);
 	}
       }
     }

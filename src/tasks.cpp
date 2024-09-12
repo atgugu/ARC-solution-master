@@ -365,7 +365,7 @@ void evalTasks() {
       }*/
 
     Image pred = solveTask(s.test[0].first, s.train, si);
-    cout << "Task " << si << ": " << (pred == s.test[0].second ? "OK" : "Failed") << endl;
+    cout << "Task " << si << ": " << (pred == s.test[0].second ? "OK" : "F") << endl;
     corrects += (pred == s.test[0].second);
     if (pred != s.test_out) {// && pred != s.test_in) {
       visu.next(to_string(si));//s.id);
