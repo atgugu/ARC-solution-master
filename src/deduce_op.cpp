@@ -16,8 +16,8 @@ pair<Image,Image> iOuterProductSI(Image_ img, int w, int h) {
   Image big = core::full({img.w/w,img.h/h},-1);
   Image small = core::full({w,h},-1);
 
-  for (int ii = 0; ii < img.h/h; ii++) {
-    for (int jj = 0; jj < img.w/w; jj++) {
+  for (int ii = 0; ii < img.h/h; ++ii) {
+    for (int jj = 0; jj < img.w/w; ++jj) {
       int all0 = 1;
       for (int i = 0; i < h; ++i)
 	for (int j = 0; j < w; ++j)
@@ -45,9 +45,8 @@ pair<Image,Image> iOuterProductIS(Image_ img, int w, int h) {
   if (img.w*img.h <= 0 || img.w%w || img.h%h) return {badImg,badImg};
   Image big = core::full({img.w/w,img.h/h},-1);
   Image small = core::full({w,h},-1);
-
-  for (int ii = 0; ii < img.h/h; ii++) {
-    for (int jj = 0; jj < img.w/w; jj++) {
+  for (int ii = 0; ii < img.h/h; ++ii) {
+    for (int jj = 0; jj < img.w/w; ++jj) {
       int mask = 0;
       for (int i = 0; i < h; ++i)
 	for (int j = 0; j < w; ++j)
@@ -150,10 +149,10 @@ deduceOuterProduct::deduceOuterProduct(vector<pair<Image,Image>> train) {
     auto f = k ? iOuterProductSI : iOuterProductIS;
     vector<double> best_at(train.size(), 1e9);
     vector<pair<Image,Image>> best_single(train.size(), {badImg,badImg});
-    for (int ti = 0; ti < train.size(); ti++) {
+    for (int ti = 0; ti < train.size(); ++ti) {
       Image target = train[ti].second;
-      for (int h = 1; h <= target.h; h++) {
-	for (int w = 1; w <= target.w; w++) {
+      for (int h = 1; h <= target.h; ++h) {
+	for (int w = 1; w <= target.w; ++w) {
 	  auto is = f(target, w, h);
 	  double entropy = score({is},k);
 	  if (entropy < best_at[ti]) {

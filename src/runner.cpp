@@ -120,7 +120,7 @@ void run(int only_sid = -1, int arg = -1) {
         {
             int insumsz = 0, outsumsz = 0, macols = 0;
             int maxside = 0, maxarea = 0;
-            
+            //#pragma omp parallel for
             for (auto& [in, out] : s.train) {
                 maxside = max({maxside, in.w, in.h, out.w, out.h});
                 maxarea = max({maxarea, in.w * in.h, out.w * out.h});
@@ -149,6 +149,7 @@ void run(int only_sid = -1, int arg = -1) {
         }
 
         // Clear memory to avoid memory bloat
+        #pragma omp parallel for
         for (DAG& d : pieces.dag) {
             d.hashi.clear();
             for (TinyNode& n : d.tiny_node.node) {
@@ -219,6 +220,7 @@ void run(int only_sid = -1, int arg = -1) {
 
     // Final score display
     if (!eval && only_sid == -1) {
+        #pragma omp parallel for
         for (int si = 0; si < sample.size(); ++si) {
             Sample& s = sample[si];
             writeVerdict(si, s.id, verdict[si]);

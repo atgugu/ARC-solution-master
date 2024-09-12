@@ -656,6 +656,7 @@ Image stackLine(vImage_ shapes) {
   sort(order.begin(), order.end());
 
   Image out = shapes[order[0].second];
+  
   for (int i = 1; i < n; ++i)
     out = myStack(out,shapes[order[i].second],dy);
   return out;

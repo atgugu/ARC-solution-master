@@ -11,6 +11,7 @@ pair<int,bool> TinyHashMap::insert(ull key, int value) {
     mask = table.size()-1;
 
     fill(table.begin(), table.end(), -1);
+
     for (int i = 0; i < data.size(); ++i) {
       int&head = table[data[i].key&mask];
       data[i].next = head;
@@ -43,6 +44,7 @@ void TinyChildren::add(int fi, int to) {
     dense = new int[cap];
     fill_n(dense, cap, None);
     dense[fi] = to;
+
     for (int i = 0; i < sz; ++i) {
       auto [fi, to] = old[i];
       assert(fi >= 0);
@@ -118,10 +120,6 @@ void TinyChildren::legacy(vector<pair<int,int>>&ret) {
     }
   }
 }
-
-
-
-
 
 
 

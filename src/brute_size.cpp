@@ -80,7 +80,7 @@ point solveSize(vector<vector<point>>&seeds, const vector<point>& target) {
     double a = i+1;
     for (int h = 1; h < 6; ++h) {
       for (int w = 1; w < 6; ++w) {
-        int awh = a*w*h;
+        const int awh = a*w*h;
 	for (int y = -3; y <= 3; ++y) {
 	  for (int x = -3; x <= 3; ++x) {
 	    for (int k = 0; k < n; ++k)

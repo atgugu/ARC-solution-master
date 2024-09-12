@@ -332,14 +332,13 @@ Image solveTask(const Image& img, const vector<pair<Image,Image>>&train, int tas
 
 
 
-
 void evalTasks() {
   vector<Sample> sample = readAll("training", 100);//evaluation
   Visu visu;
 
   int corrects = 0;
   int place_count[11] = {};
-  //#pragma omp parallel for
+  #pragma omp parallel for
   for (int si = 0; si < sample.size(); si++) {
     Sample&s = sample[si];
     {

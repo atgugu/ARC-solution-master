@@ -519,7 +519,7 @@ void evalNormalizeRigid() {
   Visu visu;
 
   int place_count[11] = {};
-  //#pragma omp parallel for
+  #pragma omp parallel for
   for (int si = 0; si < sample.size(); si++) {
     Sample&s = sample[si];
 
