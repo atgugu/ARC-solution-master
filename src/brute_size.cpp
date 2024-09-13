@@ -18,7 +18,7 @@ bool operator<(const point a, const point b) {
 }
 
 pair<vector<int>,double> solveSingle(vector<vector<int>>&seeds, const vector<int>& target) {
-  int n = target.size()+1;
+  const int n = target.size()+1;
   vector<int> ans(n,1);
   pair<int,double> best = {-1,1e9};
 
@@ -76,7 +76,7 @@ point solveSize(vector<vector<point>>&seeds, const vector<point>& target) {
     }
   };
 
-  int n = target.size()+1;
+  const int n = target.size()+1;
   vector<point> szs(n);
   const size_t seedssize = seeds.size();
   for (int i = 0; i < seedssize; ++i) {
@@ -85,10 +85,13 @@ point solveSize(vector<vector<point>>&seeds, const vector<point>& target) {
       for (int w = 1; w < 6; ++w) {
         const int awh = a*w*h;
 	for (int y = -3; y <= 3; ++y) {
+    const int absy1 = abs(y)+1;
 	  for (int x = -3; x <= 3; ++x) {
+      const int absx1 = abs(x)+1;
+      const int awhabsxy = awh*absx1*absy1;
 	    for (int k = 0; k < n; ++k)
 	      szs[k] = {seeds[i][k].x*w+x, seeds[i][k].y*h+y};
-	    add(szs, awh*(abs(x)+1)*(abs(y)+1));
+	    add(szs, awhabsxy);
 	  }
 	}
       }

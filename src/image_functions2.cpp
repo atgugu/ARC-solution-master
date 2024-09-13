@@ -596,11 +596,10 @@ vImage gravity(Image_ in, int d) {
       const int pxoutx = p.x-out.x;
       const int pyouty = p.y-out.y;
       for (int i = 0; i < p.h; ++i) {
-          const int ipyouty = i+p.y-out.y;
+          const int y = i+p.y-out.y;
 	for (int j = 0; j < p.w; ++j) {
 	  if (p(i,j) == 0) continue;
 	  const int x = j+pxoutx;
-	  const int y = ipyouty;
 	  if (x < 0 || y < 0 || x >= out.w || y >= out.h || out(y,x)) {
 	    p.x -= dx;
 	    p.y -= dy;

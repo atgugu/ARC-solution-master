@@ -12,24 +12,29 @@ using namespace std;
 #include "deduce_op.hpp"
 
 pair<Image,Image> iOuterProductSI(Image_ img, int w, int h) {
+  const unsigned short imghh = img.h/h;
+  const unsigned short imgww = img.w/w;
   if (img.w*img.h <= 0 || img.w%w || img.h%h) return {badImg,badImg};
-  Image big = core::full({img.w/w,img.h/h},-1);
+  Image big = core::full({img.w/w,imghh},-1);
   Image small = core::full({w,h},-1);
 
-  for (int ii = 0; ii < img.h/h; ++ii) {
-    for (int jj = 0; jj < img.w/w; ++jj) {
-      int all0 = 1;
-      for (int i = 0; i < h; ++i)
-	for (int j = 0; j < w; ++j)
-	  if (img(ii*h+i,jj*w+j)) all0 = 0;
+  for (unsigned short ii = 0; ii < imghh; ++ii) {
+    const unsigned short iih = ii*h;
+    for (unsigned short jj = 0; jj < imgww; ++jj) {
+      const unsigned short jjw = jj*w;
+      unsigned all0 = 1;
+      for (unsigned short i = 0; i < h; ++i)
+	for (unsigned short j = 0; j < w; ++j)
+	  if (img(iih+i,jjw+j)) all0 = 0;
 
       big(ii,jj) = !all0;
 
       if (!all0) {
-	for (int i = 0; i < h; ++i) {
-	  for (int j = 0; j < w; ++j) {
+	for (unsigned short i = 0; i < h; ++i) {
+    const unsigned short iihi = iih+i;
+	  for (unsigned short j = 0; j < w; ++j) {
 	    char& a = small(i,j);
-	    char b = img(ii*h+i,jj*w+j);
+	    char b = img(iihi,jjw+j);
 	    if (a != -1 && a != b) return {badImg,badImg};
 	    a = b;
 	  }
@@ -43,22 +48,28 @@ pair<Image,Image> iOuterProductSI(Image_ img, int w, int h) {
 
 pair<Image,Image> iOuterProductIS(Image_ img, int w, int h) {
   if (img.w*img.h <= 0 || img.w%w || img.h%h) return {badImg,badImg};
-  Image big = core::full({img.w/w,img.h/h},-1);
+  const unsigned short imghh = img.h/h;
+  const unsigned short imgww = img.w/w;
+  Image big = core::full({imgww,imghh},-1);
   Image small = core::full({w,h},-1);
-  for (int ii = 0; ii < img.h/h; ++ii) {
-    for (int jj = 0; jj < img.w/w; ++jj) {
-      int mask = 0;
-      for (int i = 0; i < h; ++i)
-	for (int j = 0; j < w; ++j)
-	  mask |= 1<<img(ii*h+i,jj*w+j);
+  for (unsigned ii = 0; ii < imghh; ++ii) {
+    const unsigned short iih = ii*h;
+    for (unsigned jj = 0; jj < imgww; ++jj) {
+      const unsigned short jjw = jj*w;
+      unsigned short mask = 0;
+      for (unsigned i = 0; i < h; ++i){
+        const unsigned short iihi = iih+i;
+	for (unsigned short j = 0; j < w; ++j)
+	  mask |= 1<<img(iihi,jjw+j);}
 
       if (__builtin_popcount(mask&~1) > 1) return {badImg,badImg};
       big(ii,jj) = 31-__builtin_clz(mask);
       if (big(ii,jj)) {
-	for (int i = 0; i < h; ++i) {
-	  for (int j = 0; j < w; ++j) {
+	for (unsigned short i = 0; i < h; ++i) {
+    const unsigned iihi =iih+i;
+	  for (unsigned short j = 0; j < w; ++j) {
 	    char& a = small(i,j);
-	    char b = img(ii*h+i,jj*w+j) > 0;
+	    char b = img(iihi,jjw+j) > 0;
 	    if (a != -1 && a != b) return {badImg,badImg};
 	    a = b;
 	  }
@@ -68,6 +79,8 @@ pair<Image,Image> iOuterProductIS(Image_ img, int w, int h) {
   }
   return {big, small};
 }
+
+
 
 
 deduceOuterProduct::deduceOuterProduct(vector<pair<Image,Image>> train) {
@@ -198,8 +211,8 @@ void addDeduceOuterProduct(Pieces&pieces, vector<pair<Image,Image>> train, vecto
   for (auto [in,out] : deduce_op.train_targets) {
     if (core::count(in) > 1 && core::count(out) > 1) ++interestings;
   }
-  const size_t trainsize = train.size();
-  const size_t trainsize1 = train.size() + 1;
+  const unsigned trainsize = train.size();
+  const unsigned trainsize1 = train.size() + 1;
 
   if (interestings*2 < trainsize) return;
 
