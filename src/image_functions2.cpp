@@ -582,8 +582,8 @@ Image mirror2(Image_ a, Image_ line) {
 vImage gravity(Image_ in, int d) {
   vImage pieces = splitAll(in);
   Image room = hull0(in);
-  int dx = (d==0)-(d==1);
-  int dy = (d==2)-(d==3);
+  const int dx = (d==0)-(d==1);
+  const int dy = (d==2)-(d==3);
 
   vImage ret;
   Image out = room;
@@ -593,11 +593,14 @@ vImage gravity(Image_ in, int d) {
     while (1) {
       p.x += dx;
       p.y += dy;
+      const int pxoutx = p.x-out.x;
+      const int pyouty = p.y-out.y;
       for (int i = 0; i < p.h; ++i) {
+          const int ipyouty = i+p.y-out.y;
 	for (int j = 0; j < p.w; ++j) {
 	  if (p(i,j) == 0) continue;
-	  int x = j+p.x-out.x;
-	  int y = i+p.y-out.y;
+	  const int x = j+pxoutx;
+	  const int y = ipyouty;
 	  if (x < 0 || y < 0 || x >= out.w || y >= out.h || out(y,x)) {
 	    p.x -= dx;
 	    p.y -= dy;
@@ -753,13 +756,15 @@ Image composeGrowing(vImage_ imgs) {
     Image ret = core::empty(point{minx, miny}, rsz);
     for (const auto& [cnt, imgi] : order) {
         const Image_& img = imgs[imgi];
-        int dx = img.x - ret.x, dy = img.y - ret.y;
+        const int dx = img.x - ret.x;
+        const int dy = img.y - ret.y;
 
         // Direct pixel access
         for (int i = 0; i < img.h; ++i) {
+          const int idy = i + dy;
             for (int j = 0; j < img.w; ++j) {
                 if (img(i, j)) {
-                    ret(i + dy, j + dx) = img(i, j);
+                    ret(idy, j + dx) = img(i, j);
                 }
             }
         }
@@ -780,13 +785,13 @@ Image pickUnique(vImage_ imgs, int id) {
   vector<int> cnt(10);
   for (int i = 0; i < n; ++i) {
     mask[i] = core::colMask(imgs[i]);
-    for (int c = 0; c < 10; c++) {
+    for (int c = 0; c < 10; ++c) {
       if (mask[i]>>c&1) cnt[c]++;
     }
   }
   int reti = -1;
   for (int i = 0; i < n; ++i) {
-    for (int c = 0; c < 10; c++) {
+    for (int c = 0; c < 10; ++c) {
       if (mask[i]>>c&1) {
 	if (cnt[c] == 1) {
 	  if (reti == -1) reti = i;

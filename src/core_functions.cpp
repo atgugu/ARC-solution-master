@@ -101,7 +101,7 @@ namespace core {
     if (!include0) cnt[0] = 0;
     int ret = 0;
     int ma = cnt[ret];
-    for (int c = 1; c < 10; c++) {
+    for (int c = 1; c < 10; ++c) {
       if (cnt[c] > ma) {
 	ma = cnt[c];
 	ret = c;
@@ -124,7 +124,7 @@ namespace core {
   vector<pair<Image,int>> splitCols(Image_ img, int include0) { //include0 = 0
     vector<pair<Image,int>> ret;
     int mask = colMask(img);
-    for (char c = !include0; c < 10; c++) {
+    for (char c = !include0; c < 10; ++c) {
       if (mask>>c&1) {
 	Image s = img;
 	for (int i = 0; i < s.h; ++i)

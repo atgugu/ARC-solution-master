@@ -24,7 +24,7 @@ pair<vector<int>,double> solveSingle(vector<vector<int>>&seeds, const vector<int
 
   auto add = [&](const vector<int>&szs, double loss) {
     int oks = 0;
-    for (int ti = 0; ti < target.size(); ti++)
+    for (int ti = 0; ti < target.size(); ++ti)
       oks += (szs[ti] == target[ti]);
     pair<int,double> cand = {oks, -loss-10};
     int sz = szs.back();
@@ -41,11 +41,11 @@ pair<vector<int>,double> solveSingle(vector<vector<int>>&seeds, const vector<int
 
   vector<int> szs(n);
   for (int i = 0; i < seeds.size(); ++i) {
-    double a = i+1;
-    for (int w = 1; w < 6; w++) {
-      int aw = a*w;
-      for (int x = -3; x <= 3; x++) {
-	for (int k = 0; k < n; k++)
+    const double a = i+1;
+    for (int w = 1; w < 6; ++w) {
+      const int aw = a*w;
+      for (int x = -3; x <= 3; ++x) {
+	for (int k = 0; k < n; ++k)
 	  szs[k] = seeds[i][k]*w+x;
 	add(szs, aw*(abs(x)+1));
       }
@@ -61,7 +61,7 @@ point solveSize(vector<vector<point>>&seeds, const vector<point>& target) {
 
   auto add = [&](const vector<point>&szs, double loss) {
     int oks = 0;
-    for (int ti = 0; ti < target.size(); ti++)
+    for (int ti = 0; ti < target.size(); ++ti)
       oks += (szs[ti] == target[ti]);
     pair<int,double> cand = {oks, -loss};
     point sz = szs.back();
@@ -94,9 +94,9 @@ point solveSize(vector<vector<point>>&seeds, const vector<point>& target) {
 
   if (1) {//best.first < target.size()) {
     for (int i = 0; i < seeds.size(); ++i) {
-      double a = i+1;
+      const double a = i+1;
       for (int j = 0; j < i; ++j) {
-  double ab = a*(j+1);
+  const double ab = a*(j+1);
 	for (int d = 0; d < 3; ++d) {
 	  for (int k = 0; k < n; ++k) {
 	    szs[k] = seeds[i][k];
@@ -132,7 +132,7 @@ point solveSize(vector<vector<point>>&seeds, const vector<point>& target) {
     for (int i = 0; i < n; ++i) {
       combined.push_back({bestx[i], besty[i]});
     }
-    double combloss = scorex*scorey;
+    const double combloss = scorex*scorey;
     add(combined, combloss);
   }
 
@@ -146,7 +146,7 @@ vector<point> bruteSize(Image_ test_in, vector<pair<Image,Image>> train) {
   for (auto [in,out] : train) {
     out_sizes.push_back(out.sz);
   }
-  int cp = MAXDEPTH;
+  const int cp = MAXDEPTH;
   MAXDEPTH = min(MAXDEPTH, 30);
   Pieces pieces;
   {
@@ -168,7 +168,7 @@ vector<point> bruteSize(Image_ test_in, vector<pair<Image,Image>> train) {
     vector<point> sz;
     int ok = 1;
     int*ind = &pieces.mem[p.memi];
-    for (int ti = 0; ti <= train.size(); ti++) {
+    for (int ti = 0; ti <= train.size(); ++ti) {
       if (pieces.dag[ti].tiny_node[ind[ti]].isvec) ok = 0;
       else {
 	sz.push_back(pieces.dag[ti].getImg(ind[ti]).sz);

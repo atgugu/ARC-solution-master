@@ -29,7 +29,7 @@ struct Timer {
       brute_sum += dt;
     }
     if (sample_counter == target) {
-      samples++;
+      ++samples;
       sample_sum += dt;
       sample_var += dt*dt;
       target = mrand()%skips;
@@ -37,7 +37,7 @@ struct Timer {
 
     if (++sample_counter == skips)
       sample_counter = 0;
-    cnt++;
+    ++cnt;
   }
   tuple<double,double,double> read() {
     if (cnt <= brute_thres)

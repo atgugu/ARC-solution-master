@@ -88,11 +88,16 @@ Image broadcast(Image_ col, Image_ shape, int include0) { //include0 = 1
   if (shape.w%col.w == 0 && shape.h%col.h == 0) {
     Image ret = shape;
     int dh = shape.h/col.h, dw = shape.w/col.w;
-    for (int ii = 0; ii < col.h; ii++) {
-      for (int jj = 0; jj < col.w; jj++) {
-	int c = col(ii,jj);
-	for (int i = ii*dh; i < ii*dh+dh; ++i)
-	  for (int j = jj*dw; j < jj*dw+dw; ++j)
+    for (int ii = 0; ii < col.h; ++ii) {
+      const int iidh = ii*dh;
+      const int iidhdh = iidh+dh;
+      for (int jj = 0; jj < col.w; ++jj) {
+  const int jjdW = jj*dw;
+  const int jjdwdw = jj*dw + dw;
+
+	const int c = col(ii,jj);
+	for (int i = iidh; i < iidhdh; ++i)
+	  for (int j = jjdW; j < jjdwdw; ++j)
 	    ret(i,j) = c;
       }
     }
@@ -116,9 +121,9 @@ Image broadcast(Image_ col, Image_ shape, int include0) { //include0 = 1
       double c0 = j*fw+eps, c1 = (j+1)*fw-eps;
 
       int guess = !include0;
-      for (int y = r0; y < r1; y++) {
+      for (int y = r0; y < r1; ++y) {
 	double wy = min((double)y+1,r1)-max((double)y,r0);
-	for (int x = c0; x < c1; x++) {
+	for (int x = c0; x < c1; ++x) {
 	  double wx = min((double)x+1,c1)-max((double)x,c0);
 	  char c = col(y,x);
 	  weight[c] += wx*wy;
@@ -133,7 +138,7 @@ Image broadcast(Image_ col, Image_ shape, int include0) { //include0 = 1
 
       int maj = !include0;
       double w = weight[maj];
-      for (int c = 1; c < 10; c++) {
+      for (int c = 1; c < 10; ++c) {
 	if (weight[c] > w) maj = c, w = weight[c];
       }
       ret(i,j) = maj;
@@ -326,11 +331,15 @@ Image outerProductSI(Image_ a, Image_ b) {
   point rpos = {a.p.x*b.w+b.p.x,
 		a.p.y*b.h+b.p.y};
   Image ret = core::empty(rpos, {a.w*b.w, a.h*b.h});
-  for (int i = 0; i < a.h; ++i)
-    for (int j = 0; j < a.w; ++j)
-      for (int k = 0; k < b.h; k++)
-	for (int l = 0; l < b.w; l++)
-	  ret(i*b.h+k, j*b.w+l) = (a(i,j)>0) * b(k,l);
+  for (int i = 0; i < a.h; ++i){
+    const int ibh = i*b.h;
+    for (int j = 0; j < a.w; ++j){
+      const int jbw = j*b.w;
+      for (int k = 0; k < b.h; ++k){
+        const int ibhk = ibh+k;
+	for (int l = 0; l < b.w; ++l)
+	  ret(ibhk, jbw+l) = (a(i,j)>0) * b(k,l);
+  }}}
   return ret;
 }
 
@@ -348,7 +357,7 @@ Image Fill(Image_ a) {
   while (q.size()) {
     auto [r,c] = q.back();
     q.pop_back();
-    for (int d = 0; d < 4; d++) {
+    for (int d = 0; d < 4; ++d) {
       int nr = r+(d==2)-(d==3);
       int nc = c+(d==0)-(d==1);
       if (nr >= 0 && nr < a.h && nc >= 0 && nc < a.w && !a(nr,nc) && ret(nr,nc)) {
@@ -452,7 +461,7 @@ Image align(Image_ a, Image_ b) {
   //Find most matching color and align a to b using it
   Image ret = a;
   int match_size = 0;
-  for (int c = 1; c < 10; c++) {
+  for (int c = 1; c < 10; ++c) {
     Image ca = compress(filterCol(a, c));
     Image cb = compress(filterCol(b, c));
     if (ca.mask == cb.mask) {
@@ -488,7 +497,7 @@ Image replaceCols(Image_ base, Image_ cols) {
 	};
 	dfs(i,j);
 	pair<int,int> maj = {0,0};
-	for (int c = 1; c < 10; c++) {
+	for (int c = 1; c < 10; ++c) {
 	  maj = max(maj, make_pair(cnt[c], -c));
 	}
 	for (auto [r,c] : path)
@@ -557,7 +566,7 @@ int mirrorHeuristic(Image_ img) {
   for (int i = 0; i < img.h; ++i) {
     for (int j = 0; j < img.w; ++j) {
       if (img(i,j)) {
-	cnt++;
+	++cnt;
 	sumx += j;
 	sumy += i;
       }
@@ -700,9 +709,10 @@ Image smear(Image_ base, Image_ room, int id) {
   if (mask&1) {
     for (int i = 0; i < ret.h; ++i) {
       char c = 0;
+      const int idy = i+d.y;
       for (int j = 0; j < ret.w; ++j) {
 	if (!room(i,j)) c = 0;
-	else if (base.safe(i+d.y,j+d.x)) c = base(i+d.y,j+d.x);
+	else if (base.safe(idy,j+d.x)) c = base(idy,j+d.x);
 	if (c) ret(i,j) = c;
       }
     }
@@ -710,10 +720,11 @@ Image smear(Image_ base, Image_ room, int id) {
 
   if (mask>>1&1) {
     for (int i = 0; i < ret.h; ++i) {
+      const int idy = i+d.y;
       char c = 0;
       for (int j = ret.w-1; j >= 0; j--) {
 	if (!room(i,j)) c = 0;
-	else if (base.safe(i+d.y,j+d.x)) c = base(i+d.y,j+d.x);
+	else if (base.safe(idy,j+d.x)) c = base(idy,j+d.x);
 	if (c) ret(i,j) = c;
       }
     }
@@ -722,9 +733,10 @@ Image smear(Image_ base, Image_ room, int id) {
   if (mask>>2&1) {
     for (int j = 0; j < ret.w; ++j) {
       char c = 0;
+      const int jdx = j+d.x;
       for (int i = 0; i < ret.h; ++i) {
 	if (!room(i,j)) c = 0;
-	else if (base.safe(i+d.y,j+d.x)) c = base(i+d.y,j+d.x);
+	else if (base.safe(i+d.y,jdx)) c = base(i+d.y,jdx);
 	if (c) ret(i,j) = c;
       }
     }
@@ -733,9 +745,10 @@ Image smear(Image_ base, Image_ room, int id) {
   if (mask>>3&1) {
     for (int j = 0; j < ret.w; ++j) {
       char c = 0;
+      const int jdx = j+d.x;
       for (int i = ret.h-1; i >= 0; i--) {
 	if (!room(i,j)) c = 0;
-	else if (base.safe(i+d.y,j+d.x)) c = base(i+d.y,j+d.x);
+	else if (base.safe(i+d.y,jdx)) c = base(i+d.y,jdx);
 	if (c) ret(i,j) = c;
       }
     }

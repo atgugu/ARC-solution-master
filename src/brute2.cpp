@@ -176,8 +176,8 @@ Functions3 initFuncs3(const vector<point>&sizes) {
   for (int i = 1; i < 9; ++i)
     funcs.add("rigid "+to_string(i), 10,
 	      [i](Image_ img) {return rigid(img, i);});
-  for (int a = 0; a < 3; a++)
-    for (int b = 0; b < 3; b++)
+  for (int a = 0; a < 3; ++a)
+    for (int b = 0; b < 3; ++b)
       funcs.add("count "+to_string(a)+" "+to_string(b), 10,
 		[a,b](Image_ img) {return count(img, a, b);});
   for (int i = 0; i < 15; ++i)
@@ -194,7 +194,7 @@ Functions3 initFuncs3(const vector<point>&sizes) {
   funcs.add("compress2", 10, compress2);
   funcs.add("compress3", 10, compress3);
 
-  for (int id = 0; id < 3; id++)
+  for (int id = 0; id < 3; ++id)
     funcs.add("connect "+to_string(id), 10,
 	      [id](Image_ img) {return connect(img,id);});
 
@@ -202,13 +202,13 @@ Functions3 initFuncs3(const vector<point>&sizes) {
     funcs.add("spreadCols "+to_string(id), 10,
 	      [id](Image_ img) {return spreadCols(img, id);});
 
-  for (int id = 0; id < 4; id++)
+  for (int id = 0; id < 4; ++id)
     funcs.add("half "+to_string(id), 10,
 	      [id](Image_ img) {return half(img, id);});
 
 
-  for (int dy = -2; dy <= 2; dy++) {
-    for (int dx = -2; dx <= 2; dx++) {
+  for (int dy = -2; dy <= 2; ++dy) {
+    for (int dx = -2; dx <= 2; ++dx) {
       funcs.add("Move "+to_string(dx)+" "+to_string(dy), 10,
 		[dx,dy](Image_ img) {return Move(img, Pos(dx,dy));}, 0);
     }
@@ -231,31 +231,31 @@ Functions3 initFuncs3(const vector<point>&sizes) {
   funcs.add("splitColumns", 10, splitColumns);
   funcs.add("splitRows",    10, splitRows);
   funcs.add("insideMarked", 10, insideMarked);
-  for (int id = 0; id < 4; id++)
+  for (int id = 0; id < 4; ++id)
     funcs.add("gravity "+to_string(id), 10,
 	      [id](Image_ img) {return gravity(img,id);});
 
 
   //Join
-  for (int id = 0; id < 14; id++)
+  for (int id = 0; id < 14; ++id)
     funcs.add("pickMax "+to_string(id), 10,
 	      [id](vImage_ v) {return pickMax(v,id);});
-  for (int id = 0; id < 1; id++)
+  for (int id = 0; id < 1; ++id)
     funcs.add("pickUnique "+to_string(id), 10,
 	      [id](vImage_ v) {return pickUnique(v,id);});
 
   funcs.add("composeGrowing", 10, composeGrowing);
   funcs.add("stackLine", 10, stackLine);
-  for (int id = 0; id < 2; id++) //consider going to 4
+  for (int id = 0; id < 2; ++id) //consider going to 4
     funcs.add("myStack "+to_string(id), 10,
 	      [id](vImage_ v) {return myStack(v,id);}); //
 
 
   //Vector
-  for (int id = 0; id < 14; id++)
+  for (int id = 0; id < 14; ++id)
     funcs.add("pickMaxes "+to_string(id), 10,
 	      [id](vImage_ v) {return pickMaxes(v,id);});
-  for (int id = 0; id < 14; id++)
+  for (int id = 0; id < 14; ++id)
     funcs.add("pickNotMaxes "+to_string(id), 10,
 	      [id](vImage_ v) {return pickNotMaxes(v,id);});
 
@@ -344,7 +344,7 @@ int DAG::add(const State&nxt, bool force) { //force = false
 void DAG::build() {
   build_f_time.start();
 
-  for (int curi = 0; curi < tiny_node.size(); curi++) {
+  for (int curi = 0; curi < tiny_node.size(); ++curi) {
     int depth = tiny_node[curi].depth;
     if (depth+1 > MAXDEPTH) continue;
 
@@ -387,7 +387,7 @@ void DAG::initial(Image_ test_in, const vector<pair<Image,Image>>&train, vector<
     add(State({core::empty(sz)}, false, 10), true);
 
   // Outputs of other trains
-  for (int tj = 0; tj < train.size(); tj++)
+  for (int tj = 0; tj < train.size(); ++tj)
     add(State({ti != tj ? train[tj].second : core::empty(train[tj].second.sz)}, false, 10), true);
 
   //add(State({greedyFillBlack2(in)}, false, 10), true);
@@ -400,10 +400,11 @@ void DAG::initial(Image_ test_in, const vector<pair<Image,Image>>&train, vector<
 //time each function
 void DAG::benchmark() {
   vector<pair<double,int>> v;
+  const unsigned int tinynodesize =tiny_node.size();
   for (int fi : funcs.listed) {
     double start_time = now();
     State nxt;
-    for (int i = 0; i < tiny_node.size(); ++i) {
+    for (int i = 0; i < tinynodesize; ++i) {
       funcs.f_list[fi](tiny_node.getState(i), nxt);
     }
     double elapsed = now()-start_time;
@@ -461,8 +462,8 @@ int DAG::applyFunc(int curi, int fi) {
 void DAG::applyFunc(string name, bool vec) {
   int fi = funcs.findfi(name);
 
-  int start_nodes = tiny_node.size();
-  for (int curi = 0; curi < start_nodes; curi++) {
+  const int start_nodes = tiny_node.size();
+  for (int curi = 0; curi < start_nodes; ++curi) {
     if (tiny_node[curi].isvec == vec) applyFunc(curi, fi);
   }
 }
@@ -474,13 +475,15 @@ void DAG::applyFuncs(vector<pair<string,int>> names, bool vec) {
   }
 
   vector<int> parid(tiny_node.size(),-1);
-  for (int curi = 0; curi < tiny_node.size(); curi++) {
+  const unsigned int tinynodesize = tiny_node.size();
+  const unsigned int fissize = fis.size();
+  for (int curi = 0; curi < tinynodesize; ++curi) {
     if (tiny_node[curi].isvec != vec) continue;
     state_time.start();
     State state = tiny_node.getState(curi);
     state_time.stop();
 
-    for (int i = 0; i < fis.size(); ++i) {
+    for (int i = 0; i < fissize; ++i) {
       auto [fi,id] = fis[i];
       if (id <= parid[curi]) continue;
 
@@ -602,18 +605,20 @@ vector<DAG> brutePieces2(Image_ test_in, const vector<pair<Image,Image>>&train, 
 	if (print) cout << now()-start_time << endl;*/
 
       total_time.stop();
-      total_time.print("Total time");
-      build_f_time.print("Build f time");
-      apply_f_time.print("Apply f time");
-      real_f_time .print("Real f time ");
+      if(print){
+        total_time.print("Total time");
+        build_f_time.print("Build f time");
+        apply_f_time.print("Apply f time");
+        real_f_time .print("Real f time ");
 
-      add_time.print("Add time");
-      find_child_time.print("Find child");
-      add_child_time.print("Add child");
-      hash_time.print("Hash");
-      map_time.print("Map");
+        add_time.print("Add time");
+        find_child_time.print("Find child");
+        add_child_time.print("Add child");
+        hash_time.print("Hash");
+        map_time.print("Map");
 
-      state_time.print("getState");
+        state_time.print("getState");
+      }
       //exit(0);
       /*FILE*fp = fopen("images.txt", "w");
       for (Node&n : dag[ti].node) {
