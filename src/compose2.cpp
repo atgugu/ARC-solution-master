@@ -84,14 +84,15 @@ vector<Candidate> greedyCompose2(Pieces& pieces, vector<Image>& target, vector<p
             d = p.depth;
         }
     }
-
+    const unsigned short targetSize = target.size();
     vector<Image> init;
     vector<int> sz;
     {
         init.reserve(out_sizes.size());
         sz.reserve(out_sizes.size());
-        for (size_t i = 0; i < pieces.dag.size(); i++) {
-            if (i < target.size()) assert(out_sizes[i] == target[i].sz);
+        const unsigned short dagSize = pieces.dag.size();
+        for (size_t i = 0; i < dagSize; i++) {
+            if (i < targetSize) assert(out_sizes[i] == target[i].sz);
             init.push_back(core::full(out_sizes[i], 10));
             sz.push_back(init.back().mask.size());
         }
@@ -120,7 +121,7 @@ vector<Candidate> greedyCompose2(Pieces& pieces, vector<Image>& target, vector<p
                 int* ind = &pieces.mem[pieces.piece[i].memi];
                 Image_ img = pieces.dag[j].getImg(ind[j]);
                 const vector<char>& p = img.mask;
-                const vector<char>& t = (j < target.size()) ? target[j].mask : init[j].mask;
+                const vector<char>& t = (j < targetSize) ? target[j].mask : init[j].mask;
                 
                 assert(p.size() == sz[j]);
                 assert(t.size() == sz[j]);
@@ -199,13 +200,13 @@ vector<Candidate> greedyCompose2(Pieces& pieces, vector<Image>& target, vector<p
         if (besti == -1) return -1;
 
         int i = img_ind[besti];
-        int x = 0;
-
-        for (size_t l = 0; l < ret.size(); ++l) {
+        unsigned short x = 0;
+        const unsigned short retSize = ret.size();
+        for (unsigned short l = 0; l < retSize; ++l) {
             int* ind = &pieces.mem[pieces.piece[i].memi];
             const vector<char>& mask = pieces.dag[l].getImg(ind[l]).mask;
 
-            for (int j = 0; j < sz[l]; ++j) {
+            for (unsigned short j = 0; j < sz[l]; ++j) {
                 if ((best_active[x >> 6] >> (x & 63)) & 1 && ret[l].mask[j] == 10) {
                     ret[l].mask[j] = mask[j];
                 }
@@ -213,7 +214,7 @@ vector<Candidate> greedyCompose2(Pieces& pieces, vector<Image>& target, vector<p
             }
         }
 
-        for (int j = 0; j < M; ++j) {
+        for (unsigned short j = 0; j < M; ++j) {
             if ((best_active[j >> 6] >> (j & 63)) & 1) cur.set(j, 1);
         }
 
@@ -225,15 +226,14 @@ vector<Candidate> greedyCompose2(Pieces& pieces, vector<Image>& target, vector<p
 
     for (int pdt = max_piece_depth % 10; pdt <= max_piece_depth; pdt += 10) {
         int piece_depth_thres = pdt;
-
-        for (int it0 = 0; it0 < 10; ++it0) {
-            for (int mask = 1; mask < min(1 << target.size(), 1 << 5); ++mask) {
+        for (unsigned short it0 = 0; it0 < 10; ++it0) {
+            for (unsigned short mask = 1; mask < min(1 << targetSize, 32); ++mask) {
                 vector<int> maskv;
-                for (int j = 0; j < target.size(); ++j) {
+                for (unsigned short j = 0; j < target.size(); ++j) {
                     if (mask >> j & 1) maskv.push_back(j);
                 }
 
-                int caremask;
+                unsigned short caremask;
                 if (it0 < maskv.size()) {
                     caremask = 1 << maskv[it0];
                 } else {
@@ -241,13 +241,13 @@ vector<Candidate> greedyCompose2(Pieces& pieces, vector<Image>& target, vector<p
                 }
 
                 mybitset cur(M), careMask(M);
-                int base = 0;
-                for (int j = 0; j < sz.size(); ++j) {
+                unsigned short base = 0;
+                for (unsigned short j = 0; j < sz.size(); ++j) {
                     if (!(mask >> j & 1)) {
                         for (int k = 0; k < sz[j]; ++k) cur.set(base + k, 1);
                     }
                     if (caremask >> j & 1) {
-                        for (int k = 0; k < sz[j]; ++k) careMask.set(base + k, 1);
+                        for (unsigned short k = 0; k < sz[j]; ++k) careMask.set(base + k, 1);
                     }
                     base += sz[j];
                 }
