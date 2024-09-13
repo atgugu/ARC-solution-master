@@ -144,12 +144,12 @@ deduceOuterProduct::deduceOuterProduct(vector<pair<Image,Image>> train) {
     }
   }
   assert(rec_funci != -1);
-
+  const size_t trainsize = train.size();
   for (int k : {0,1}) {
     auto f = k ? iOuterProductSI : iOuterProductIS;
-    vector<double> best_at(train.size(), 1e9);
+    vector<double> best_at(trainsize, 1e9);
     vector<pair<Image,Image>> best_single(train.size(), {badImg,badImg});
-    for (int ti = 0; ti < train.size(); ++ti) {
+    for (int ti = 0; ti < trainsize; ++ti) {
       Image target = train[ti].second;
       for (int h = 1; h <= target.h; ++h) {
 	for (int w = 1; w <= target.w; ++w) {
@@ -171,8 +171,8 @@ deduceOuterProduct::deduceOuterProduct(vector<pair<Image,Image>> train) {
   }
 
   assert(rec_funci != -1);
-  assert(train_targets.size() == train.size());
-  for (int ti = 0; ti < train.size(); ++ti) {
+  assert(train_targets.size() == trainsize);
+  for (int ti = 0; ti < trainsize; ++ti) {
     Image a, b;
     tie(a,b) = train_targets[ti];
     //print(a);
@@ -198,7 +198,10 @@ void addDeduceOuterProduct(Pieces&pieces, vector<pair<Image,Image>> train, vecto
   for (auto [in,out] : deduce_op.train_targets) {
     if (core::count(in) > 1 && core::count(out) > 1) ++interestings;
   }
-  if (interestings*2 < train.size()) return;
+  const size_t trainsize = train.size();
+  const size_t trainsize1 = train.size() + 1;
+
+  if (interestings*2 < trainsize) return;
 
   vImage a, b;
   for (int k : {0,1}) {
@@ -207,7 +210,7 @@ void addDeduceOuterProduct(Pieces&pieces, vector<pair<Image,Image>> train, vecto
 
     auto add = [&](vImage_ vi) {
       int matches = 0;
-      for (int i = 0; i < train.size(); ++i) {
+      for (int i = 0; i < trainsize; ++i) {
 	Image_ target = k ? deduce_op.train_targets[i].second : deduce_op.train_targets[i].first;
 	matches += (vi[i] == target);
       }
@@ -227,11 +230,11 @@ void addDeduceOuterProduct(Pieces&pieces, vector<pair<Image,Image>> train, vecto
 	imgs.push_back(img);
 	imgs.back().p = point{0,0};
       }
-      if (imgs.size() == train.size()+1)
+      if (imgs.size() == trainsize1)
 	add(imgs);
     }
     for (auto [x,y] : deduce_op.train_targets) {
-      add(vImage(train.size()+1, (k ? y : x)));
+      add(vImage(trainsize1, (k ? y : x)));
     }
   }
 

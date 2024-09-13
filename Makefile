@@ -1,7 +1,7 @@
 
 DEBUG = -Wshadow -Wall -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG -g -Wno-sign-compare -Wno-shadow -Wno-char-subscripts -Wno-unused-variable
 #-fprofile-generate -fprofile-update -mcpu=sandybridge
-FLAGS = -std=c++17 -mavx2 -mfma -ftree-vectorize -fprofile-use -fprofile-dir=./profilerdata -fgcse -fopenmp -flto=auto -Ofast -march=native -mtune=native -funroll-loops -finline-functions -fomit-frame-pointer -ffast-math -fno-stack-protector -fno-math-errno -funsafe-math-optimizations -fno-trapping-math -fno-signed-zeros -fassociative-math -freciprocal-math -ffinite-math-only -fexcess-precision=fast -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno
+FLAGS = -std=c++17 -mavx2 -mfma -ftree-vectorize -fprofile-generate -fprofile-dir=./profilerdata -fgcse -fopenmp -flto=auto -Ofast -march=native -mtune=native -funroll-loops -finline-functions -fomit-frame-pointer -ffast-math -fno-stack-protector -fno-math-errno -funsafe-math-optimizations -fno-trapping-math -fno-signed-zeros -fassociative-math -freciprocal-math -ffinite-math-only -fexcess-precision=fast -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno
 LIBS = -lstdc++ -lstdc++fs
 
 .DEFAULT_GOAL := run

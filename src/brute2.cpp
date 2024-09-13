@@ -534,17 +534,17 @@ void DAG::buildBinary() {
 
 
 vector<DAG> brutePieces2(Image_ test_in, const vector<pair<Image,Image>>&train, vector<point> out_sizes) {
-  int print = 0;
-
-  vector<DAG> dag(train.size()+1);
+  const int print = 0;
+  const size_t trainsize = train.size();
+  vector<DAG> dag(trainsize+1);
 
   int all_train_out_mask = 0, and_train_out_mask = ~0;
-  for (int ti = 0; ti < train.size(); ti++)
+  for (int ti = 0; ti < trainsize; ti++)
     and_train_out_mask &= core::colMask(train[ti].second);
 
-  for (int ti = 0; ti <= train.size(); ti++) {
+  for (int ti = 0; ti <= trainsize; ti++) {
     vector<point> sizes;
-    if (ti < train.size())
+    if (ti < trainsize)
       sizes.push_back(train[ti].first.sz);
     else
       sizes.push_back(test_in.sz);

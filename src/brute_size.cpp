@@ -24,7 +24,8 @@ pair<vector<int>,double> solveSingle(vector<vector<int>>&seeds, const vector<int
 
   auto add = [&](const vector<int>&szs, double loss) {
     int oks = 0;
-    for (int ti = 0; ti < target.size(); ++ti)
+    const unsigned int targetsize = target.size();
+    for (int ti = 0; ti < targetsize; ++ti)
       oks += (szs[ti] == target[ti]);
     pair<int,double> cand = {oks, -loss-10};
     int sz = szs.back();
@@ -40,7 +41,8 @@ pair<vector<int>,double> solveSingle(vector<vector<int>>&seeds, const vector<int
   }
 
   vector<int> szs(n);
-  for (int i = 0; i < seeds.size(); ++i) {
+  const size_t seedssize = seeds.size();
+  for (int i = 0; i < seedssize; ++i) {
     const double a = i+1;
     for (int w = 1; w < 6; ++w) {
       const int aw = a*w;
@@ -61,7 +63,8 @@ point solveSize(vector<vector<point>>&seeds, const vector<point>& target) {
 
   auto add = [&](const vector<point>&szs, double loss) {
     int oks = 0;
-    for (int ti = 0; ti < target.size(); ++ti)
+    const size_t targetsize = target.size();
+    for (int ti = 0; ti < targetsize; ++ti)
       oks += (szs[ti] == target[ti]);
     pair<int,double> cand = {oks, -loss};
     point sz = szs.back();
@@ -75,8 +78,8 @@ point solveSize(vector<vector<point>>&seeds, const vector<point>& target) {
 
   int n = target.size()+1;
   vector<point> szs(n);
-
-  for (int i = 0; i < seeds.size(); ++i) {
+  const size_t seedssize = seeds.size();
+  for (int i = 0; i < seedssize; ++i) {
     double a = i+1;
     for (int h = 1; h < 6; ++h) {
       for (int w = 1; w < 6; ++w) {
@@ -93,7 +96,7 @@ point solveSize(vector<vector<point>>&seeds, const vector<point>& target) {
   }
 
   if (1) {//best.first < target.size()) {
-    for (int i = 0; i < seeds.size(); ++i) {
+    for (int i = 0; i < seedssize; ++i) {
       const double a = i+1;
       for (int j = 0; j < i; ++j) {
   const double ab = a*(j+1);
