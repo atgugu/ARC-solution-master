@@ -3,7 +3,7 @@
 
 double now();
 
-struct State {
+struct __attribute__((packed)) State {
   vImage vimg;
   int depth;
   bool isvec;
@@ -23,7 +23,7 @@ struct State {
 
 
 
-struct Node {
+struct __attribute__((packed)) Node {
   State state;
   //vImage vimg;
   //bool isvec;
@@ -43,7 +43,7 @@ struct Node {
 };
 
 
-struct Functions3 {
+struct __attribute__((packed)) Functions3 {
   vector<int> listed, cost;
   vector<string> names;
   vector<function<bool(const State&,State&)>> f_list;
@@ -60,7 +60,7 @@ struct Functions3 {
 
 
 
-struct DAG {
+struct __attribute__((packed)) DAG {
   Functions3 funcs;
   //vector<Node> node;
   TinyNodeBank tiny_node;
@@ -82,5 +82,5 @@ struct DAG {
 };
 
 
-struct Pieces;
+struct __attribute__((packed)) Pieces;
 vector<DAG> brutePieces2(Image_ test_in, const vector<pair<Image,Image>>&train, vector<point> out_sizes);

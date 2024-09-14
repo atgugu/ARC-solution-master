@@ -338,13 +338,13 @@ vector<Candidate> evaluateCands(const vector<Candidate>&cands, vector<pair<Image
     assert(cand.max_depth >= 0 && cand.max_depth < 100);
     assert(cand.cnt_pieces >= 0 && cand.cnt_pieces < 100);
     //cout << cand.max_depth << ' ' << cand.cnt_pieces << endl;
-    double prior = cand.max_depth+cand.cnt_pieces*1e-3;//cnt_pieces;
+    const double prior = cand.max_depth+cand.cnt_pieces*1e-2;//cnt_pieces;
 
     int goods = 0;
     for (int i = 0; i < train.size(); ++i) {
       goods += (imgs[i] == train[i].second);
     }
-    double score = goods-prior*0.01;
+    const double score = goods-prior*0.01;
 
     Image answer = imgs.back();
     if (answer.w > 30 || answer.h > 30 || answer.w*answer.h == 0) goods = 0;

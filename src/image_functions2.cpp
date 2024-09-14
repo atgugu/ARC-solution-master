@@ -168,63 +168,89 @@ Image compress3(Image_ img) {
 
 
 //TODO: return badImg if fail
-Image greedyFill(Image& ret, vector<pair<int,vector<int>>>&piece, Spec&done, int bw, int bh, int&donew) {
+Image greedyFill(Image &ret, vector<pair<short, vector<short>>> &piece, Spec &done, short bw, short bh, int &donew)
+{
   sort(piece.rbegin(), piece.rend());
 
-  const int dw = ret.w-bw+1, dh = ret.h-bh+1;
-  if (dw < 1 || dh < 1) return badImg;
+  const short dw = ret.w - bw + 1, dh = ret.h - bh + 1;
+  if (dw < 1 || dh < 1)
+    return badImg;
 
-  vector<int> dones(dw*dh, -1);
-  priority_queue<tuple<int,int,int>> pq;
-  auto recalc = [&](int i, int j) {
-    int cnt = 0;
-    for (int y = 0; y < bh; ++y)
-      for (int x = 0; x < bw; ++x)
-	cnt += done(i+y,j+x);
-    if (cnt != dones[i*dw+j]) {
-      dones[i*dw+j] = cnt;
-      pq.emplace(cnt,j,i);
+  vector<int> dones(dw * dh, -1);
+  priority_queue<tuple<unsigned short, short, short>> pq;
+  auto recalc = [&](short i, short j)
+  {
+    unsigned short cnt = 0;
+    const short idw = i * dw;
+    for (short y = 0; y < bh; ++y)
+      for (short x = 0; x < bw; ++x)
+        cnt += done(i + y, j + x);
+    if (cnt != dones[idw + j])
+    {
+      dones[idw + j] = cnt;
+      pq.emplace(cnt, j, i);
     }
   };
-  for (int i = 0; i+bh <= ret.h; ++i)
-    for (int j = 0; j+bw <= ret.w; ++j)
-      recalc(i,j);
 
-  while (pq.size()) {
-    auto [ds,j,i] = pq.top();
+  for (short i = 0; i + bh <= ret.h; ++i)
+    for (short j = 0; j + bw <= ret.w; ++j)
+      recalc(i, j);
+
+  while (pq.size())
+  {
+    auto [ds, j, i] = pq.top();
     pq.pop();
-    if (ds != dones[i*dw+j]) continue;
-    int found = 0;
-    for (auto [cnt,mask] : piece) {
-      int ok = 1;
-      for (int y = 0; y < bh; ++y)
-	for (int x = 0; x < bw; ++x)
-	  if (done(i+y,j+x) && ret(i+y,j+x) != mask[y*bw+x])
-	    ok = 0;
-      if (ok) {
-	for (int y = 0; y < bh; ++y) {
-	  for (int x = 0; x < bw; ++x) {
-	    if (!done(i+y,j+x)) {
-	      done(i+y,j+x) = donew;
-	      if (donew > 1) donew--;
-	      ret(i+y,j+x) = mask[y*bw+x];
-	    }
-	  }
-	}
-	for (int y = max(i-bh+1,0); y < min(i+bh, dh); ++y)
-	  for (int x = max(j-bw+1,0); x < min(j+bw, dw); ++x)
-	    recalc(y,x);
-	found = 1;
-	break;
+    const short ibh = i + bh;
+    const short jbw = j + bw;
+    const short ibh1 =i - bh + 1;
+    const short jbw1 =j - bw + 1;
+    if (ds != dones[i * dw + j])
+      continue;
+    short found = 0;
+    for (auto [cnt, mask] : piece)
+    {
+      short ok = 1;
+      for (short y = 0; y < bh; ++y)
+      {
+        const short iy = i + y;
+        const short ybw = y * bw;
+        for (short x = 0; x < bw; ++x)
+        {
+          if (done(iy, j + x) && ret(iy, j + x) != mask[ybw + x])
+            ok = 0;
+        }
+      }
+      if (ok)
+      {
+        for (short y = 0; y < bh; ++y)
+        {
+          const short iy = i + y;
+          const short ybw = y * bw;
+
+          for (short x = 0; x < bw; ++x)
+          {
+            const short ybwx = ybw + x;
+            if (!done(iy, j + x))
+            {
+              done(iy, j + x) = donew;
+              if (donew > 1)
+                --donew;
+              ret(iy, j + x) = mask[ybwx];
+            }
+          }
+        }
+        for (short y = max(ibh1, short(0)); y < min(ibh, dh); ++y)
+          for (short x = max(jbw1, short(0)); x < min(jbw, dw); ++x)
+            recalc(y, x);
+        found = 1;
+        break;
       }
     }
     if (!found)
-      return badImg;//ret;
+      return badImg; // ret;
   }
   return ret;
 }
-
-
 
 Image greedyFillBlack(Image_ img, int N = 3) {
   Image ret = core::empty(img.p, img.sz);
@@ -233,8 +259,8 @@ Image greedyFillBlack(Image_ img, int N = 3) {
   done.mask.assign(done.w*done.h,0);
 
   int donew = 1e6;
-  for (int i = 0; i < ret.h; ++i) {
-    for (int j = 0; j < ret.w; ++j) {
+  for (short i = 0; i < ret.h; ++i) {
+    for (short j = 0; j < ret.w; ++j) {
       if (img(i,j)) {
 	ret(i,j) = img(i,j);
 	done(i,j) = donew;
@@ -242,28 +268,30 @@ Image greedyFillBlack(Image_ img, int N = 3) {
     }
   }
 
-  map<vector<int>,int> piece_cnt;
-  vector<int> mask;
-  const int bw = N, bh = N;
-  for (int r = 0; r < 8; r++) {
+  map<vector<short>,short> piece_cnt;
+  vector<short> mask;
+  const short bw = N, bh = N;
+  const short bwbh = bw*bh;
+  for (short r = 0; r < 8; r++) {
     Image rot = rigid(img,r);
-    for (int i = 0; i+bh <= rot.h; ++i) {
-      for (int j = 0; j+bw <= rot.w; ++j) {
-	mask.reserve(bw*bh);
+    for (short i = 0; i+bh <= rot.h; ++i) {
+      for (short j = 0; j+bw <= rot.w; ++j) {
+	mask.reserve(bwbh);
 	mask.resize(0);
-	int ok = 1;
-	for (int y = 0; y < bh; ++y)
-	  for (int x = 0; x < bw; ++x) {
-	    char c = rot(i+y,j+x);
+	short ok = 1;
+	for (short y = 0; y < bh; ++y){
+    const short iy = i+y;
+	  for (short x = 0; x < bw; ++x) {
+	    char c = rot(iy,j+x);
 	    mask.push_back(c);
 	    if (!c) ok = 0;
-	  }
+	  }}
 	if (ok)
 	  ++piece_cnt[mask];
       }
     }
   }
-  vector<pair<int,vector<int>>> piece;
+  vector<pair<short,vector<short>>> piece;
   for (auto&[p,c] : piece_cnt)
     piece.emplace_back(c,p);
 
@@ -283,9 +311,10 @@ Image extend2(Image_ img, Image_ room) {
 
   point d = room.p-img.p;
   int donew = 1e6;
-  for (int i = 0; i < ret.h; ++i) {
-    for (int j = 0; j < ret.w; ++j) {
-      int x = j+d.x, y = i+d.y;
+  for (short i = 0; i < ret.h; ++i) {
+    for (short j = 0; j < ret.w; ++j) {
+      const short x = j+d.x;
+      const short y = i+d.y;
       if (x >= 0 && y >= 0 && x < img.w && y < img.h) {
 	ret(i,j) = img(y,x);
 	done(i,j) = donew;
@@ -293,23 +322,24 @@ Image extend2(Image_ img, Image_ room) {
     }
   }
 
-  map<vector<int>,int> piece_cnt;
-  vector<int> mask;
-  const int bw = 3, bh = 3;
-  for (int r = 0; r < 8; r++) {
+  map<vector<short>,short> piece_cnt;
+  vector<short> mask;
+  const short bw = 3, bh = 3;
+  const short bwbh= bw*bh;
+  for (short r = 0; r < 8; ++r) {
     Image rot = rigid(img,r);
-    for (int i = 0; i+bh <= rot.h; ++i) {
-      for (int j = 0; j+bw <= rot.w; ++j) {
-	mask.reserve(bw*bh);
+    for (short i = 0; i+bh <= rot.h; ++i) {
+      for (short j = 0; j+bw <= rot.w; ++j) {
+	mask.reserve(bwbh);
 	mask.resize(0);
-	for (int y = 0; y < bh; ++y)
-	  for (int x = 0; x < bw; ++x)
+	for (short y = 0; y < bh; ++y)
+	  for (short x = 0; x < bw; ++x)
 	    mask.push_back(rot(i+y,j+x));
 	++piece_cnt[mask];
       }
     }
   }
-  vector<pair<int,vector<int>>> piece;
+  vector<pair<short,vector<short>>> piece;
   for (auto&[p,c] : piece_cnt)
     piece.emplace_back(c,p);
 
