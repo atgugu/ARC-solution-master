@@ -13,8 +13,7 @@ import math
 from os import system
 from glob import glob
 
-call(['make','-j'])
-call(['make','-j','count_tasks'])
+
 
 SUCCESS, TLE, MLE, RTE, RUNNING = 0,1,2,3,-1
 exit_names = ["SUCCESS", "TLE", "MLE", "RTE", "RUNNING"]
@@ -131,7 +130,8 @@ def runAll(cmd_list, threads):
 
 system("mkdir -p output")
 system("mkdir -p store/tmp")
-system("rm -f output/answer*.csv")
+system('make -j gen_profile')
+
 
 if len(sys.argv) == 3:
     l = int(sys.argv[1])
@@ -144,6 +144,23 @@ else:
     #print("Usage: python %s <start_task> <#tasks>"%sys.argv[0])
 
 #TODO: change back to depth 3/4
+depth2 = []
+for i in range(ntasks):
+    depth2.append(Command("./run %d 2"%i))
+stats2 = runAll(depth2, 4)
+
+system('make -j use_profile')
+
+depth22 = []
+for i in range(ntasks):
+    depth22.append(Command("./run %d 22"%i))
+stats22 = runAll(depth22, 4)
+
+depth23 = []
+for i in range(ntasks):
+    depth23.append(Command("./run %d 23"%i))
+stats23 = runAll(depth23, 4)
+
 depth3 = []
 for i in range(ntasks):
     depth3.append(Command("./run %d 3"%i))
@@ -161,11 +178,25 @@ for i in range(ntasks):
     flip3.append(Command("./run %d 33"%i, t*2, m*2, 100))
 runAll(flip3, 4)
 
+os.system('rm src/efficient.cpp')
+os.system('cp fastEfficient/efficient.cpp src/efficient.cpp')
+os.system('make -j save_space')
+
 depth4 = []
 for i in range(ntasks):
     status, t, m = stats3[depth3[i].cmd]
     depth4.append(Command("./run %d 4"%i, t*20, m*20, 2))
-stats4 = runAll(depth4, 2)
+stats4 = runAll(depth4, 1)
+
+depth24 = []
+for i in range(ntasks):
+    depth24.append(Command("./run %d 24"%i))
+stats24 = runAll(depth24, 1)
+
+depth34 = []
+for i in range(ntasks):
+    depth34.append(Command("./run %d 24"%i))
+stats34 = runAll(depth34, 1)
 
 def read(fn):
     f = open(fn)

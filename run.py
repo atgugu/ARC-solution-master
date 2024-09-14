@@ -19,6 +19,8 @@ parallel = 10
 
 os.system('mkdir -p store/version/')
 os.system('mkdir -p store/tmp/')
+os.system('mkdir -p output')
+
 
 def outdated(i):
     fn = 'store/version/%d.txt'%i
@@ -54,8 +56,6 @@ def run(i):
     sys.stdout.flush()
     return i
 
-
-call(['make','-j'])
 scores = []
 with Pool(max_workers=parallel) as executor:
     for i in executor.map(run, run_list):

@@ -44,7 +44,7 @@ Pieces makePieces2(vector<DAG>&dag, vector<pair<Image,Image>> train, vector<poin
   vector<int>&mem = pieces.mem;
   vector<int> depth_mem;
 
-  int dags = dag.size();
+  const int dags = dag.size();
 
   TinyHashMap seen;
   //set<vector<int>> seen;

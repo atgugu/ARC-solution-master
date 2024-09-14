@@ -14,6 +14,7 @@ using namespace std;
 #include "read.hpp"
 #include "normalize.hpp"
 
+
 vector<double> shapeFeatures(Image_ img, int col) {
   double fill_cnt = core::count(img);
   double comp_cnt = core::countComponents(img);
@@ -21,19 +22,19 @@ vector<double> shapeFeatures(Image_ img, int col) {
   vector<double> r =  {fill_cnt, 1./(fill_cnt+1e-3),
 		       comp_cnt, 1./(comp_cnt+1e-3),
 		       int_cnt, 1./(int_cnt+1e-3)};
-  for (int c = 0; c < 10; c++)
+  for (short c = 0; c < 10; ++c)
     r.push_back((c == col)+2);
 
   point center2 = img.p*2+img.sz-point{1,1};
-  for (int a = 0; a < 2; a++) {
-    for (int b = 0; b < 2; b++) {
-      for (int c = 0; c < 2; c++) {
+  for (short a = 0; a < 2; ++a) {
+    for (short b = 0; b < 2; ++b) {
+      for (short c = 0; c < 2; c++) {
 	point dir;
 	if (c) dir = point{a*2-1, b*2-1}*2;
 	else dir = point{(a*2-1)*b, (a*2-1)*!b}*3;
 	int ma = -50;
-	for (int i = 0; i < img.h; ++i)
-	  for (int j = 0; j < img.w; ++j)
+	for (short i = 0; i < img.h; ++i)
+	  for (short j = 0; j < img.w; ++j)
 	    if (img(i,j)) ma = max(ma, (point{i*2,j*2}-center2)*dir);
 	r.push_back(ma+1000);
       }
@@ -44,7 +45,7 @@ vector<double> shapeFeatures(Image_ img, int col) {
 
 struct UniquePicker {
   vector<int> feature_dim;
-  int save;
+  short save;
   UniquePicker(const vector<Image>&ins, int save_) {
     save = save_ | 1;
 
@@ -60,7 +61,7 @@ struct UniquePicker {
       feat.push_back(features);
     }
 
-    int nins = ins.size();
+    const int nins = ins.size();
     vector<vector<int>> done(nins); // inp, cole
     vector<int> cols_left(nins);
     for (int i = 0; i < nins; ++i) {
@@ -75,13 +76,13 @@ struct UniquePicker {
       vector<vector<int>> picki(nins); //inp, feat -> col
 
       int found = 0;
-      for (int inpi = 0; inpi < nins; inpi++) {
+      for (int inpi = 0; inpi < nins; ++inpi) {
 	if (!cols_left[inpi]) continue;
 	found = 1;
 
 	auto&f = feat[inpi];
-	int cols = f.size();
-	for (int fi = 0; fi < nfeats; fi++) {
+	const int cols = f.size();
+	for (int fi = 0; fi < nfeats; ++fi) {
 	  pair<double,int> best = {-1,-1};
 	  for (int i = 0; i < cols; ++i) {
 	    if (done[inpi][i]) continue;
@@ -100,7 +101,7 @@ struct UniquePicker {
       if (!found) break;
 
       pair<double,int> best = {-1,-1};
-      for (int fi = 0; fi < nfeats; fi++) {
+      for (int fi = 0; fi < nfeats; ++fi) {
 	best = max(best, make_pair(score[fi], fi));
 	//cout << score[fi] << '-' << fi << "  ";
       }
@@ -109,7 +110,7 @@ struct UniquePicker {
       int pickf = best.second;
       assert(pickf != -1);
       feature_dim.push_back(pickf);
-      for (int inpi = 0; inpi < nins; inpi++) {
+      for (int inpi = 0; inpi < nins; ++inpi) {
 	if (!cols_left[inpi]) continue;
 	auto&col = picki[inpi];
 	done[inpi][col[pickf]] = 1;
@@ -128,7 +129,7 @@ struct UniquePicker {
 
   int getUnique(const vector<vector<double>>&features, const vector<int>&done, int fi) const {
     pair<double,int> best = {-1,-1};
-    int n = features.size();
+    const int n = features.size();
     for (int i = 0; i < n; ++i) {
       if (done[i]) continue;
       double score = 0;
@@ -169,7 +170,7 @@ struct UniquePicker {
     }
 
     vector<int> order, fdone(features.size());
-    for (int it = 0; it < features.size(); it++) {
+    for (int it = 0; it < features.size(); ++it) {
       int fi = it < feature_dim.size() ? feature_dim[it] : -1;
       int i = getUnique(features, fdone, fi);
       fdone[i] = 1;
@@ -208,17 +209,17 @@ Image remapCols(Image_ img, int cols[10]) {
 
 
 void remapCols(const vector<pair<Image,Image>>&train, vector<Simplifier>&sims) {
-  int orin = 0, orout = 0, andin = ~0, andout = ~0;
+  short orin = 0, orout = 0, andin = ~0, andout = ~0;
   for (auto [in,out] : train) {
-    int maskin = core::colMask(in);
-    int maskout = core::colMask(out);
+    short maskin = core::colMask(in);
+    short maskout = core::colMask(out);
     orin |= maskin;
     andin &= maskin;
     orout |= maskout;
     andout &= maskout;
   }
 
-  int save = andout & ~orin;
+  short save = andout & ~orin;
   if (orout == andout) save = andout;
   save |= andin&~orout;
 
@@ -252,15 +253,15 @@ void remapCols(const vector<pair<Image,Image>>&train, vector<Simplifier>&sims) {
 
 
 Image listCols(Image_ img, int extra) {
-  int mask = core::colMask(img);
-  int w = __builtin_popcount(mask);
+  short mask = core::colMask(img);
+  short w = __builtin_popcount(mask);
   Image ret = core::full({w,2}, 9);
-  int j = 0;
-  for (int i = 0; i < 10; ++i)
+  short j = 0;
+  for (short i = 0; i < 10; ++i)
     if ((mask>>i&1) && !(extra>>i&1))
       ret(0,j++) = i;
   j = 0;
-  for (int i = 0; i < 10; ++i)
+  for (short i = 0; i < 10; ++i)
     if (extra>>i&1)
       ret(1,j++) = i;
   return ret;
@@ -347,6 +348,7 @@ struct OrientationPicker {
 
     {
       double score = 1e3;
+      //#pragma omp parallel for
       for (Image_ in : ins) {
 	score = min(score, max(in.w*1./in.h, in.h*1./in.w));
       }
@@ -355,7 +357,7 @@ struct OrientationPicker {
 	best_score = score;
       }
     }
-
+    #pragma omp parallel for
     for (int c = 0; c < 10; c++) {
       double score = 1e3;
       for (Image_ in : ins) {

@@ -34,8 +34,8 @@ void Visu::add(Image in, Image out) {
 
 
 void plot(const vector<vector<int>>&inp, const char*filename) { //filename = out.ppm
-  int h = inp.size();
-  int w = inp[0].size();
+  const int h = inp.size();
+  const int w = inp[0].size();
 
   int tw = 512/max(w,h);
   int bw = max(1, 10/max(w,h));

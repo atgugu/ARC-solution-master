@@ -745,7 +745,7 @@ Image solveEval(Image in, vector<pair<Image,Image>> train, int taski) {
 
 void evalEvals(int print = 1) {
   vector<Sample> sample = readAll("evaluation", -1);
-  int samples = sample.size();
+  const int samples = sample.size();
   sample = vector<Sample>(sample.begin()+samples-100,sample.end());
 
   Visu visu;

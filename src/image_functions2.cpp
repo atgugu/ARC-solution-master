@@ -618,7 +618,7 @@ vImage gravity(Image_ in, int d) {
 
 
 Image myStack(vImage_ lens, int id) {
-  int n = lens.size();
+  const int n = lens.size();
   if (!n) return badImg;
   vector<pair<int,int>> order(n);
   for (int i = 0; i < n; ++i) {
@@ -633,7 +633,7 @@ Image myStack(vImage_ lens, int id) {
 }
 
 Image stackLine(vImage_ shapes) {
-  int n = shapes.size();
+  const int n = shapes.size();
   if (!n) return badImg;
   else if (n == 1) return shapes[0];
   vector<int> xs(n), ys(n);
@@ -666,7 +666,7 @@ Image stackLine(vImage_ shapes) {
 
 
 Image composeGrowingSlow(vImage_ imgs) {
-  int n = imgs.size();
+  const int n = imgs.size();
   if (!n) return badImg;
 
   vector<pair<int,int>> order(n);
@@ -707,7 +707,7 @@ void radixSort(std::vector<std::pair<int, int>>& arr) {
 }
 
 Image composeGrowing(vImage_ imgs) {
-    int n = imgs.size();
+    const int n = imgs.size();
     if (!n) return badImg;
     if (n == 1) return imgs[0];
 
@@ -776,7 +776,7 @@ Image composeGrowing(vImage_ imgs) {
 Image pickUnique(vImage_ imgs, int id) {
   assert(id == 0);
 
-  int n = imgs.size();
+  const int n = imgs.size();
   if (!n) return badImg;
 
   //Pick the one with the unique color

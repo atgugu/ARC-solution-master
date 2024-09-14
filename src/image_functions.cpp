@@ -358,8 +358,8 @@ Image Fill(Image_ a) {
     auto [r,c] = q.back();
     q.pop_back();
     for (int d = 0; d < 4; ++d) {
-      int nr = r+(d==2)-(d==3);
-      int nc = c+(d==0)-(d==1);
+      const int nr = r+(d==2)-(d==3);
+      const int nc = c+(d==0)-(d==1);
       if (nr >= 0 && nr < a.h && nc >= 0 && nc < a.w && !a(nr,nc) && ret(nr,nc)) {
 	q.emplace_back(nr,nc);
 	ret(nr,nc) = 0;
@@ -479,11 +479,11 @@ Image align(Image_ a, Image_ b) {
 Image replaceCols(Image_ base, Image_ cols) {
   Image ret = base;
   Image done = core::empty(base.p,base.sz);
-  point d = base.p-cols.p;
+  const point d = base.p-cols.p;
   for (int i = 0; i < base.h; ++i) {
     for (int j = 0; j < base.w; ++j) {
       if (!done(i,j) && base(i,j)) {
-	int acol = base(i,j);
+	const int acol = base(i,j);
 	int cnt[10] = {};
 	vector<pair<int,int>> path;
 	function<void(int,int)> dfs = [&](int r, int c) {
@@ -497,9 +497,11 @@ Image replaceCols(Image_ base, Image_ cols) {
 	};
 	dfs(i,j);
 	pair<int,int> maj = {0,0};
+  #pragma omp parallel for
 	for (int c = 1; c < 10; ++c) {
 	  maj = max(maj, make_pair(cnt[c], -c));
 	}
+  #pragma omp parallel for
 	for (auto [r,c] : path)
 	  ret(r,c) = -maj.second;
       }
@@ -592,7 +594,7 @@ Image rigid(Image_ img, int id) {
 Image invert(Image img) {
     if (img.w == 0 || img.h == 0) return img;  // Early return for empty image
 
-    int mask = core::colMask(img);
+    const int mask = core::colMask(img);
     int col = 1;
 
     // Check for the first non-zero bit in the mask
@@ -701,7 +703,7 @@ Image wrap(Image_ line, Image_ area) {
 Image smear(Image_ base, Image_ room, int id) {
   assert(id >= 0 && id < 7);
   const int arr[] = {1,2,4,8,3,12,15};
-  int mask = arr[id];
+  const int mask = arr[id];
 
   point d = room.p-base.p;
 
@@ -834,7 +836,7 @@ Image pickMax(vImage_ v, int id) {
 vImage cut(Image_ img, Image_ a) {
   vector<Image> ret;
   Image done = core::empty(img.p,img.sz);
-  point d = img.p-a.p;
+  const point d = img.p-a.p;
   for (int i = 0; i < img.h; ++i) {
     for (int j = 0; j < img.w; ++j) {
       if (!done(i,j) && !a.safe(i+d.y,j+d.x)) {
@@ -886,18 +888,18 @@ Image compose(vImage_ imgs, int id) {
 }
 
 void getRegular(vector<int>&col) {
-  int colw = col.size();
+  const short colw = col.size();
 
-  for (int w = 1; w < colw; w++) {
-    int s = -1;
+  for (short w = 1; w < colw; w++) {
+    short s = -1;
     if (colw%(w+1) == w) { //No outer border
       s = w;
     } else if (colw%(w+1) == 1) { //Outer border
       s = 0;
     }
     if (s != -1) {
-      int ok = 1;
-      for (int i = 0; i < colw; ++i) {
+      short ok = 1;
+      for (short i = 0; i < colw; ++i) {
 	if (col[i] != (i%(w+1) == s)) {
 	  ok = 0;
 	  break;
@@ -968,7 +970,7 @@ Image cutIndex(Image_ a, Image_ b, int ind) {
 
 
 vImage pickMaxes(vImage_ v, function<int(Image_)> f, int invert = 0) {
-  int n = v.size();
+  const int n = v.size();
   if (!n) return {};
   vector<int> score(n);
   int ma = -1e9;
@@ -1010,7 +1012,6 @@ Image heuristicCut(Image_ img) {
 
     int mask = core::colMask(img);
     Image done = core::empty(img.p, img.sz);
-
     for (int col = 0; col < 10; col++) {
         if ((mask >> col & 1) == 0) continue;
         fill(done.mask.begin(), done.mask.end(), 0);
