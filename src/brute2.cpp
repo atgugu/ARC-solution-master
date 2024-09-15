@@ -146,13 +146,13 @@ Functions3 initFuncs3(const vector<point>&sizes) {
   // Unary
 
   //invert is filterCol(img, 0)
-  for (int c = 0; c < 10; c++)
+  for (int c = 0; c < 10;++c)
     funcs.add("filterCol "+to_string(c), 10, [c](Image_ img) {return filterCol(img, c);});
-  for (int c = 1; c < 10; c++)
+  for (int c = 1; c < 10;++c)
     funcs.add("eraseCol "+to_string(c), 10,
 	      [c](Image_ img) {return eraseCol(img, c);});
 
-  for (int c = 1; c < 10; c++)
+  for (int c = 1; c < 10;++c)
     funcs.add("colShape "+to_string(c), 10,
 	      [c](Image_ img) {return colShape(img, c);}, 0);
 
@@ -463,6 +463,7 @@ void DAG::applyFunc(string name, bool vec) {
   int fi = funcs.findfi(name);
 
   const int start_nodes = tiny_node.size();
+
   for (int curi = 0; curi < start_nodes; ++curi) {
     if (tiny_node[curi].isvec == vec) applyFunc(curi, fi);
   }
@@ -512,6 +513,8 @@ void DAG::buildBinary() {
       memi[fi] = curi;
     }
   }
+  //ham
+  //#pragma omp parallel for
   for (int fa : funcs.listed) {
     if (!active[fa]) continue;
     for (int fb : funcs.listed) {
@@ -539,10 +542,10 @@ vector<DAG> brutePieces2(Image_ test_in, const vector<pair<Image,Image>>&train, 
   vector<DAG> dag(trainsize+1);
 
   int all_train_out_mask = 0, and_train_out_mask = ~0;
-  for (int ti = 0; ti < trainsize; ti++)
+  for (int ti = 0; ti < trainsize; ++ti)
     and_train_out_mask &= core::colMask(train[ti].second);
 
-  for (int ti = 0; ti <= trainsize; ti++) {
+  for (int ti = 0; ti <= trainsize; ++ti) {
     vector<point> sizes;
     if (ti < trainsize)
       sizes.push_back(train[ti].first.sz);
@@ -569,7 +572,7 @@ vector<DAG> brutePieces2(Image_ test_in, const vector<pair<Image,Image>>&train, 
     if (sizes.size() > 1) {
       vector<pair<string,int>> toapply;
       toapply.emplace_back("toOrigin",0);
-      for (int c = 1; c <= 5; c++)
+      for (int c = 1; c <= 5;++c)
 	if (and_train_out_mask>>c&1)
 	  toapply.emplace_back("colShape "+to_string(c),1);
       toapply.emplace_back("embed 1",2);
@@ -586,7 +589,7 @@ vector<DAG> brutePieces2(Image_ test_in, const vector<pair<Image,Image>>&train, 
 	mask = all_train_out_mask;
       }
 
-      for (int c = 1; c <= 5; c++)
+      for (int c = 1; c <= 5;++c)
 	if (and_train_out_mask>>c&1)
 	dag[ti].applyFunc("colShape "+to_string(c), 0);
       if (print) cout << now()-start_time << endl;

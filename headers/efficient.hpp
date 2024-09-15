@@ -118,7 +118,7 @@ struct TinyNodeBank {
   State getState(int ni) {
     State ret;
     ret.vimg.resize(node[ni].imgs);
-    for (int i = 0; i < node[ni].imgs; i++)
+    for (int i = 0; i < node[ni].imgs;++i)
       ret.vimg[i] = imgs[node[ni].vimg[i]].decompress(bank);
     ret.depth = node[ni].depth;
     ret.isvec = node[ni].isvec;
@@ -131,7 +131,7 @@ struct TinyNodeBank {
 
     v.imgs = min((int)state.vimg.size(),100000);
     v.vimg = new int[v.imgs];
-    for (int i = 0; i < v.imgs; i++) {
+    for (int i = 0; i < v.imgs;++i) {
       v.vimg[i] = imgs.size();
       imgs.emplace_back(state.vimg[i], bank);
     }

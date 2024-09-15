@@ -82,9 +82,11 @@ inline bool operator<(Image_ a, Image_ b) {
 
 using ll = long long;
 using ull = unsigned long long;
-inline ull hashImage(Image_ img) {
-  const ull base = 137;
-  ull r = 1543;
+using ul = unsigned long;
+
+inline ul hashImage(Image_ img) {
+  const ul base = 137;
+  ul r = 1543;
   r = r*base+img.w;
   r = r*base+img.h;
   r = r*base+img.x;
@@ -99,7 +101,7 @@ inline ull hashImage(Image_ img) {
 struct Piece {
   vector<Image> imgs;
   double node_prob;
-  int keepi, knowi;
+  short keepi, knowi;
 };
 
 const Image badImg = {{0,0},{0,0},{}};

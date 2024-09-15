@@ -91,7 +91,7 @@ vector<Candidate> greedyCompose2(Pieces& pieces, vector<Image>& target, vector<p
         init.reserve(out_sizes.size());
         sz.reserve(out_sizes.size());
         const unsigned short dagSize = pieces.dag.size();
-        for (size_t i = 0; i < dagSize; i++) {
+        for (size_t i = 0; i < dagSize;++i) {
             if (i < targetSize) assert(out_sizes[i] == target[i].sz);
             init.push_back(core::full(out_sizes[i], 10));
             sz.push_back(init.back().mask.size());
@@ -166,7 +166,7 @@ vector<Candidate> greedyCompose2(Pieces& pieces, vector<Image>& target, vector<p
                 ull full = (k == 2) ? ~0ULL : 0;
                 bool ok = true;
 
-                for (int j = 0; j < M64; j++) {
+                for (int j = 0; j < M64;++j) {
                     ull active = (active_data[j] ^ flip) | full;
                     if (~cur.data[j] & bad_data[j] & active) {
                         ok = false;
@@ -287,7 +287,7 @@ vector<Candidate> greedyCompose2(Pieces& pieces, vector<Image>& target, vector<p
                                 greedy_fill_mem[h] = greedyFillBlack(img);
                             }
                             img = greedy_fill_mem[h];
-                            if (img.w * img.h <= 0) ok = 0;
+                            if (img.w * img.h <= 0) {ok = 0; break;}
                         }
                         if (ok) rets.emplace_back(cp, cnt_pieces + 1, sum_depth, max_depth);
                     }
@@ -348,9 +348,15 @@ vector<Candidate> evaluateCands(const vector<Candidate>&cands, vector<pair<Image
 
     Image answer = imgs.back();
     if (answer.w > 30 || answer.h > 30 || answer.w*answer.h == 0) goods = 0;
-    for (int i = 0; i < answer.h; ++i)
+    //ham
+    //#pragma omp parallel for
+    for (int i = 0; i < answer.h; ++i){
       for (int j = 0; j < answer.w; ++j)
-	if (answer(i,j) < 0 || answer(i,j) >= 10) goods = 0;
+	if (answer(i,j) < 0 || answer(i,j) >= 10) {
+        goods = 0; break;
+    }
+    if(goods == 0) break;
+    }
 
     if (goods)
       ret.emplace_back(imgs, score);

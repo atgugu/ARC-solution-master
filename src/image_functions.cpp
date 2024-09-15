@@ -283,8 +283,8 @@ Image outerProductIS(Image_ a, Image_ b) {
   Image ret = core::empty(rpos, {a.w*b.w, a.h*b.h});
   for (int i = 0; i < a.h; ++i)
     for (int j = 0; j < a.w; ++j)
-      for (int k = 0; k < b.h; k++)
-	for (int l = 0; l < b.w; l++)
+      for (int k = 0; k < b.h; ++k)
+	for (int l = 0; l < b.w; ++l)
 	  ret(i*b.h+k, j*b.w+l) = a(i,j) * !!b(k,l);
   return ret;
 }
@@ -867,7 +867,7 @@ vImage cut(Image_ img, Image_ a) {
 vImage splitCols(Image_ img, int include0) { //include0 = 0
   vector<Image> ret;
   int mask = core::colMask(img);
-  for (int c = !include0; c < 10; c++) {
+  for (int c = !include0; c < 10;++c) {
     if (mask>>c&1) {
       Image s = img;
       for (int i = 0; i < s.h; ++i)
@@ -890,7 +890,7 @@ Image compose(vImage_ imgs, int id) {
 void getRegular(vector<int>&col) {
   const short colw = col.size();
 
-  for (short w = 1; w < colw; w++) {
+  for (short w = 1; w < colw; ++w) {
     short s = -1;
     if (colw%(w+1) == w) { //No outer border
       s = w;
@@ -1030,8 +1030,8 @@ Image heuristicCut(Image_ img) {
         int top = 0, bot = 0, left = 0, right = 0;
 
         // Check edges
-        for (int i = 0; i < img.h; i++) {
-            for (int j = 0; j < img.w; j++) {
+        for (int i = 0; i < img.h;++i) {
+            for (int j = 0; j < img.w;++j) {
                 if (img(i, j) == col) {
                     if (i == 0) top = 1;
                     if (j == 0) left = 1;
@@ -1050,8 +1050,8 @@ Image heuristicCut(Image_ img) {
         int score = 1e9, components = 0, nocontained = 1;
 
         // Iterate through the image and apply DFS to unmarked cells
-        for (int i = 0; i < img.h; i++) {
-            for (int j = 0; j < img.w; j++) {
+        for (int i = 0; i < img.h;++i) {
+            for (int j = 0; j < img.w;++j) {
                 int cnt = 0, contained = 1;
                 if (!done(i, j) && img(i, j) != col) {
                     function<void(int, int)> dfs = [&](int r, int c) {

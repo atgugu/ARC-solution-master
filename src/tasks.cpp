@@ -339,7 +339,7 @@ void evalTasks() {
   int corrects = 0;
   int place_count[11] = {};
   #pragma omp parallel for
-  for (int si = 0; si < sample.size(); si++) {
+  for (int si = 0; si < sample.size(); ++si) {
     Sample&s = sample[si];
     {
       vector<Simplifier> sims;

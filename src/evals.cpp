@@ -502,7 +502,7 @@ Image solveEval(Image in, vector<pair<Image,Image>> train, int taski) {
 
   } else if (taski == 71) {
     Image to = colShape(Square(4),4);
-    for (int c = 1; c < 10; c++) {
+    for (int c = 1; c < 10;++c) {
       in = replaceTemplate(in,colShape(to,c),to, 1);
     }
     return in;
@@ -567,7 +567,7 @@ Image solveEval(Image in, vector<pair<Image,Image>> train, int taski) {
     Image out = in;
     for (Image_ img : cut(in)) {
       map<Image,int> cnt;
-      for (int d = 0; d < 4; d++) {
+      for (int d = 0; d < 4; ++d) {
 	int nx = img.x+(W+1)*((d==0)-(d==1));
 	int ny = img.y+(W+1)*((d==2)-(d==3));
 
@@ -751,7 +751,7 @@ void evalEvals(int print = 1) {
   Visu visu;
 
   int corrects = 0;
-  for (int si = 0; si < sample.size(); si++) {
+  for (int si = 0; si < sample.size(); ++si) {
     Sample&s = sample[si];
     visu.next(s.id);
     int ok = 1;

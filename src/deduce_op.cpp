@@ -52,12 +52,13 @@ pair<Image,Image> iOuterProductIS(Image_ img, int w, int h) {
   const unsigned short imgww = img.w/w;
   Image big = core::full({imgww,imghh},-1);
   Image small = core::full({w,h},-1);
-  for (unsigned ii = 0; ii < imghh; ++ii) {
+
+  for (unsigned short ii = 0; ii < imghh; ++ii) {
     const unsigned short iih = ii*h;
-    for (unsigned jj = 0; jj < imgww; ++jj) {
+    for (unsigned short jj = 0; jj < imgww; ++jj) {
       const unsigned short jjw = jj*w;
       unsigned short mask = 0;
-      for (unsigned i = 0; i < h; ++i){
+      for (unsigned short i = 0; i < h; ++i){
         const unsigned short iihi = iih+i;
 	for (unsigned short j = 0; j < w; ++j)
 	  mask |= 1<<img(iihi,jjw+j);}
@@ -66,7 +67,7 @@ pair<Image,Image> iOuterProductIS(Image_ img, int w, int h) {
       big(ii,jj) = 31-__builtin_clz(mask);
       if (big(ii,jj)) {
 	for (unsigned short i = 0; i < h; ++i) {
-    const unsigned iihi =iih+i;
+    const unsigned short iihi =iih+i;
 	  for (unsigned short j = 0; j < w; ++j) {
 	    char& a = small(i,j);
 	    const char b = img(iihi,jjw+j) > 0;
@@ -90,7 +91,7 @@ deduceOuterProduct::deduceOuterProduct(vector<pair<Image,Image>> train) {
     for (int k : {0,1}) {
       vector<Image> imgs;
       int allequal = 1;
-      for (int ti = 0; ti < pa.size(); ti++) {
+      for (int ti = 0; ti < pa.size(); ++ti) {
 	Image img = k ? pa[ti].second : pa[ti].first;
 	if (img.w*img.h <= 0) return 1e9;
 
@@ -98,7 +99,8 @@ deduceOuterProduct::deduceOuterProduct(vector<pair<Image,Image>> train) {
 	if (imgs[0] != imgs.back()) allequal = 0;
       }
       if (allequal && imgs.size() > 1) continue;
-
+      //ham
+      //#pragma omp parallel for
       for (Image_ img : imgs) {
 	const short cols = __builtin_popcount(core::colMask(img)&~1);
 	if (cols <= 1 && core::isRectangle(img)) {
@@ -157,15 +159,17 @@ deduceOuterProduct::deduceOuterProduct(vector<pair<Image,Image>> train) {
     }
   }
   assert(rec_funci != -1);
-  const size_t trainsize = train.size();
+  const unsigned short trainsize = train.size();
   for (int k : {0,1}) {
     auto f = k ? iOuterProductSI : iOuterProductIS;
     vector<double> best_at(trainsize, 1e9);
     vector<pair<Image,Image>> best_single(train.size(), {badImg,badImg});
-    for (int ti = 0; ti < trainsize; ++ti) {
+    //ham
+    //#pragma omp parallel for
+    for (unsigned short ti = 0; ti < trainsize; ++ti) {
       Image target = train[ti].second;
-      for (int h = 1; h <= target.h; ++h) {
-	for (int w = 1; w <= target.w; ++w) {
+      for (unsigned short h = 1; h <= target.h; ++h) {
+	for (unsigned short w = 1; w <= target.w; ++w) {
 	  const auto is = f(target, w, h);
 	  const double entropy = score({is},k);
 	  if (entropy < best_at[ti]) {
@@ -185,6 +189,8 @@ deduceOuterProduct::deduceOuterProduct(vector<pair<Image,Image>> train) {
 
   assert(rec_funci != -1);
   assert(train_targets.size() == trainsize);
+  //ham
+  //#pragma omp parallel for
   for (int ti = 0; ti < trainsize; ++ti) {
     Image a, b;
     tie(a,b) = train_targets[ti];

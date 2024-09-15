@@ -11,21 +11,21 @@ using namespace std;
 vImage splitAll(Image_ img) {
   vector<Image> ret;
   Image done = core::empty(img.p,img.sz);
-  for (int i = 0; i < img.h; ++i) {
-    for (int j = 0; j < img.w; ++j) {
+  for (short i = 0; i < img.h; ++i) {
+    for (short j = 0; j < img.w; ++j) {
       if (!done(i,j)) {
 	Image toadd = core::empty(img.p,img.sz);
-	function<void(int,int,int)> dfs = [&](int r, int c, int col) {
+	function<void(short,short,short)> dfs = [&](short r, short c, short col) {
 	  if (r < 0 || r >= img.h || c < 0 || c >= img.w || img(r,c) != col || done(r,c)) return;
 	  toadd(r,c) = img(r,c)+1;
 	  done(r,c) = 1;
-	  for (int d = 0; d < 4; ++d)
+	  for (short d = 0; d < 4; ++d)
 	    dfs(r+(d==0)-(d==1),c+(d==2)-(d==3),col);
 	};
 	dfs(i,j,img(i,j));
 	toadd = compress(toadd);
-	for (int i = 0; i < toadd.h; ++i) {
-	  for (int j = 0; j < toadd.w; ++j) {
+	for (short i = 0; i < toadd.h; ++i) {
+	  for (short j = 0; j < toadd.w; ++j) {
 	    toadd(i,j) = max(0, toadd(i,j)-1);
 	  }
 	}
@@ -41,8 +41,8 @@ vImage splitAll(Image_ img) {
 
 
 Image eraseCol(Image img, int col) {
-  for (int i = 0; i < img.h; ++i)
-    for (int j = 0; j < img.w; ++j)
+  for (short i = 0; i < img.h; ++i)
+    for (short j = 0; j < img.w; ++j)
       if (img(i,j) == col) img(i,j) = 0;
   return img;
 }
@@ -51,16 +51,16 @@ Image eraseCol(Image img, int col) {
 // Looks for 4 corners
 vImage insideMarked(Image_ in) {
   vector<Image> ret;
-  for (int i = 0; i+1 < in.h; ++i) {
-    for (int j = 0; j+1 < in.w; ++j) {
-      for (int h = 1; i+h+1 < in.h; h++) {
-	for (int w = 1; j+w+1 < in.w; w++) {
+  for (short i = 0; i+1 < in.h; ++i) {
+    for (short j = 0; j+1 < in.w; ++j) {
+      for (short h = 1; i+h+1 < in.h; ++h) {
+	for (short w = 1; j+w+1 < in.w; ++w) {
 	  char col = in(i,j);
 	  if (!col) continue;
-	  int ok = 1;
-	  for (int k = 0; k < 4; k++) {
-	    int x = j+k%2*w, y = i+k/2*h;
-	    for (int d = 0; d < 4; ++d) {
+	  short ok = 1;
+	  for (short k = 0; k < 4; ++k) {
+	    short x = j+k%2*w, y = i+k/2*h;
+	    for (short d = 0; d < 4; ++d) {
 	      if ((d != 3-k) == (in(y+d/2,x+d%2) != col)) {
 		ok = 0;
 		goto fail;
@@ -84,14 +84,15 @@ Image makeBorder(Image_ img, int bcol = 1) {
   for (int i = 0; i < ret.h; ++i) {
     for (int j = 0; j < ret.w; ++j) {
       if (img(i,j) == 0) {
-	int ok = 0;
+	int ok = 1;
 	for (int ni : {i-1,i,i+1}) {
 	  for (int nj : {j-1,j,j+1}) {
-	    if (img.safe(ni,nj)) {
-	      ok = 1;
+	    if (img.safe(ni,nj) == 0) {
+	      ok = 0;
 	      break;
 	    }
 	  }
+    if(ok == 0) break;
 	}
 	if (ok) {
 	  ret(i,j) = bcol;
@@ -214,6 +215,7 @@ Image greedyFill(Image &ret, vector<pair<short, vector<short>>> &piece, Spec &do
       {
         const short iy = i + y;
         const short ybw = y * bw;
+        //#pragma omp parallel for
         for (short x = 0; x < bw; ++x)
         {
           if (done(iy, j + x) && ret(iy, j + x) != mask[ybw + x])
@@ -222,6 +224,8 @@ Image greedyFill(Image &ret, vector<pair<short, vector<short>>> &piece, Spec &do
       }
       if (ok)
       {
+        //ham
+        //#pragma omp parallel for
         for (short y = 0; y < bh; ++y)
         {
           const short iy = i + y;
@@ -259,6 +263,7 @@ Image greedyFillBlack(Image_ img, int N = 3) {
   done.mask.assign(done.w*done.h,0);
 
   int donew = 1e6;
+  //#pragma omp parallel for
   for (short i = 0; i < ret.h; ++i) {
     for (short j = 0; j < ret.w; ++j) {
       if (img(i,j)) {
@@ -271,12 +276,12 @@ Image greedyFillBlack(Image_ img, int N = 3) {
   map<vector<short>,short> piece_cnt;
   vector<short> mask;
   const short bw = N, bh = N;
-  const short bwbh = bw*bh;
-  for (short r = 0; r < 8; r++) {
+  mask.reserve(bw*bh);
+
+  for (short r = 0; r < 8; ++r) {
     Image rot = rigid(img,r);
     for (short i = 0; i+bh <= rot.h; ++i) {
       for (short j = 0; j+bw <= rot.w; ++j) {
-	mask.reserve(bwbh);
 	mask.resize(0);
 	short ok = 1;
 	for (short y = 0; y < bh; ++y){
@@ -311,6 +316,8 @@ Image extend2(Image_ img, Image_ room) {
 
   point d = room.p-img.p;
   int donew = 1e6;
+  //ham
+  //#pragma omp parallel for
   for (short i = 0; i < ret.h; ++i) {
     for (short j = 0; j < ret.w; ++j) {
       const short x = j+d.x;
@@ -325,12 +332,13 @@ Image extend2(Image_ img, Image_ room) {
   map<vector<short>,short> piece_cnt;
   vector<short> mask;
   const short bw = 3, bh = 3;
-  const short bwbh= bw*bh;
+  mask.reserve(bw*bh);
+  //ham
+  //#pragma omp parallel for
   for (short r = 0; r < 8; ++r) {
     Image rot = rigid(img,r);
     for (short i = 0; i+bh <= rot.h; ++i) {
       for (short j = 0; j+bw <= rot.w; ++j) {
-	mask.reserve(bwbh);
 	mask.resize(0);
 	for (short y = 0; y < bh; ++y)
 	  for (short x = 0; x < bw; ++x)
@@ -354,12 +362,12 @@ Image connect(Image_ img, int id) {
 
   //Horizontal
   if (id == 0 || id == 2) {
-    for (int i = 0; i < img.h; ++i) {
-      int last = -1, lastc = -1;
-      for (int j = 0; j < img.w; ++j) {
+    for (short i = 0; i < img.h; ++i) {
+      short last = -1, lastc = -1;
+      for (short j = 0; j < img.w; ++j) {
 	if (img(i,j)) {
 	  if (img(i,j) == lastc) {
-	    for (int k = last+1; k < j; k++)
+	    for (short k = last+1; k < j; ++k)
 	      ret(i,k) = lastc;
 	  }
 	  lastc = img(i,j);
@@ -370,13 +378,15 @@ Image connect(Image_ img, int id) {
   }
 
   //Vertical
+
   if (id == 1 || id == 2) {
-    for (int j = 0; j < img.w; ++j) {
-      int last = -1, lastc = -1;
-      for (int i = 0; i < img.h; ++i) {
+
+    for (short j = 0; j < img.w; ++j) {
+      short last = -1, lastc = -1;
+      for (short i = 0; i < img.h; ++i) {
 	if (img(i,j)) {
 	  if (img(i,j) == lastc) {
-	    for (int k = last+1; k < i; ++k)
+	    for (short k = last+1; k < i; ++k)
 	      ret(k,j) = lastc;
 	  }
 	  lastc = img(i,j);
@@ -395,24 +405,30 @@ Image replaceTemplate(Image_ in, Image_ need_, Image_ marked_, int overlapping =
 
   const int rots = rigids ? 8 : 1;
   vector<Image> needr(rots), markedr(rots);
-  for (int r = 0; r < rots; ++r) {
+  //ham
+  //#pragma omp parallel for
+  for (short r = 0; r < rots; ++r) {
     needr[r] = rigid(need_,r);
     markedr[r] = rigid(marked_,r);
   }
 
   Image ret = in;
-  for (int r = 0; r < rots; r++) {
+  //ham
+  //#pragma omp parallel for
+  for (short r = 0; r < rots; ++r) {
     Image_ need = needr[r];
     Image_ marked = markedr[r];
 
     for (int i = 0; i+need.h <= ret.h; ++i) {
       for (int j = 0; j+need.w <= ret.w; ++j) {
 	int ok = 1;
+  //#pragma omp parallel for
 	for (int y = 0; y < need.h; ++y)
 	  for (int x = 0; x < need.w; ++x)
 	    if ((overlapping ? in : ret)(i+y,j+x) != need(y,x)) ok = 0;
 
 	if (overlapping == 2) {
+    //#pragma omp parallel for
 	  for (int y = -1; y <= need.h; ++y) {
 	    for (int x = -1; x <= need.w; ++x) {
 	      if (x >= 0 && y >= 0 && x < need.w && y < need.h) continue;
@@ -443,26 +459,29 @@ Image swapTemplate(Image_ in, Image_ a, Image_ b, int rigids = 0) {
 
   const int rots = rigids ? 8 : 1;
   vector<Image> ar(rots), br(rots);
-  for (int r = 0; r < rots; r++) {
+  for (int r = 0; r < rots; ++r) {
     ar[r] = rigid(a,r);
     br[r] = rigid(b,r);
   }
   Image done = hull0(in), ret = in;
-  for (int k : {0,1}) {
-    for (int r = 0; r < rots; r++) {
+  //ham
+  //#pragma omp parallel for
+  for (short k : {0,1}) {
+    //#pragma omp parallel for
+    for (short r = 0; r < rots; ++r) {
       Image_ need = k ? ar[r] : br[r];
       Image_ to   = k ? br[r] : ar[r];
 
-      for (int i = 0; i+need.h <= ret.h; ++i) {
-	for (int j = 0; j+need.w <= ret.w; ++j) {
+      for (short i = 0; i+need.h <= ret.h; ++i) {
+	for (short j = 0; j+need.w <= ret.w; ++j) {
 
 	  int ok = 1;
-	  for (int y = 0; y < need.h; ++y)
-	    for (int x = 0; x < need.w; ++x)
-	      if (done(i+y,j+x) || ret(i+y,j+x) != need(y,x)) ok = 0;
+	  for (short y = 0; y < need.h; ++y)
+	    for (short x = 0; x < need.w; ++x)
+	      if (done(i+y,j+x) || ret(i+y,j+x) != need(y,x)) { ok = 0; break; } //ham
 	  if (ok) {
-	    for (int y = 0; y < need.h; ++y) {
-	      for (int x = 0; x < need.w; ++x) {
+	    for (short y = 0; y < need.h; ++y) {
+	      for (short x = 0; x < need.w; ++x) {
 		ret(i+y,j+x) = to(y,x);
 		done(i+y,j+x) = 1;
 	      }

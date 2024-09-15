@@ -44,8 +44,9 @@ void TinyChildren::add(int fi, int to) {
     dense = new int[cap];
     fill_n(dense, cap, None);
     dense[fi] = to;
-
-    for (int i = 0; i < sz; ++i) {
+    // ham
+    //#pragma omp parallel for
+    for (short i = 0; i < sz; ++i) {
       auto [fi, to] = old[i];
       assert(fi >= 0);
       assert(fi < cap);
@@ -136,7 +137,7 @@ TinyImage::TinyImage(Image_ img, TinyBank&bank) {
   }
 
   priority_queue<pair<short,short>> pq;
-  for (short d = 0; d < 10; d++) {
+  for (short d = 0; d < 10; ++d) {
     if (freq[d]) {
       pq.emplace(-freq[d], -d);
       //cout << d << ": " << freq[d] << endl;
@@ -161,7 +162,7 @@ TinyImage::TinyImage(Image_ img, TinyBank&bank) {
   }
   short code[10] = {}, codelen[10] = {};
   short path[10] = {}, pathlen[10] = {};
-  for (short p = 0; p < nodes; p++) {
+  for (short p = 0; p < nodes; ++p) {
     for (short k : {0,1}) {
       short child = tree[p]>>k*4&15;
       short newpath = path[p] | k<<pathlen[p];
@@ -176,7 +177,7 @@ TinyImage::TinyImage(Image_ img, TinyBank&bank) {
     }
     //cout << p << ": " << (int)tree[p][0] << ' ' << (int)tree[p][1] << endl;
   }
-  /*for (int d = 0; d < 10; d++) {
+  /*for (int d = 0; d < 10; ++d) {
     cout << d << ": " << bitset<4>(code[d]) << ' ' << codelen[d] << endl;
     }*/
 
@@ -191,10 +192,10 @@ TinyImage::TinyImage(Image_ img, TinyBank&bank) {
     //for (int i = 0; i < codelen[c]; ++i)
     //bank.set(memstart+ sz++, code[c]>>i&1);
   }
-  /*for (int it = 0; it < 10; it++)
+  /*for (int it = 0; it < 10;  ++it)
     cout << (int)img.mask[it] << ' ';
     cout << endl;
-    for (int it = 0; it < 20; it++)
+    for (int it = 0; it < 20;  ++it)
     cout << bank.get(memi+it);
     cout << endl;*/
   bank.curi = memstart+sz;

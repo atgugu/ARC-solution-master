@@ -10,19 +10,19 @@ using namespace std;
 #include "core_functions.hpp"
 
 namespace core {
-  int colMask(Image_ img) {
+  unsigned short colMask(Image_ img) {
     unsigned short mask = 0;
     for (unsigned short i = 0; i < img.h; ++i)
       for (unsigned short j = 0; j < img.w; ++j)
 	mask |= 1<<img(i,j);
     return mask;
   }
-  int countCols(Image_ img, int include0) {//include0 = 0
+  unsigned short countCols(Image_ img, int include0) {//include0 = 0
     unsigned short mask = colMask(img);
     if (!include0) mask = mask&~1;
     return __builtin_popcount(mask);
   }
-  int count(Image_ img) {
+  unsigned short count(Image_ img) {
     unsigned short ans = 0;
     for (unsigned short i = 0; i < img.h; ++i)
       for (unsigned short j = 0; j < img.w; ++j)
@@ -60,18 +60,18 @@ namespace core {
     return count(a) == a.w*a.h;
   }
 
-  void countComponents_dfs(Image&img, int r, int c) {
+  void countComponents_dfs(Image&img, unsigned short r, unsigned short c) {
     img(r,c) = 0;
-    for (int nr = r-1; nr <= r+1; ++nr)
-      for (int nc = c-1; nc <= c+1; ++nc)
+    for (unsigned short nr = r-1; nr <= r+1; ++nr)
+      for (unsigned short nc = c-1; nc <= c+1; ++nc)
 	if (nr >= 0 && nr < img.h && nc >= 0 && nc < img.w && img(nr,nc))
 	  countComponents_dfs(img,nr,nc);
   }
 
-  int countComponents(Image img) {
-    int ans = 0;
-    for (int i = 0; i < img.h; ++i) {
-      for (int j = 0; j < img.w; ++j) {
+  unsigned short countComponents(Image img) {
+    unsigned short  ans = 0;
+    for (unsigned short i = 0; i < img.h; ++i) {
+      for (unsigned short j = 0; j < img.w; ++j) {
 	if (img(i,j)) {
 	  countComponents_dfs(img,i,j);
 	  /*function<void(int,int)> dfs = [&](int r, int c) {
@@ -82,7 +82,7 @@ namespace core {
 		dfs(nr,nc);
 	  };
 	  dfs(i,j);*/
-	  ans++;
+	  ++ans;
 	}
       }
     }

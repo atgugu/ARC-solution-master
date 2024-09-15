@@ -48,9 +48,9 @@ void plot(const vector<vector<int>>&inp, const char*filename) { //filename = out
   vector<unsigned char> output(W*H*3, 0x60);
   for (int i = 0; i < h; ++i) {
     for (int j = 0; j < w; ++j) {
-      for (int k = 0; k < tw; k++) {
-	for (int l = 0; l < tw; l++) {
-	  for (int c = 0; c < 3; c++) {
+      for (int k = 0; k < tw; ++k) {
+	for (int l = 0; l < tw; ++l) {
+	  for (int c = 0; c < 3;++c) {
 	    output[((i*(tw+bw)+bw+k)*W+
 		    (j*(tw+bw)+bw+l))*3 + c] = cols[inp[i][j]] >> (2-c)*8 & 255;
 	  }

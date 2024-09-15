@@ -173,7 +173,7 @@ vector<point> bruteSize(Image_ test_in, vector<pair<Image,Image>> train) {
   for (Piece3&p : pieces.piece) {
     vector<point> sz;
     int ok = 1;
-    int*ind = &pieces.mem[p.memi];
+    const int*ind = &pieces.mem[p.memi];
     for (int ti = 0; ti <= train.size(); ++ti) {
       if (pieces.dag[ti].tiny_node[ind[ti]].isvec) ok = 0;
       else {

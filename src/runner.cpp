@@ -38,7 +38,8 @@ string red(string s) {
 }
 
 
-void writeVerdict(int si, string sid, int verdict) {
+void writeVerdict(int si, string sid, short verdict) {
+  
   printf("Task #%2d (%s): ", si, sid.c_str());
   switch (verdict) {
   case 3: cout << green("Correct") << endl; break;
@@ -47,6 +48,7 @@ void writeVerdict(int si, string sid, int verdict) {
   case 0: cout << red("Nothing") << endl; break;
   default: assert(0);
   }
+  
 }
 
 
@@ -72,7 +74,7 @@ void run(int only_sid = -1, int arg = -1) {
 
     // Read all samples
     vector<Sample> sample = readAll(sample_dir, samples);
-    vector<int> verdict(sample.size());
+    vector<short> verdict(sample.size());
     Visu visu;
 
     // Prepare loaders and counters
@@ -84,7 +86,16 @@ void run(int only_sid = -1, int arg = -1) {
     int scores[4] = {};
     int skips = 0;
 
+    unsigned train_size_max = 0;
+    for (const auto& sam: sample) {
+        if(sam.train.size() > train_size_max) train_size_max = sam.train.size();
+    }
 
+    vector<pair<Image, Image>> train;
+    train.reserve(train_size_max);
+    vector<point> out_sizes;
+    vector<Candidate> cands;
+    vector<Candidate> answers;
     for (int si = 0; si < sample.size(); ++si) {
         if (only_sid != -1 && si != only_sid) continue;
 
@@ -96,8 +107,7 @@ void run(int only_sid = -1, int arg = -1) {
 
         // Normalize sample with or without normalization
         Simplifier sim = no_norm ? normalizeDummy(s.train) : normalizeCols(s.train);
-        vector<pair<Image, Image>> train;
-        train.reserve(s.train.size());
+        train.clear();
 
         // Process training data
         for (auto& [in, out] : s.train) {
@@ -108,7 +118,7 @@ void run(int only_sid = -1, int arg = -1) {
         if (add_flips) {
             size_t initial_size = train.size();
             train.reserve(initial_size * 2);
-            for (size_t i = 0; i < initial_size; i++) {
+            for (size_t i = 0; i < initial_size;++i) {
                 auto [rin, rout] = sim(train[i].first, train[i].second);
                 train.push_back({rigid(rin, add_flip_id), rigid(rout, add_flip_id)});
             }
@@ -120,7 +130,6 @@ void run(int only_sid = -1, int arg = -1) {
         {
             int insumsz = 0, outsumsz = 0, macols = 0;
             int maxside = 0, maxarea = 0;
-            //#pragma omp parallel for
             for (auto& [in, out] : s.train) {
                 maxside = max({maxside, in.w, in.h, out.w, out.h});
                 maxarea = max({maxarea, in.w * in.h, out.w * out.h});
@@ -138,7 +147,8 @@ void run(int only_sid = -1, int arg = -1) {
         }
 
         // Size calculation for brute force methods
-        vector<point> out_sizes = bruteSize(test_in, train);
+        out_sizes.clear();
+        out_sizes = bruteSize(test_in, train);
 
         // Generate candidate pieces
         Pieces pieces;
@@ -159,16 +169,18 @@ void run(int only_sid = -1, int arg = -1) {
 
         // Score and evaluate
         int s1 = (out_sizes.back() == test_out.sz) ? 1 : 0;
-        vector<Candidate> cands = composePieces2(pieces, train, out_sizes);
+        cands.clear();
+        cands = composePieces2(pieces, train, out_sizes);
         addDeduceOuterProduct(pieces, train, cands);
         cands = evaluateCands(cands, train);
         int s2 = scoreCands(cands, test_in, test_out);
 
         // Pick best candidates
-        vector<Candidate> answers = cands;
+        answers.clear();
+        answers = cands;
         {
             sort(cands.begin(), cands.end());
-            set<ull> seen;
+            set<ul> seen;
             answers.clear();
             answers.reserve(3 + skips * 3);
 
@@ -183,10 +195,11 @@ void run(int only_sid = -1, int arg = -1) {
         }
 
         // Reconstruct answers
+        const unsigned ansSize = answers.size();
         vector<Image> rec_answers;
         vector<double> answer_scores;
-        rec_answers.reserve(answers.size());
-        answer_scores.reserve(answers.size());
+        rec_answers.reserve(ansSize);
+        answer_scores.reserve(ansSize);
 
         for (Candidate& cand : answers) {
             rec_answers.push_back(sim.rec(s.test_in, cand.imgs.back()));
@@ -220,7 +233,6 @@ void run(int only_sid = -1, int arg = -1) {
 
     // Final score display
     if (!eval && only_sid == -1) {
-        #pragma omp parallel for
         for (int si = 0; si < sample.size(); ++si) {
             Sample& s = sample[si];
             writeVerdict(si, s.id, verdict[si]);

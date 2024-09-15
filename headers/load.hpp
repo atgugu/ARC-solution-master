@@ -1,10 +1,10 @@
 struct Loader {
-  long long n;
+  long n;
   string text;
-  long long counter;
-  long long prev;
-  int keep_title;
-  Loader(long long n_, string text_ = "") {
+  unsigned counter;
+  long prev;
+  short keep_title;
+  Loader(long n_, string text_ = "") {
     n = n_;
     text = text_;
     counter = 0;

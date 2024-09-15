@@ -70,7 +70,7 @@ Pieces makePieces2(vector<DAG>&dag, vector<pair<Image,Image>> train, vector<poin
       q[d].push(memi);
     }
   };
-  for (int i = 0; i < dag[0].givens; i++) {
+  for (int i = 0; i < dag[0].givens;++i) {
     vector<int> v(dags,i);
     add(dag[0].tiny_node[i].depth, v);
   }
@@ -101,7 +101,7 @@ Pieces makePieces2(vector<DAG>&dag, vector<pair<Image,Image>> train, vector<poin
   vector<pair<int,vector<int>>> newi_list;
 
   piece_time.start();
-  for (int depth = 0; depth < q.size(); depth++) {
+  for (int depth = 0; depth < q.size(); ++depth) {
     while (q[depth].size()) {
       int memi = q[depth].front();
       q[depth].pop();
@@ -111,7 +111,7 @@ Pieces makePieces2(vector<DAG>&dag, vector<pair<Image,Image>> train, vector<poin
       vector<int> ind(mem.begin()+memi, mem.begin()+memi+dags);
       {
 	int ok = 1, maxdepth = -1;
-	for (int i = 0; i < dags; i++) {
+	for (int i = 0; i < dags; ++i) {
 	  maxdepth = max(maxdepth, (int)dag[i].tiny_node[ind[i]].depth);
 	  ok &= dag[i].tiny_node[ind[i]].ispiece;
 	}
@@ -128,13 +128,13 @@ Pieces makePieces2(vector<DAG>&dag, vector<pair<Image,Image>> train, vector<poin
 
       child_time.start();
       {
-	for (int i = 0; i <= train.size(); i++)
+	for (int i = 0; i <= train.size(); ++i)
 	  dag[i].tiny_node[ind[i]].child.legacy(slow_child[i]);
 	vector<int> newi(dags), ci(dags); //current index into child[]
 	int fi = 0;
 	while (1) {
 	next_iteration:
-	  for (int i = 0; i <= train.size(); i++) {
+	  for (int i = 0; i <= train.size(); ++i) {
 	    auto&child = slow_child[i];//dag[i].node[ind[i]].child;
 	    while (ci[i] < child.size() &&
 		   child[ci[i]].first < fi) ci[i]++;
@@ -183,7 +183,7 @@ Pieces makePieces2(vector<DAG>&dag, vector<pair<Image,Image>> train, vector<poin
 	}
 
 	int new_depth = -1;
-	for (int i = 0; i < dags; i++) {
+	for (int i = 0; i < dags;++i) {
 	  new_depth = max(new_depth, (int)dag[i].tiny_node[newi[i]].depth);
 	}
 
@@ -266,7 +266,7 @@ Pieces makePieces2(vector<DAG>&dag, vector<pair<Image,Image>> train, vector<poin
   //pieces.seen = move(seen);
 
   for (Piece3&p : pieces.piece) {
-    for (int i = 0; i < pieces.dag.size(); i++) {
+    for (int i = 0; i < pieces.dag.size();++i) {
       int*ind = &mem[p.memi];
       assert(ind[i] >= 0 && ind[i] < pieces.dag[i].tiny_node.size());
     }

@@ -27,11 +27,12 @@ vector<double> shapeFeatures(Image_ img, int col) {
 
   point center2 = img.p*2+img.sz-point{1,1};
   for (short a = 0; a < 2; ++a) {
+    const short a21 = a*2-1;
     for (short b = 0; b < 2; ++b) {
-      for (short c = 0; c < 2; c++) {
+      for (short c = 0; c < 2; ++c) {
 	point dir;
-	if (c) dir = point{a*2-1, b*2-1}*2;
-	else dir = point{(a*2-1)*b, (a*2-1)*!b}*3;
+	if (c) dir = point{a21, b*2-1}*2;
+	else dir = point{(a21)*b, (a21)*!b}*3;
 	int ma = -50;
 	for (short i = 0; i < img.h; ++i)
 	  for (short j = 0; j < img.w; ++j)
@@ -61,10 +62,12 @@ struct UniquePicker {
       feat.push_back(features);
     }
 
-    const int nins = ins.size();
+    const unsigned short nins = ins.size();
     vector<vector<int>> done(nins); // inp, cole
     vector<int> cols_left(nins);
-    for (int i = 0; i < nins; ++i) {
+    //ham
+    //#pragma omp parallel for
+    for (unsigned short i = 0; i < nins; ++i) {
       done[i].assign(feat[i].size(), 0);
       cols_left[i] = feat[i].size();
     }
@@ -107,12 +110,14 @@ struct UniquePicker {
       }
       //cout << endl;
       //cout << best.first << '-' << best.second << endl;
-      int pickf = best.second;
+      const int pickf = best.second;
       assert(pickf != -1);
       feature_dim.push_back(pickf);
-      for (int inpi = 0; inpi < nins; ++inpi) {
+      //ham
+      //#pragma omp parallel for
+      for (unsigned short inpi = 0; inpi < nins; ++inpi) {
 	if (!cols_left[inpi]) continue;
-	auto&col = picki[inpi];
+	const auto&col = picki[inpi];
 	done[inpi][col[pickf]] = 1;
 	cols_left[inpi]--;
       }
@@ -136,7 +141,7 @@ struct UniquePicker {
       for (int j = 0; j < features[i].size(); ++j) {
 	if (fi != -1) j = fi;
 	double fscore = 1e3;
-	for (int k = 0; k < n; k++) {
+	for (int k = 0; k < n; ++k) {
 	  if (k == i || done[k]) continue;
 	  fscore = min(fscore, diff(features[i][j], features[k][j]));
 	}
@@ -152,9 +157,9 @@ struct UniquePicker {
     return best.second;
   }
 
-  void getMap(Image_ in, int cols[10]) const {
-    int j = 0, done = 0;
-    for (int i = 0; i < 10; ++i)
+  void getMap(Image_ in, short cols[10]) const {
+    short j = 0, done = 0;
+    for (short i = 0; i < 10; ++i)
       if (save>>i&1) {
 	done |= 1<<i;
 	cols[i] = j++;
@@ -198,10 +203,10 @@ struct UniquePicker {
 
 
 
-Image remapCols(Image_ img, int cols[10]) {
+Image remapCols(Image_ img, short cols[10]) {
   Image r = img;
-  for (int i = 0; i < r.h; ++i)
-    for (int j = 0; j < r.w; ++j)
+  for (short i = 0; i < r.h; ++i)
+    for (short j = 0; j < r.w; ++j)
       r(i,j) = cols[img(i,j)];
   return r;
 }
@@ -230,20 +235,20 @@ void remapCols(const vector<pair<Image,Image>>&train, vector<Simplifier>&sims) {
   Simplifier ret;
 
   ret.in = [up](Image_ in) {
-    int cols[10];
+    short cols[10];
     up.getMap(in, cols);
     return remapCols(in, cols);
   };
   ret.out = [up](Image_ in, Image_ out) {
-    int cols[10];
+    short cols[10];
     up.getMap(in, cols);
     return remapCols(out, cols);
   };
   ret.rec = [up](Image_ in, Image_ out) {
-    int cols[10];
+    short cols[10];
     up.getMap(in, cols);
-    int icols[10];
-    for (int i = 0; i < 10; ++i)
+    short icols[10];
+    for (short i = 0; i < 10; ++i)
       icols[cols[i]] = i;
     return remapCols(out, icols);
   };
@@ -252,7 +257,7 @@ void remapCols(const vector<pair<Image,Image>>&train, vector<Simplifier>&sims) {
 }
 
 
-Image listCols(Image_ img, int extra) {
+Image listCols(Image_ img, short extra) {
   short mask = core::colMask(img);
   short w = __builtin_popcount(mask);
   Image ret = core::full({w,2}, 9);
@@ -272,7 +277,7 @@ Image listCols(Image_ img, int extra) {
 void normalizeCols(vector<Sample>&sample) {
   Visu visu;
 
-  int count = 0;
+  unsigned short count = 0;
   for (Sample&s : sample) {
     auto train = s.train;
     vector<Simplifier> sims;
@@ -286,7 +291,7 @@ void normalizeCols(vector<Sample>&sample) {
 	in = sim.in(in);
       }
 
-      count++;
+      ++count;
       visu.next(s.id);
       for (auto [in,out] : s.train)
 	visu.add(in,out);
@@ -312,7 +317,7 @@ void normalizeCols(vector<Sample>&sample) {
     //if (__builtin_popcount(eq&~1) != 1) continue;
 
     if (meaningCols) {
-      count++;
+      ++count;
       visu.next(s.id);
       for (auto [in,out] : s.train)
 	visu.add(in,out);
@@ -323,7 +328,7 @@ void normalizeCols(vector<Sample>&sample) {
       }
     }
   }
-  cout << count << " tasks" << endl;
+  //cout << count << " tasks" << endl;
 }
 
 
@@ -358,7 +363,7 @@ struct OrientationPicker {
       }
     }
     #pragma omp parallel for
-    for (int c = 0; c < 10; c++) {
+    for (int c = 0; c < 10;++c) {
       double score = 1e3;
       for (Image_ in : ins) {
 	auto [p,q] = inertia(in, c);
@@ -380,8 +385,8 @@ struct OrientationPicker {
 
 	double sx = 1e3, sy = 1e3, sxy = 1e3, syx = 1e3;
 	int found = 0;
-	for (int a = 1; a < 10; a++) {
-	  for (int b = 1; b < a; b++) {
+	for (int a = 1; a < 10; ++a) {
+	  for (int b = 1; b < a; ++b) {
 	    if (cnt[a] && cnt[b]) {
 	      double dx = x[a]-x[b];
 	      double dy = y[a]-y[b];
@@ -435,7 +440,7 @@ struct OrientationPicker {
 	cnt[c]++;
       }
 
-    for (int c = 0; c < 10; c++) {
+    for (int c = 0; c < 10;++c) {
       if (cnt[c]) {
 	x[c] /= cnt[c];
 	y[c] /= cnt[c];
@@ -454,8 +459,8 @@ struct OrientationPicker {
       double x[10] = {}, y[10] = {}, cnt[10] = {};
       colorMeans(in, x, y, cnt);
 
-      for (int a = 1; a < 10; a++)
-	for (int b = 1; b < a; b++) {
+      for (int a = 1; a < 10; ++a)
+	for (int b = 1; b < a; ++b) {
 	  if (cnt[a] && cnt[b]) {
 	    double dx = x[a]-x[b];
 	    double dy = y[a]-y[b];
@@ -522,7 +527,7 @@ void evalNormalizeRigid() {
 
   int place_count[11] = {};
   #pragma omp parallel for
-  for (int si = 0; si < sample.size(); si++) {
+  for (int si = 0; si < sample.size(); ++si) {
     Sample&s = sample[si];
 
     {
