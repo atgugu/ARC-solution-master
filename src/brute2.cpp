@@ -14,6 +14,7 @@ using namespace std;
 #include "pieces.hpp"
 
 #include "timer.hpp"
+#include <unordered_set>
 
 extern int MAXDEPTH, print_nodes;
 
@@ -140,7 +141,7 @@ int Functions3::findfi(string name) {
 }
 
 
-Functions3 initFuncs3(const vector<point>&sizes) {
+Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, int> &colorMap) {
   Functions3 funcs;
 
   // Unary
@@ -170,8 +171,8 @@ Functions3 initFuncs3(const vector<point>&sizes) {
   funcs.add("center", 10, center);
   funcs.add("majCol", 10, majCol);
 
-  //funcs.add("greedyFillBlack", 10, [](Image_ img) {return greedyFillBlack(img);});
-  //funcs.add("greedyFillBlack2", 10, [](Image_ img) {return greedyFillBlack2(img);});
+  funcs.add("greedyFillBlack", 10, [](Image_ img) {return greedyFillBlack(img);});
+  funcs.add("greedyFillBlack2", 10, [](Image_ img) {return greedyFillBlack2(img);});
 
   for (int i = 1; i < 9; ++i)
     funcs.add("rigid "+to_string(i), 10,
@@ -184,6 +185,88 @@ Functions3 initFuncs3(const vector<point>&sizes) {
     funcs.add("smear "+to_string(i), 10,
 	      [i](Image_ img) {return smear(img, i);});
 
+  for (int i = 0; i < 4; ++i)
+  funcs.add("diagonalSmear "+to_string(i), 10,
+    [i](Image_ img) {return diagonalSmear(img, i);});
+
+  funcs.add("dilate1", 10, dilate1);
+  funcs.add("erode1", 10, erode1);
+  funcs.add("dilate2", 10, dilate2);
+  funcs.add("erode2", 10, erode2);
+  funcs.add("dilate3", 10, dilate3);
+  funcs.add("erode3", 10, erode3);
+
+  funcs.add("detectPatterns2Image2", 10, detectPatterns2Image2);
+  funcs.add("detectPatterns2Image3", 10, detectPatterns2Image3);
+  funcs.add("detectPatterns2Image4", 10, detectPatterns2Image4);
+  funcs.add("detectPatterns2Image5", 10, detectPatterns2Image5);
+  funcs.add("detectPatterns2Image6", 10, detectPatterns2Image6);
+  funcs.add("detectPatterns2Image7", 10, detectPatterns2Image7);
+  funcs.add("detectPatterns2Image8", 10, detectPatterns2Image8);
+  funcs.add("detectPatterns2Image9", 10, detectPatterns2Image9);
+
+  funcs.add("detectVerticalStripes2", 10, [](Image_ img) { return detectVerticalStripes(img, 2); });
+  funcs.add("detectVerticalStripes3", 10, [](Image_ img) { return detectVerticalStripes(img, 3); });
+  funcs.add("detectVerticalStripes4", 10, [](Image_ img) { return detectVerticalStripes(img, 4); });
+  funcs.add("detectVerticalStripes5", 10, [](Image_ img) { return detectVerticalStripes(img, 5); });
+  funcs.add("detectDiagonalPattern2", 10, [](Image_ img) { return detectDiagonalPattern(img, 2); });
+  funcs.add("detectDiagonalPattern3", 10, [](Image_ img) { return detectDiagonalPattern(img, 3); });
+  funcs.add("detectHorizontalStripes2", 10, [](Image_ img) { return detectHorizontalStripes(img, 2); });
+  funcs.add("detectHorizontalStripes3", 10, [](Image_ img) { return detectHorizontalStripes(img, 3); });
+  funcs.add("detectCrossPattern3", 10, [](Image_ img) { return detectCrossPattern(img, 3); });
+  funcs.add("detectCrossPattern5", 10, [](Image_ img) { return detectCrossPattern(img, 5); });
+
+  funcs.add("detectCheckerboardPattern2", 10, [](Image_ img) { return detectCheckerboardPattern(img, 2); });
+  funcs.add("detectCheckerboardPattern3", 10, [](Image_ img) { return detectCheckerboardPattern(img, 3); });
+  funcs.add("detectCheckerboardPattern5", 10, [](Image_ img) { return detectCheckerboardPattern(img, 5); });
+
+  funcs.add("detectRepeatingPattern", 10, [](Image_ img) {
+      Image pattern;
+      int offsetX, offsetY;
+      bool hasPattern = detectRepeatingPattern(img, pattern, offsetX, offsetY);
+      if (hasPattern) {
+          // Return the pattern image
+          return pattern;
+      } else {
+          // Return an empty image
+          return Image{{0, 0}, {0, 0}, {}};
+      }
+  });
+
+    funcs.add("applyColorMapping", 10, [colorMap](Image_ img) {
+        return applyColorMapping(img, colorMap);
+    });
+
+  funcs.add("trimToContent", 10, trimToContent);
+  funcs.add("detectRepeatingPatternWithHole1", 10,
+	      [](Image_ img) {return detectRepeatingPatternWithHole(img, true);});
+  funcs.add("detectRepeatingPatternWithHole1", 10,
+	      [](Image_ img) {return detectRepeatingPatternWithHole(img, false);});
+
+  for (int id = -3; id < 3; ++id)
+    funcs.add("circularShiftRow "+to_string(id), 10,
+	      [id](Image_ img) {return circularShift(img, true, id);});
+
+  // funcs.add("detectTranslation1DPattern", 10, detectTranslation1DPattern);
+  // funcs.add("detectTranslationPattern", 10, detectTranslationPattern);
+// funcs.add("enforceRotationalSymmetry90", 10, enforceRotationalSymmetry90);
+// funcs.add("enforceRotationalSymmetry180", 10, enforceRotationalSymmetry180);
+
+  // for (int id = 0; id < 4; ++id)
+  //   funcs.add("gridFilter "+to_string(id), 10,
+	//       [id](Image_ img) {return gridFilter(img, id, id);});
+
+
+  for (int id = -3; id < 3; ++id)
+    funcs.add("circularShiftColumn "+to_string(id), 10,
+	      [id](Image_ img) {return circularShift(img, false, id);});
+
+  for (int id = 0; id < 4; ++id)
+    funcs.add("diagonalGravity "+to_string(id), 10,
+	      [id](Image_ img) {return diagonalGravity(img,id);});
+
+  funcs.add("mostCommonShape", 10, mostCommonShape);
+  // funcs.add("repairRotationalSymmetry", 10, repairRotationalSymmetry);
 
   funcs.add("makeBorder", 10,
 	    [](Image_ img) {return makeBorder(img, 1);});
@@ -207,8 +290,8 @@ Functions3 initFuncs3(const vector<point>&sizes) {
 	      [id](Image_ img) {return half(img, id);});
 
 
-  for (int dy = -2; dy <= 2; ++dy) {
-    for (int dx = -2; dx <= 2; ++dx) {
+  for (int dy = -4; dy <= 4; ++dy) {
+    for (int dx = -4; dx <= 4; ++dx) {
       funcs.add("Move "+to_string(dx)+" "+to_string(dy), 10,
 		[dx,dy](Image_ img) {return Move(img, Pos(dx,dy));}, 0);
     }
@@ -220,8 +303,30 @@ Functions3 initFuncs3(const vector<point>&sizes) {
   funcs.add(sizes, "broadcast", 10, [](Image_ a, Image_ b) {return broadcast(a,b);});
   funcs.add(sizes, "repeat 0",  10, [](Image_ a, Image_ b) {return repeat(a,b);});
   funcs.add(sizes, "repeat 1",  10, [](Image_ a, Image_ b) {return repeat(a,b,1);});
+  funcs.add(sizes, "repeat 2",  10, [](Image_ a, Image_ b) {return repeat(a,b,2);});
+  funcs.add(sizes, "repeat 3",  10, [](Image_ a, Image_ b) {return repeat(a,b,3);});
+  funcs.add(sizes, "repeat 4",  10, [](Image_ a, Image_ b) {return repeat(a,b,4);});
+  // funcs.add(sizes, "repeat 5",  10, [](Image_ a, Image_ b) {return repeat(a,b,5);});
+  // funcs.add(sizes, "repeat 6",  10, [](Image_ a, Image_ b) {return repeat(a,b,6);});
+  // funcs.add(sizes, "repeat 7",  10, [](Image_ a, Image_ b) {return repeat(a,b,7);});
+  // funcs.add(sizes, "repeat 8",  10, [](Image_ a, Image_ b) {return repeat(a,b,8);});
+  // funcs.add(sizes, "repeat 9",  10, [](Image_ a, Image_ b) {return repeat(a,b,9);});
+
   funcs.add(sizes, "mirror 0",  10, [](Image_ a, Image_ b) {return mirror(a,b);});
   funcs.add(sizes, "mirror 1",  10, [](Image_ a, Image_ b) {return mirror(a,b,1);});
+  funcs.add(sizes, "mirror 2",  10, [](Image_ a, Image_ b) {return mirror(a,b,2);});
+  funcs.add(sizes, "mirror 3",  10, [](Image_ a, Image_ b) {return mirror(a,b,3);});
+  funcs.add(sizes, "mirror 4",  10, [](Image_ a, Image_ b) {return mirror(a,b,4);});
+  // funcs.add(sizes, "mirror 5",  10, [](Image_ a, Image_ b) {return mirror(a,b,5);});
+  // funcs.add(sizes, "mirror 6",  10, [](Image_ a, Image_ b) {return mirror(a,b,6);});
+  // funcs.add(sizes, "mirror 7",  10, [](Image_ a, Image_ b) {return mirror(a,b,7);});
+  // funcs.add(sizes, "mirror 8",  10, [](Image_ a, Image_ b) {return mirror(a,b,8);});
+  // funcs.add(sizes, "mirror 9",  10, [](Image_ a, Image_ b) {return mirror(a,b,9);});
+  funcs.add(sizes, "ringSmear",  10, [](Image_ a, Image_ b) {return ringSmear(a,b);});
+  // funcs.add(sizes, "diagonalSmear1",  10, [](Image_ a, Image_ b) {return diagonalSmear(a,b,1);});
+  // funcs.add(sizes, "diagonalSmear2",  10, [](Image_ a, Image_ b) {return diagonalSmear(a,b,2);});
+  // funcs.add(sizes, "diagonalSmear3",  10, [](Image_ a, Image_ b) {return diagonalSmear(a,b,3);});
+  // funcs.add(sizes, "diagonalSmear4",  10, [](Image_ a, Image_ b) {return diagonalSmear(a,b,4);});
 
 
   //Split
@@ -534,8 +639,79 @@ void DAG::buildBinary() {
   }
 }
 
+#include <unordered_set>
+#include <vector>
+#include <algorithm>
 
+std::vector<int> getAllColors(const Image_ &test_in, const std::vector<std::pair<Image, Image>> &train) {
+    std::unordered_set<int> colorSet;
 
+    // Collect colors from the test_in image
+    for (int i = 0; i < test_in.h; ++i) {
+        for (int j = 0; j < test_in.w; ++j) {
+            int color = test_in(i, j);
+            if (color >= 0 && color <= 9) {
+                colorSet.insert(color);
+            }
+        }
+    }
+
+    // Collect colors from each image in the train vector
+    for (const auto &[input, output] : train) {
+        for (int i = 0; i < input.h; ++i) {
+            for (int j = 0; j < input.w; ++j) {
+                int color = input(i, j);
+                if (color >= 0 && color <= 9) {
+                    colorSet.insert(color);
+                }
+            }
+        }
+        for (int i = 0; i < output.h; ++i) {
+            for (int j = 0; j < output.w; ++j) {
+                int color = output(i, j);
+                if (color >= 0 && color <= 9) {
+                    colorSet.insert(color);
+                }
+            }
+        }
+    }
+
+    // Convert the set of colors to a sorted vector
+    std::vector<int> colors(colorSet.begin(), colorSet.end());
+    std::sort(colors.begin(), colors.end());
+    return colors;
+}
+
+std::unordered_map<int, int> getColorMapping(const std::vector<std::pair<Image, Image>> &train) {
+    std::unordered_map<int, int> colorMap;
+
+    // Iterate over each input-output pair in the train vector
+    for (const auto &[input, output] : train) {
+        for (int i = 0; i < input.h; ++i) {
+            for (int j = 0; j < input.w; ++j) {
+                int inputColor = input(i, j);
+                int outputColor = output(i, j);
+
+                // Only map valid colors between 0 and 9
+                if (inputColor >= 0 && inputColor <= 9 && outputColor >= 0 && outputColor <= 9) {
+                    // If this color already has a mapping, ensure it is consistent
+                    if (colorMap.count(inputColor)) {
+                        // If an inconsistent mapping is found, this could indicate an error
+                        if (colorMap[inputColor] != outputColor) {
+                            // Handle inconsistency (this can be logged, replaced, or ignored)
+                            // For now, we keep the original mapping
+                        }
+                    } else {
+                        // If the color is not mapped yet, add the mapping
+                        colorMap[inputColor] = outputColor;
+                    }
+                }
+            }
+        }
+    }
+
+    return colorMap;
+}
 vector<DAG> brutePieces2(Image_ test_in, const vector<pair<Image,Image>>&train, vector<point> out_sizes) {
   const int print = 0;
   const size_t trainsize = train.size();
@@ -554,8 +730,8 @@ vector<DAG> brutePieces2(Image_ test_in, const vector<pair<Image,Image>>&train, 
 
     if (out_sizes.size())
       sizes.push_back(out_sizes[ti]);
-
-    dag[ti].funcs = initFuncs3(sizes);
+    std::unordered_map<int, int> colors = getColorMapping(train);
+    dag[ti].funcs = initFuncs3(sizes, colors);
 
     dag[ti].initial(test_in, train, sizes, ti);
 

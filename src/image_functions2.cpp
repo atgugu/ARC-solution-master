@@ -6,6 +6,12 @@ using namespace std;
 #include "spec.hpp"
 #include "read.hpp"
 #include "normalize.hpp"
+#include <vector>
+#include <queue>
+#include <algorithm>
+#include <unordered_set>
+#include <functional>
+#include <tuple>
 
 
 vImage splitAll(Image_ img) {
@@ -45,6 +51,217 @@ Image eraseCol(Image img, int col) {
     for (short j = 0; j < img.w; ++j)
       if (img(i,j) == col) img(i,j) = 0;
   return img;
+}
+
+#include <vector>
+#include <algorithm>
+#include <unordered_set>
+
+Image detectRepeatingPatternWithHole(
+    Image_ img,
+    bool fillHole  // Option to fill the hole in the entire image or return only the missing pattern
+) {
+    int imgHeight = img.h;
+    int imgWidth = img.w;
+
+    // Find the hole in the image (pixels with color 0)
+    std::vector<point> holePixels;
+    for (int i = 0; i < imgHeight; ++i) {
+        for (int j = 0; j < imgWidth; ++j) {
+            if (img(i, j) == 0) {
+                holePixels.push_back({i, j});
+            }
+        }
+    }
+
+    if (holePixels.empty()) {
+        // No hole found, return the original image as-is
+        return img;
+    }
+
+    // Try different tile sizes starting from 1x1 up to half the image size
+    for (int tileHeight = 1; tileHeight <= imgHeight / 2; ++tileHeight) {
+        for (int tileWidth = 1; tileWidth <= imgWidth / 2; ++tileWidth) {
+
+            // Extract the tile pattern from known (non-hole) pixels
+            Image tile = {{0, 0}, {tileWidth, tileHeight}, std::vector<char>(tileWidth * tileHeight, -1)};
+            bool incompleteTile = false;
+
+            for (int i = 0; i < tileHeight; ++i) {
+                for (int j = 0; j < tileWidth; ++j) {
+                    int imgRow = i;
+                    int imgCol = j;
+
+                    if (imgRow < imgHeight && imgCol < imgWidth) {
+                        char pixelValue = img(imgRow, imgCol);
+                        if (pixelValue != 0) {
+                            tile(i, j) = pixelValue;
+                        } else {
+                            incompleteTile = true;
+                        }
+                    } else {
+                        incompleteTile = true;
+                    }
+                }
+            }
+
+            if (incompleteTile) {
+                // Cannot construct a complete tile from this position, skip
+                continue;
+            }
+
+            // Now, verify if this tile can generate the entire image (ignoring holes)
+            bool patternMatches = true;
+            for (int i = 0; i < imgHeight; ++i) {
+                for (int j = 0; j < imgWidth; ++j) {
+                    char expectedPixel = tile(i % tileHeight, j % tileWidth);
+                    char actualPixel = img(i, j);
+                    if (actualPixel != 0 && actualPixel != expectedPixel) {
+                        patternMatches = false;
+                        break;
+                    }
+                }
+                if (!patternMatches) break;
+            }
+
+            if (patternMatches) {
+                // The tile pattern repeats across the image (excluding holes)
+
+                // Determine the bounding box of the hole
+                int minRow = holePixels[0].x;
+                int maxRow = holePixels[0].x;
+                int minCol = holePixels[0].y;
+                int maxCol = holePixels[0].y;
+
+                for (const auto& p : holePixels) {
+                    if (p.x < minRow) minRow = p.x;
+                    if (p.x > maxRow) maxRow = p.x;
+                    if (p.y < minCol) minCol = p.y;
+                    if (p.y > maxCol) maxCol = p.y;
+                }
+
+                int holeHeight = maxRow - minRow + 1;
+                int holeWidth = maxCol - minCol + 1;
+
+                if (fillHole) {
+                    // Option 1: Return the entire image with the hole filled
+                    Image filledImg = img;
+                    for (const auto& p : holePixels) {
+                        int i = p.x;
+                        int j = p.y;
+                        char expectedPixel = tile(i % tileHeight, j % tileWidth);
+                        filledImg(i, j) = expectedPixel;
+                    }
+                    return filledImg;
+
+                } else {
+                    // Option 2: Return only an image of the size of the hole, filled with the missing pattern
+                    Image missingPat = {{0, 0}, {holeWidth, holeHeight}, std::vector<char>(holeWidth * holeHeight)};
+                    for (int i = 0; i < holeHeight; ++i) {
+                        for (int j = 0; j < holeWidth; ++j) {
+                            missingPat(i, j) = tile((minRow + i) % tileHeight, (minCol + j) % tileWidth);
+                        }
+                    }
+                    return missingPat;
+                }
+            }
+        }
+    }
+
+    // No repeating pattern found that matches the image with the hole
+    return Image{{0, 0}, {0, 0}, {}};  // Return an empty image to indicate no pattern found
+}
+Image enforceSymmetry(Image_ img, unsigned short symmetryType = 0) {
+    Image result = img;
+    if (symmetryType ==  0) {
+        for (int i = 0; i < img.h / 2; ++i) {
+            for (int j = 0; j < img.w; ++j) {
+                result(img.h - 1 - i, j) = img(i, j);
+            }
+        }
+    } else if (symmetryType == 1) {
+        for (int i = 0; i < img.h; ++i) {
+            for (int j = 0; j < img.w / 2; ++j) {
+                result(i, img.w - 1 - j) = img(i, j);
+            }
+        }
+    } else if (symmetryType == 2) {
+        for (int i = 0; i < img.h; ++i) {
+            for (int j = 0; j < img.w; ++j) {
+                if (i != j && i < img.h && j < img.w) {
+                    result(j, i) = img(i, j);
+                }
+            }
+        }
+    }
+    return result;
+}
+bool detectRepeatingPattern(Image_ img, Image& pattern, int& offsetX, int& offsetY) {
+    // Try different tile sizes starting from 1x1 up to half the image size
+    for (int tileHeight = 1; tileHeight <= img.h / 2; ++tileHeight) {
+        for (int tileWidth = 1; tileWidth <= img.w / 2; ++tileWidth) {
+            bool patternFound = true;
+            // Extract the pattern from the top-left corner
+            Image tile = {{0, 0}, {tileWidth, tileHeight}, vector<char>(tileWidth * tileHeight)};
+            for (int i = 0; i < tileHeight; ++i) {
+                for (int j = 0; j < tileWidth; ++j) {
+                    tile(i, j) = img(i, j);
+                }
+            }
+            // Check if the image can be reconstructed by repeating this tile
+            for (int i = 0; i < img.h; ++i) {
+                for (int j = 0; j < img.w; ++j) {
+                    char expectedPixel = tile(i % tileHeight, j % tileWidth);
+                    if (img(i, j) != expectedPixel) {
+                        patternFound = false;
+                        break;
+                    }
+                }
+                if (!patternFound) break;
+            }
+            if (patternFound) {
+                pattern = tile;
+                offsetX = 0;
+                offsetY = 0;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+Image gridFilter(Image_ img, int cellHeight, int cellWidth) {
+    int numRows = img.h / cellHeight;
+    int numCols = img.w / cellWidth;
+    Image result = {{0, 0}, {numCols, numRows}, vector<char>(numRows * numCols)};
+
+    for (int row = 0; row < numRows; ++row) {
+        for (int col = 0; col < numCols; ++col) {
+            // Extract cell
+            std::unordered_map<char, int> colorCount;
+            for (int i = 0; i < cellHeight; ++i) {
+                for (int j = 0; j < cellWidth; ++j) {
+                    int x = row * cellHeight + i;
+                    int y = col * cellWidth + j;
+                    if (x < img.h && y < img.w) {
+                        char color = img(x, y);
+                        colorCount[color]++;
+                    }
+                }
+            }
+            // Determine the mode color in the cell
+            char modeColor = 0;
+            int maxCount = 0;
+            for (const auto& [color, count] : colorCount) {
+                if (count > maxCount) {
+                    maxCount = count;
+                    modeColor = color;
+                }
+            }
+            result(row, col) = modeColor;
+        }
+    }
+    return result;
 }
 
 
@@ -148,114 +365,134 @@ Image compress2(Image_ img) {
 
 //Group single color rectangles
 Image compress3(Image_ img) {
-  if (img.w*img.h <= 0) return badImg;
-  vector<int> row(img.h), col(img.w);
-  row[0] = col[0] = 1;
-  for (int i = 0; i < img.h; ++i) {
-    for (int j = 0; j < img.w; ++j) {
-      if (i && img(i,j) != img(i-1,j)) row[i] = 1;
-      if (j && img(i,j) != img(i,j-1)) col[j] = 1;
+    const int height = img.h, width = img.w;
+    if (width * height <= 0) return badImg;
+
+    std::vector<int> row(height, 0), col(width, 0);
+    row[0] = col[0] = 1;
+
+    // Mark rows and columns that have unique pixels
+    for (int i = 1; i < height; ++i) {
+        for (int j = 1; j < width; ++j) {
+            if (img(i, j) != img(i - 1, j)) row[i] = 1;
+            if (img(i, j) != img(i, j - 1)) col[j] = 1;
+        }
     }
-  }
-  vector<int> rows, cols;
-  for (int i = 0; i < img.h; ++i) if (row[i]) rows.push_back(i);
-  for (int j = 0; j < img.w; ++j) if (col[j]) cols.push_back(j);
-  Image ret = core::empty(point{(int)cols.size(), (int)rows.size()});
-  for (int i = 0; i < ret.h; ++i)
-    for (int j = 0; j < ret.w; ++j)
-      ret(i,j) = img(rows[i],cols[j]);
-  return ret;
+
+    // Collect the indices of the marked rows and columns
+    std::vector<int> rows, cols;
+    rows.reserve(height);
+    cols.reserve(width);
+
+    for (int i = 0; i < height; ++i) {
+        if (row[i]) rows.push_back(i);
+    }
+    for (int j = 0; j < width; ++j) {
+        if (col[j]) cols.push_back(j);
+    }
+
+    // Create the compressed image
+    const int compressedHeight = rows.size();
+    const int compressedWidth = cols.size();
+    Image ret = core::empty(point{compressedWidth, compressedHeight});
+
+    for (int i = 0; i < compressedHeight; ++i) {
+        const int rowIdx = rows[i];
+        for (int j = 0; j < compressedWidth; ++j) {
+            ret(i, j) = img(rowIdx, cols[j]);
+        }
+    }
+
+    return ret;
 }
 
 
-//TODO: return badImg if fail
-Image greedyFill(Image &ret, vector<pair<short, vector<short>>> &piece, Spec &done, short bw, short bh, int &donew)
-{
-  sort(piece.rbegin(), piece.rend());
+Image greedyFill(Image &ret, std::vector<std::pair<short, std::vector<short>>> &pieces, Spec &done, short bw, short bh, int &donew) {
+    // Sort pieces by size descending for better filling priority
+    std::sort(pieces.rbegin(), pieces.rend());
 
-  const short dw = ret.w - bw + 1, dh = ret.h - bh + 1;
-  if (dw < 1 || dh < 1)
-    return badImg;
+    const short dw = ret.w - bw + 1, dh = ret.h - bh + 1;
+    if (dw < 1 || dh < 1)
+        return badImg;
 
-  vector<int> dones(dw * dh, -1);
-  priority_queue<tuple<unsigned short, short, short>> pq;
-  auto recalc = [&](short i, short j)
-  {
-    unsigned short cnt = 0;
-    const short idw = i * dw;
-    for (short y = 0; y < bh; ++y)
-      for (short x = 0; x < bw; ++x)
-        cnt += done(i + y, j + x);
-    if (cnt != dones[idw + j])
-    {
-      dones[idw + j] = cnt;
-      pq.emplace(cnt, j, i);
-    }
-  };
+    std::vector<int> dones(dw * dh, -1);
+    std::priority_queue<std::tuple<unsigned short, short, short>> pq;
 
-  for (short i = 0; i + bh <= ret.h; ++i)
-    for (short j = 0; j + bw <= ret.w; ++j)
-      recalc(i, j);
-
-  while (pq.size())
-  {
-    auto [ds, j, i] = pq.top();
-    pq.pop();
-    const short ibh = i + bh;
-    const short jbw = j + bw;
-    const short ibh1 =i - bh + 1;
-    const short jbw1 =j - bw + 1;
-    if (ds != dones[i * dw + j])
-      continue;
-    short found = 0;
-    for (auto [cnt, mask] : piece)
-    {
-      short ok = 1;
-      for (short y = 0; y < bh; ++y)
-      {
-        const short iy = i + y;
-        const short ybw = y * bw;
-        //#pragma omp parallel for
-        for (short x = 0; x < bw; ++x)
-        {
-          if (done(iy, j + x) && ret(iy, j + x) != mask[ybw + x])
-            ok = 0;
-        }
-      }
-      if (ok)
-      {
-        //ham
-        //#pragma omp parallel for
+    // Function to recalculate priorities for each grid position efficiently
+    auto recalc = [&](short i, short j) {
+        unsigned short count = 0;
         for (short y = 0; y < bh; ++y)
-        {
-          const short iy = i + y;
-          const short ybw = y * bw;
+            for (short x = 0; x < bw; ++x)
+                count += done(i + y, j + x);
 
-          for (short x = 0; x < bw; ++x)
-          {
-            const short ybwx = ybw + x;
-            if (!done(iy, j + x))
-            {
-              done(iy, j + x) = donew;
-              if (donew > 1)
-                --donew;
-              ret(iy, j + x) = mask[ybwx];
-            }
-          }
+        if (count != dones[i * dw + j]) {
+            dones[i * dw + j] = count;
+            pq.emplace(count, j, i);
         }
-        for (short y = max(ibh1, short(0)); y < min(ibh, dh); ++y)
-          for (short x = max(jbw1, short(0)); x < min(jbw, dw); ++x)
-            recalc(y, x);
-        found = 1;
-        break;
-      }
-    }
-    if (!found)
-      return badImg; // ret;
-  }
-  return ret;
-}
+    };
 
+    // Initialize priority queue by calculating initial counts for each window in the image
+    for (short i = 0; i + bh <= ret.h; ++i)
+        for (short j = 0; j + bw <= ret.w; ++j)
+            recalc(i, j);
+
+    while (!pq.empty()) {
+        auto [ds, j, i] = pq.top();
+        pq.pop();
+
+        // Ignore outdated priority values
+        if (ds != dones[i * dw + j])
+            continue;
+
+        bool placedPattern = false;
+
+        // Place the largest valid pattern that fits in the current region
+        for (auto &[cnt, mask] : pieces) {
+            bool canPlace = true;
+
+            for (short y = 0; y < bh && canPlace; ++y) {
+                const short iy = i + y;
+                for (short x = 0; x < bw; ++x) {
+                    if (done(iy, j + x) && ret(iy, j + x) != mask[y * bw + x]) {
+                        canPlace = false;
+                        break;
+                    }
+                }
+            }
+
+            // If pattern can be placed, apply it to the output image and update `done`
+            if (canPlace) {
+                for (short y = 0; y < bh; ++y) {
+                    const short iy = i + y;
+                    for (short x = 0; x < bw; ++x) {
+                        if (!done(iy, j + x)) {
+                            done(iy, j + x) = donew;
+                            ret(iy, j + x) = mask[y * bw + x];
+                        }
+                    }
+                }
+
+                // Update the relevant region around the newly placed pattern
+                const short ibh = min(static_cast<short>(i + bh), dh);
+                const short jbw = std::min(static_cast<short>(j + bw), dw);
+
+                for (short y = std::max(static_cast<short>(i - bh + 1), short(0)); y < ibh; ++y)
+                    for (short x = std::max(static_cast<short>(j - bw + 1), short(0)); x < jbw; ++x)
+                        recalc(y, x);
+
+                placedPattern = true;
+                break;
+            }
+        }
+
+        if (!placedPattern) {
+            // No suitable pattern was found for the current position, exit with bad image
+            return badImg;
+        }
+    }
+
+    return ret;
+}
 Image greedyFillBlack(Image_ img, int N = 3) {
   Image ret = core::empty(img.p, img.sz);
   Spec done;
@@ -529,6 +766,882 @@ Image spreadCols(Image img, int skipmaj = 0) {
 }
 
 
+Image dilation(Image_ img) {
+    Image result = img;
+    vector<point> directions = {{-1,0},{1,0},{0,-1},{0,1}};
+    for (int i = 0; i < img.h; ++i) {
+        for (int j = 0; j < img.w; ++j) {
+            if (img(i, j) != 0) {
+                for (const auto& dir : directions) {
+                    int ni = i + dir.x;
+                    int nj = j + dir.y;
+                    if (ni >= 0 && ni < img.h && nj >= 0 && nj < img.w) {
+                        result(ni, nj) = img(i, j);
+                    }
+                }
+            }
+        }
+    }
+    return result;
+}
+
+Image erosion(Image_ img) {
+    Image result = img;
+    vector<point> directions = {{-1,0},{1,0},{0,-1},{0,1}};
+    for (int i = 0; i < img.h; ++i) {
+        for (int j = 0; j < img.w; ++j) {
+            if (img(i, j) != 0) {
+                for (const auto& dir : directions) {
+                    int ni = i + dir.x;
+                    int nj = j + dir.y;
+                    if (img.safe(ni, nj) == 0) {
+                        result(i, j) = 0;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    return result;
+}
+
+Image detectCrossPattern(Image_ img, unsigned short size = 3) {
+    if (img.h < size || img.w < size || size < 3) return img;
+
+    Image pattern = {{0, 0}, img.sz, std::vector<char>(img.h * img.w, 0)};
+    int mid = size / 2;
+
+    for (int i = mid; i <= img.h - mid - 1; ++i) {
+        for (int j = mid; j <= img.w - mid - 1; ++j) {
+            int val = img(i, j);
+            bool isCross = true;
+            for (int k = -mid; k <= mid; ++k) {
+                if (img(i + k, j) != val || img(i, j + k) != val) {
+                    isCross = false;
+                    break;
+                }
+            }
+            if (isCross) {
+                for (int k = -mid; k <= mid; ++k) {
+                    pattern(i + k, j) = val;
+                    pattern(i, j + k) = val;
+                }
+            }
+        }
+    }
+    return pattern;
+}
+Image detectHorizontalStripes(Image_ img, unsigned short size = 2) {
+    if (img.h < size) return img;
+
+    Image pattern = {{0, 0}, img.sz, std::vector<char>(img.h * img.w, 0)};
+    for (int i = 0; i <= img.h - size; ++i) {
+        for (int j = 0; j < img.w; ++j) {
+            bool isStripe = true;
+            int val = img(i, j);
+            for (int k = 1; k < size; ++k) {
+                if (img(i + k, j) != val) {
+                    isStripe = false;
+                    break;
+                }
+            }
+            if (isStripe) {
+                for (int k = 0; k < size; ++k) {
+                    pattern(i + k, j) = val;
+                }
+            }
+        }
+    }
+    return pattern;
+}
+Image detectVerticalStripes(Image_ img, unsigned short size = 2) {
+    if (img.w < size) return img;
+
+    Image pattern = {{0, 0}, img.sz, std::vector<char>(img.h * img.w, 0)};
+    for (int j = 0; j <= img.w - size; ++j) {
+        for (int i = 0; i < img.h; ++i) {
+            bool isStripe = true;
+            int val = img(i, j);
+            for (int k = 1; k < size; ++k) {
+                if (img(i, j + k) != val) {
+                    isStripe = false;
+                    break;
+                }
+            }
+            if (isStripe) {
+                for (int k = 0; k < size; ++k) {
+                    pattern(i, j + k) = val;
+                }
+            }
+        }
+    }
+    return pattern;
+}
+struct pair_hash {
+    template <class T1, class T2>
+    std::size_t operator()(const std::pair<T1, T2>& pair) const noexcept {
+        std::size_t h1 = std::hash<T1>{}(pair.first);
+        std::size_t h2 = std::hash<T2>{}(pair.second);
+        return h1 ^ (h2 << 1);
+    }
+};
+
+Image detectTranslationPattern(Image_ img) {
+    int h = img.h;
+    int w = img.w;
+
+    // Find the smallest vertical and horizontal shifts where the pattern repeats
+    int bestR = h;
+    int bestS = w;
+    for (int r = 1; r < h; ++r) {
+        bool matches = true;
+        for (int i = 0; i < h - r; ++i) {
+            for (int j = 0; j < w; ++j) {
+                if (img(i, j) != img(i + r, j)) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (!matches) break;
+        }
+        if (matches) {
+            bestR = r;
+            break;
+        }
+    }
+
+    for (int s = 1; s < w; ++s) {
+        bool matches = true;
+        for (int i = 0; i < h; ++i) {
+            for (int j = 0; j < w - s; ++j) {
+                if (img(i, j) != img(i, j + s)) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (!matches) break;
+        }
+        if (matches) {
+            bestS = s;
+            break;
+        }
+    }
+
+    if (bestR == h && bestS == w) {
+        // No repeating pattern found
+        return img;
+    }
+
+    // Create the pattern image
+    Image pattern = {{0, 0}, {bestS, bestR}, std::vector<char>(bestR * bestS)};
+    for (int i = 0; i < bestR; ++i) {
+        for (int j = 0; j < bestS; ++j) {
+            pattern(i, j) = img(i, j);
+        }
+    }
+    return pattern;
+}
+Image enforceRotationalSymmetry90(Image_ img) {
+    int h = img.h;
+    int w = img.w;
+    Image result = img;
+
+    if (h != w) {
+        // Rotation symmetry requires a square image
+        return img;
+    }
+
+    int n = h; // Since h == w
+    for (int i = 0; i < (n + 1) / 2; ++i) {
+        for (int j = i; j < n - i - 1; ++j) {
+            // Rotate the pixels in groups of four
+            char temp = result(i, j);
+            result(i, j) = result(n - 1 - j, i);
+            result(n - 1 - j, i) = result(n - 1 - i, n - 1 - j);
+            result(n - 1 - i, n - 1 - j) = result(j, n - 1 - i);
+            result(j, n - 1 - i) = temp;
+        }
+    }
+    return result;
+}
+
+Image enforceRotationalSymmetry180(Image_ img) {
+    int h = img.h;
+    int w = img.w;
+    Image result = img;
+
+    for (int i = 0; i < (h + 1) / 2; ++i) {
+        for (int j = 0; j < w; ++j) {
+            int ni = h - 1 - i;
+            int nj = w - 1 - j;
+            char temp = result(i, j);
+            result(i, j) = result(ni, nj);
+            result(ni, nj) = temp;
+        }
+    }
+    return result;
+}
+
+Image enforceDiagonalSymmetryNESW(Image_ img) {
+    int h = img.h;
+    int w = img.w;
+    Image result = img;
+
+    int minDim = std::min(h, w);
+    for (int i = 0; i < minDim; ++i) {
+        for (int j = 0; j < w - i - 1; ++j) {
+            // Swap pixels symmetrically across the NE-SW diagonal
+            char temp = result(i, j);
+            result(i, j) = result(h - j - 1, w - i - 1);
+            result(h - j - 1, w - i - 1) = temp;
+        }
+    }
+    return result;
+}
+
+Image detectTranslation1DPattern(Image_ img) {
+    int h = img.h;
+    int w = img.w;
+    std::vector<std::pair<int, int>> possibleShifts;
+
+    for (int r = -h + 1; r < h; ++r) {
+        for (int s = -w + 1; s < w; ++s) {
+            if (r == 0 && s == 0) continue;
+            bool possible = true;
+            std::unordered_map<std::pair<int, int>, char, pair_hash> equivColors;
+            for (int i = 0; i < h; ++i) {
+                if (!possible) break;
+                for (int j = 0; j < w; ++j) {
+                    int u = i * s - j * r;
+                    int v = (i * r + j * s + 100 * (r * r + s * s)) % (r * r + s * s);
+                    char color = img(i, j);
+                    std::pair<int, int> key = {u, v};
+                    if (equivColors.find(key) == equivColors.end()) {
+                        equivColors[key] = color;
+                    } else if (equivColors[key] != color) {
+                        possible = false;
+                        break;
+                    }
+                }
+            }
+            if (possible) {
+                possibleShifts.emplace_back(r, s);
+            }
+        }
+    }
+
+    if (possibleShifts.empty()) {
+        // No repeating pattern found
+        return img;
+    }
+
+    // Choose the shift with the minimal absolute sum
+    std::sort(possibleShifts.begin(), possibleShifts.end(), [](const auto& a, const auto& b) {
+        return std::abs(a.first) + std::abs(a.second) < std::abs(b.first) + std::abs(b.second);
+    });
+
+    int bestR = possibleShifts[0].first;
+    int bestS = possibleShifts[0].second;
+
+
+    // Build the equivalence classes
+    std::unordered_map<std::pair<int, int>, std::vector<std::pair<int, int>>, pair_hash> equivalenceClasses;
+    for (int i = 0; i < h; ++i) {
+        for (int j = 0; j < w; ++j) {
+            int u = i * bestS - j * bestR;
+            int v = (i * bestR + j * bestS + 100 * (bestR * bestR + bestS * bestS)) % (bestR * bestR + bestS * bestS);
+            equivalenceClasses[{u, v}].emplace_back(i, j);
+        }
+    }
+
+    // Build the pattern image
+    Image pattern = img;
+    for (const auto& [key, positions] : equivalenceClasses) {
+        if (positions.size() > 1) {
+            char color = img(positions[0].first, positions[0].second);
+            for (const auto& pos : positions) {
+                pattern(pos.first, pos.second) = color;
+            }
+        }
+    }
+    return pattern;
+}
+
+
+
+Image detectDiagonalPattern(Image_ img, unsigned short size = 2) {
+    if (img.h < size || img.w < size) return img;
+
+    Image pattern = {{0, 0}, img.sz, std::vector<char>(img.h * img.w, 0)};
+    for (int i = 0; i <= img.h - size; ++i) {
+        for (int j = 0; j <= img.w - size; ++j) {
+            bool isDiagonal = true;
+            int val = img(i, j);
+            for (int k = 1; k < size; ++k) {
+                if (img(i + k, j + k) != val) {
+                    isDiagonal = false;
+                    break;
+                }
+            }
+            if (isDiagonal) {
+                for (int k = 0; k < size; ++k) {
+                    pattern(i + k, j + k) = val;
+                }
+            }
+        }
+    }
+    return pattern;
+}
+
+Image detectCheckerboardPattern(Image_ img, unsigned short size = 2) {
+    if (img.h < size || img.w < size) return img;
+
+    Image pattern = {{0, 0}, img.sz, std::vector<char>(img.h * img.w, 0)};
+    for (int i = 0; i <= img.h - size; i += size) {
+        for (int j = 0; j <= img.w - size; j += size) {
+            int val = img(i, j);
+            bool isCheckerboard = true;
+            for (int x = 0; x < size; ++x) {
+                for (int y = 0; y < size; ++y) {
+                    if ((x + y) % 2 == 0) {
+                        if (img(i + x, j + y) != val) {
+                            isCheckerboard = false;
+                            break;
+                        }
+                    } else {
+                        if (img(i + x, j + y) == val) {
+                            isCheckerboard = false;
+                            break;
+                        }
+                    }
+                }
+                if (!isCheckerboard) break;
+            }
+            if (isCheckerboard) {
+                for (int x = 0; x < size; ++x) {
+                    for (int y = 0; y < size; ++y) {
+                        pattern(i + x, j + y) = img(i + x, j + y);
+                    }
+                }
+            }
+        }
+    }
+    return pattern;
+}
+
+Image repairRotationalSymmetry(const Image& img) {
+    if (img.h <= 0 || img.w <= 0) {
+        return img;
+    }
+
+    Image result = img;  // Create a copy of the input image
+
+    // Repair rotational symmetry by averaging
+    for (int i = 0; i < img.h; ++i) {
+        for (int j = 0; j < img.w; ++j) {
+            int opposite_i = img.h - i - 1;
+            int opposite_j = img.w - j - 1;
+
+            // Calculate the average value between the pixel and its rotationally symmetric counterpart
+            int average_value = (img(i, j) + img(opposite_i, opposite_j)) / 2;
+
+            // Update both the original and the symmetric pixel in the result
+            result(i, j) = average_value;
+            result(opposite_i, opposite_j) = average_value;
+        }
+    }
+
+    return result;
+}
+
+Image applyColorMapping(const Image_ &img, const std::unordered_map<int, int> &colorMap) {
+    // Create a copy of the image to modify and return
+    Image result = img;
+
+    for (int i = 0; i < img.h; ++i) {
+        for (int j = 0; j < img.w; ++j) {
+            int originalColor = img(i, j);
+
+            // Check if the color is in the map
+            if (colorMap.find(originalColor) != colorMap.end()) {
+                // Change the color based on the mapping
+                result(i, j) = colorMap.at(originalColor);
+            }
+            // If not found in map, keep the original color
+        }
+    }
+
+    return result;
+}
+Image detectPatterns(Image_ img, unsigned short size = 2) {
+    if(img.h < size || img.w < size) return img;
+
+    Image pattern = {{0,0}, img.sz, vector<char>(img.h * img.w, 0)};
+    for (int i = 0; i <= img.h - 2; ++i) {
+        for (int j = 0; j <= img.w - 2; ++j) {
+            int val = img(i, j);
+            if (val == img(i, j + 1) && val == img(i + 1, j) && val == img(i + 1, j + 1)) {
+                pattern(i, j) = val;
+                pattern(i, j + 1) = val;
+                pattern(i + 1, j) = val;
+                pattern(i + 1, j + 1) = val;
+            }
+        }
+    }
+    return pattern;
+}
+
+Image detectPatterns2Image2(Image_ img) {
+  return detectPatterns(img, 2);
+}
+
+Image detectPatterns2Image3(Image_ img) {
+  return detectPatterns(img, 3);
+}
+
+Image detectPatterns2Image4(Image_ img) {
+  return detectPatterns(img, 4);
+}
+
+Image detectPatterns2Image5(Image_ img) {
+  return detectPatterns(img, 5);
+}
+
+Image detectPatterns2Image6(Image_ img) {
+  return detectPatterns(img, 6);
+}
+
+Image detectPatterns2Image7(Image_ img) {
+  return detectPatterns(img, 7);
+}
+
+Image detectPatterns2Image8(Image_ img) {
+  return detectPatterns(img, 8);
+}
+
+Image detectPatterns2Image9(Image_ img) {
+  return detectPatterns(img, 9);
+}
+
+Image combineShapes(const vector<Image>& shapes, int rows, int cols) {
+    // Initialize the result image with dimensions (rows, cols) and filled with 0s
+    Image result = {{0, 0}, {cols, rows}, vector<char>(rows * cols, 0)};
+
+    // Iterate through each shape and place its pixels in the appropriate position in `result`
+    for (const auto& shape : shapes) {
+        for (int i = 0; i < shape.h; ++i) {
+            for (int j = 0; j < shape.w; ++j) {
+                // Only place the pixel if it is part of the shape (non-zero value in `shape.mask`)
+                if (shape(i, j) != 0) {
+                    int x = shape.p.x + i;  // Original x-coordinate of the pixel in `result`
+                    int y = shape.p.y + j;  // Original y-coordinate of the pixel in `result`
+
+                    // Ensure coordinates are within bounds before assigning
+                    if (x >= 0 && x < rows && y >= 0 && y < cols) {
+                        result(x, y) = shape(i, j);
+                    }
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+#include <vector>
+#include <algorithm>
+#include <unordered_set>
+
+bool detectRepeatingPatternWithHole(
+    Image_ img,
+    Image& filledImage,     // Output: the entire image with the hole filled
+    Image& missingPattern,  // Output: only the missing pattern that fills the hole
+    bool fillHole           // Option to fill the hole in the entire image or return only the missing pattern
+) {
+    int imgHeight = img.h;
+    int imgWidth = img.w;
+
+    // Find the hole in the image (pixels with color 0)
+    std::vector<point> holePixels;
+    for (int i = 0; i < imgHeight; ++i) {
+        for (int j = 0; j < imgWidth; ++j) {
+            if (img(i, j) == 0) {
+                holePixels.push_back({i, j});
+            }
+        }
+    }
+
+    if (holePixels.empty()) {
+        // No hole found, the image is complete
+        return false;
+    }
+
+    // Try different tile sizes starting from 1x1 up to half the image size
+    for (int tileHeight = 1; tileHeight <= imgHeight / 2; ++tileHeight) {
+        for (int tileWidth = 1; tileWidth <= imgWidth / 2; ++tileWidth) {
+
+            // Extract the tile pattern from known (non-hole) pixels
+            Image tile = {{0, 0}, {tileWidth, tileHeight}, std::vector<char>(tileWidth * tileHeight, -1)};
+            bool incompleteTile = false;
+
+            for (int i = 0; i < tileHeight; ++i) {
+                for (int j = 0; j < tileWidth; ++j) {
+                    // Map tile position to image position
+                    int imgRow = i;
+                    int imgCol = j;
+
+                    if (imgRow < imgHeight && imgCol < imgWidth) {
+                        char pixelValue = img(imgRow, imgCol);
+                        if (pixelValue != 0) {
+                            tile(i, j) = pixelValue;
+                        } else {
+                            incompleteTile = true;
+                        }
+                    } else {
+                        incompleteTile = true;
+                    }
+                }
+            }
+
+            if (incompleteTile) {
+                // Cannot construct a complete tile from this position, skip
+                continue;
+            }
+
+            // Now, verify if this tile can generate the entire image (ignoring holes)
+            bool patternMatches = true;
+            for (int i = 0; i < imgHeight; ++i) {
+                for (int j = 0; j < imgWidth; ++j) {
+                    char expectedPixel = tile(i % tileHeight, j % tileWidth);
+                    char actualPixel = img(i, j);
+                    if (actualPixel != 0 && actualPixel != expectedPixel) {
+                        patternMatches = false;
+                        break;
+                    }
+                }
+                if (!patternMatches) break;
+            }
+
+            if (patternMatches) {
+                // The tile pattern repeats across the image (excluding holes)
+
+                // Now, fill the hole(s)
+                Image filledImg = img;
+                for (const auto& p : holePixels) {
+                    int i = p.x;
+                    int j = p.y;
+                    char expectedPixel = tile(i % tileHeight, j % tileWidth);
+                    filledImg(i, j) = expectedPixel;
+                }
+
+                filledImage = filledImg;
+
+                if (fillHole) {
+                    // Return the entire image with the hole filled
+                    return true;
+                } else {
+                    // Return only the missing pattern corresponding to the hole
+                    // Determine the bounding box of the hole
+                    int minRow = holePixels[0].x;
+                    int maxRow = holePixels[0].x;
+                    int minCol = holePixels[0].y;
+                    int maxCol = holePixels[0].y;
+
+                    for (const auto& p : holePixels) {
+                        if (p.x < minRow) minRow = p.x;
+                        if (p.x > maxRow) maxRow = p.x;
+                        if (p.y < minCol) minCol = p.y;
+                        if (p.y > maxCol) maxCol = p.y;
+                    }
+
+                    int holeHeight = maxRow - minRow + 1;
+                    int holeWidth = maxCol - minCol + 1;
+
+                    // Extract the missing pattern from the filled image
+                    Image missingPat = {{0, 0}, {holeWidth, holeHeight}, std::vector<char>(holeWidth * holeHeight)};
+                    for (int i = 0; i < holeHeight; ++i) {
+                        for (int j = 0; j < holeWidth; ++j) {
+                            missingPat(i, j) = filledImg(minRow + i, minCol + j);
+                        }
+                    }
+
+                    missingPattern = missingPat;
+                    return true;
+                }
+            }
+        }
+    }
+
+    // No repeating pattern found that matches the image with the hole
+    return false;
+}
+
+
+Image trimToContent(Image_ img) {
+    int minX = img.h, minY = img.w, maxX = -1, maxY = -1;
+    for (int i = 0; i < img.h; ++i) {
+        for (int j = 0; j < img.w; ++j) {
+            if (img(i, j) != 0) {
+                minX = std::min(minX, i);
+                minY = std::min(minY, j);
+                maxX = std::max(maxX, i);
+                maxY = std::max(maxY, j);
+            }
+        }
+    }
+    if (minX > maxX || minY > maxY) {
+        // No content found
+        return Image{{0, 0}, {0, 0}, {}};
+    }
+    int newHeight = maxX - minX + 1;
+    int newWidth = maxY - minY + 1;
+    Image result = {{0, 0}, {newWidth, newHeight}, vector<char>(newWidth * newHeight)};
+    for (int i = 0; i < newHeight; ++i) {
+        for (int j = 0; j < newWidth; ++j) {
+            result(i, j) = img(minX + i, minY + j);
+        }
+    }
+    return result;
+}
+
+
+vector<Image> extractConnectedComponents(Image_ img) {
+    int rows = img.h;
+    int cols = img.w;
+    vector<bool> visited(rows * cols, false); // 1D visited array
+    vector<Image> components;
+
+    // Directions for 4-neighbor connectivity (up, down, left, right)
+    vector<point> directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+
+    // Helper lambda for 2D to 1D index
+    auto index = [&](int x, int y) { return x * cols + y; };
+
+    // Iterate through each pixel in the image
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            if (!visited[index(i, j)] && img(i, j) != 0) {  // Non-zero and unvisited
+                char value = img(i, j);
+
+                // Bounding box of the component
+                int minX = i, maxX = i, minY = j, maxY = j;
+
+                // Points belonging to this component
+                vector<point> points;
+
+                // BFS queue for flood fill
+                queue<point> q;
+                q.push({i, j});
+                visited[index(i, j)] = true;
+
+                while (!q.empty()) {
+                    point p = q.front();
+                    q.pop();
+
+                    points.push_back(p);
+
+                    // Update bounding box
+                    minX = min(minX, p.x);
+                    maxX = max(maxX, p.x);
+                    minY = min(minY, p.y);
+                    maxY = max(maxY, p.y);
+
+                    // Explore neighbors
+                    for (const point& dir : directions) {
+                        int nx = p.x + dir.x;
+                        int ny = p.y + dir.y;
+
+                        // Check bounds and ensure the pixel is part of the same component
+                        if (nx >= 0 && nx < rows && ny >= 0 && ny < cols &&
+                            !visited[index(nx, ny)] && img(nx, ny) == value) {
+                            visited[index(nx, ny)] = true;
+                            q.push({nx, ny});
+                        }
+                    }
+                }
+
+                // Calculate width and height of the component
+                int compWidth = maxY - minY + 1;
+                int compHeight = maxX - minX + 1;
+
+                // Initialize the mask for this component with zeros
+                Image component = {{minX, minY}, {compWidth, compHeight}, vector<char>(compWidth * compHeight, 0)};
+
+                // Place the points in the component image's mask
+                for (const point& pt : points) {
+                    int localX = pt.x - minX;
+                    int localY = pt.y - minY;
+                    component(localX, localY) = value;
+                }
+
+                // Add the component to the list of components
+                components.push_back(std::move(component));
+            }
+        }
+    }
+
+    return components;
+}
+
+
+Image mostCommonShape(Image_ img) {
+    auto shapes = extractConnectedComponents(img);
+    map<int, int> shapeCounts;
+    for (const auto& shape : shapes) {
+        int size = shape.mask.size();
+        shapeCounts[size]++;
+    }
+    int maxCount = 0;
+    int commonSize = 0;
+    for (const auto& [size, count] : shapeCounts) {
+        if (count > maxCount) {
+            maxCount = count;
+            commonSize = size;
+        }
+    }
+    vector<Image> commonShapes;
+    for (const auto& shape : shapes) {
+        if (shape.mask.size() == commonSize) {
+            commonShapes.push_back(shape);
+        }
+    }
+    Image result = combineShapes(commonShapes, img.h, img.w);
+    return result;
+}
+
+
+Image dilate(Image_ img, int iterations = 1) {
+    Image result = img;
+    for (int iter = 0; iter < iterations; ++iter) {
+        result = dilation(result);
+    }
+    return result;
+}
+
+Image erode(Image_ img, int iterations = 1) {
+    Image result = img;
+    for (int iter = 0; iter < iterations; ++iter) {
+        result = erosion(result);
+    }
+    return result;
+}
+
+Image dilate1(Image_ img) {
+    return dilate(img, 1);
+}
+
+Image erode1(Image_ img) {
+    return erode(img, 1);
+}
+
+Image dilate2(Image_ img) {
+    return dilate(img, 2);
+}
+
+Image erode2(Image_ img) {
+    return erode(img, 2);
+}
+
+Image dilate3(Image_ img) {
+    return dilate(img, 3);
+}
+
+Image erode3(Image_ img) {
+    return erode(img, 3);
+}
+
+Image ringSmear(Image_ base, Image_ room) {
+    Image ret = embed(base, hull(room));
+    point center = {base.w / 2, base.h / 2};
+
+    for (int r = 0; r < std::max(base.h, base.w) / 2; ++r) {
+        for (int i = -r; i <= r; ++i) {
+            for (int j = -r; j <= r; ++j) {
+                int x = center.x + i;
+                int y = center.y + j;
+                if (x >= 0 && x < base.w && y >= 0 && y < base.h) {
+                    if (room.safe(y, x) && base.safe(y, x)) {
+                        ret(y, x) = base(y, x);
+                    }
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
+Image checkerboardSmear(Image_ base, Image_ room) {
+    Image ret = embed(base, hull(room));
+
+    for (int i = 0; i < ret.h; ++i) {
+        for (int j = 0; j < ret.w; ++j) {
+            if ((i + j) % 2 == 0) {  // Checkerboard condition
+                if (room(i, j) && base.safe(i, j)) {
+                    ret(i, j) = base(i, j);
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
+Image diagonalSmear(Image_ base, Image_ room, int id) {
+    assert(id >= 0 && id < 4);
+    const int arr[] = {1, 2, 3, 4};  // 1: Top-left to Bottom-right, 2: Bottom-right to Top-left, etc.
+    const int mask = arr[id];
+
+    point d = room.p - base.p;
+    Image ret = embed(base, hull(room));
+
+    if (mask == 1) {
+        // Top-left to Bottom-right
+        for (int i = 0; i < ret.h; ++i) {
+            char c = 0;
+            for (int j = 0; j < ret.w; ++j) {
+                if (!room(i, j)) c = 0;
+                else if (base.safe(i + d.y, j + d.x)) c = base(i + d.y, j + d.x);
+                if (c) ret(i, j) = c;
+            }
+        }
+    } else if (mask == 2) {
+        // Bottom-right to Top-left
+        for (int i = ret.h - 1; i >= 0; --i) {
+            char c = 0;
+            for (int j = ret.w - 1; j >= 0; --j) {
+                if (!room(i, j)) c = 0;
+                else if (base.safe(i + d.y, j + d.x)) c = base(i + d.y, j + d.x);
+                if (c) ret(i, j) = c;
+            }
+        }
+    } else if (mask == 3) {
+        // Top-right to Bottom-left
+        for (int i = 0; i < ret.h; ++i) {
+            char c = 0;
+            for (int j = ret.w - 1; j >= 0; --j) {
+                if (!room(i, j)) c = 0;
+                else if (base.safe(i + d.y, j + d.x)) c = base(i + d.y, j + d.x);
+                if (c) ret(i, j) = c;
+            }
+        }
+    } else if (mask == 4) {
+        // Bottom-left to Top-right
+        for (int i = ret.h - 1; i >= 0; --i) {
+            char c = 0;
+            for (int j = 0; j < ret.w; ++j) {
+                if (!room(i, j)) c = 0;
+                else if (base.safe(i + d.y, j + d.x)) c = base(i + d.y, j + d.x);
+                if (c) ret(i, j) = c;
+            }
+        }
+    }
+
+    return ret;
+}
+
+
+
 vImage splitColumns(Image_ img) {
   if (img.w*img.h <= 0) return {};
   vector<Image> ret(img.w);
@@ -567,6 +1680,49 @@ Image half(Image_ img, int id) {
     return core::subImage(img, {0,img.h-img.h/2}, {img.w, img.h/2});
   }
   return badImg;
+}
+Image diagonalSmear(Image_ img, int id) {
+    Image ret = img;
+
+    if (id == 0) { // Top-left to bottom-right
+        for (int i = 0; i < ret.h; ++i) {
+            char c = 0;
+            for (int j = 0; j < ret.w; ++j) {
+                if (!img(i, j)) c = 0;
+                else c = img(i, j);
+                if (c) ret(i, j) = c;
+            }
+        }
+    } else if (id == 1) { // Bottom-right to top-left
+        for (int i = ret.h - 1; i >= 0; --i) {
+            char c = 0;
+            for (int j = ret.w - 1; j >= 0; --j) {
+                if (!img(i, j)) c = 0;
+                else c = img(i, j);
+                if (c) ret(i, j) = c;
+            }
+        }
+    } else if (id == 2) { // Top-right to bottom-left
+        for (int i = 0; i < ret.h; ++i) {
+            char c = 0;
+            for (int j = ret.w - 1; j >= 0; --j) {
+                if (!img(i, j)) c = 0;
+                else c = img(i, j);
+                if (c) ret(i, j) = c;
+            }
+        }
+    } else if (id == 3) { // Bottom-left to top-right
+        for (int i = ret.h - 1; i >= 0; --i) {
+            char c = 0;
+            for (int j = 0; j < ret.w; ++j) {
+                if (!img(i, j)) c = 0;
+                else c = img(i, j);
+                if (c) ret(i, j) = c;
+            }
+        }
+    }
+
+    return ret;
 }
 
 
@@ -612,7 +1768,78 @@ Image smear(Image_ img, int id) {
 
   return ret;
 }
+Image diagonalGravity(Image_ img, int corner) {
+    Image result = img;
+    bool moved = true;
 
+    while (moved) {
+        moved = false;
+
+        if (corner == 0) { // Top-left
+            for (int i = 1; i < img.h; ++i) {
+                for (int j = 1; j < img.w; ++j) {
+                    if (result(i, j) != 0 && result(i - 1, j - 1) == 0) {
+                        std::swap(result(i, j), result(i - 1, j - 1));
+                        moved = true;
+                    }
+                }
+            }
+        } else if (corner == 1) { // Bottom-right
+            for (int i = img.h - 2; i >= 0; --i) {
+                for (int j = img.w - 2; j >= 0; --j) {
+                    if (result(i, j) != 0 && result(i + 1, j + 1) == 0) {
+                        std::swap(result(i, j), result(i + 1, j + 1));
+                        moved = true;
+                    }
+                }
+            }
+        } else if (corner == 2) { // Top-right
+            for (int i = 1; i < img.h; ++i) {
+                for (int j = img.w - 2; j >= 0; --j) {
+                    if (result(i, j) != 0 && result(i - 1, j + 1) == 0) {
+                        std::swap(result(i, j), result(i - 1, j + 1));
+                        moved = true;
+                    }
+                }
+            }
+        } else if (corner == 3) { // Bottom-left
+            for (int i = img.h - 2; i >= 0; --i) {
+                for (int j = 1; j < img.w; ++j) {
+                    if (result(i, j) != 0 && result(i + 1, j - 1) == 0) {
+                        std::swap(result(i, j), result(i + 1, j - 1));
+                        moved = true;
+                    }
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+Image circularShift(Image_ img, bool isRowShift, int shiftAmount) {
+    Image result = img;
+
+    if (isRowShift) { // Shift rows circularly
+        for (int i = 0; i < img.h; ++i) {
+            for (int j = 0; j < img.w; ++j) {
+                int newCol = (j + shiftAmount) % img.w;
+                if (newCol < 0) newCol += img.w;
+                result(i, newCol) = img(i, j);
+            }
+        }
+    } else { // Shift columns circularly
+        for (int j = 0; j < img.w; ++j) {
+            for (int i = 0; i < img.h; ++i) {
+                int newRow = (i + shiftAmount) % img.h;
+                if (newRow < 0) newRow += img.h;
+                result(newRow, j) = img(i, j);
+            }
+        }
+    }
+
+    return result;
+}
 
 Image mirror2(Image_ a, Image_ line) {
   Image ret;

@@ -7,13 +7,31 @@ struct State {
   vImage vimg;
   int depth;
   bool isvec;
-  State() {}
-  State(vImage_ vimg_, bool isvec_, int depth_) : vimg(vimg_), isvec(isvec_), depth(depth_) {}
+
+  State() = default;
+  State(vImage_&& vimg_, bool isvec_, int depth_)
+    : vimg(std::move(vimg_)), isvec(isvec_), depth(depth_) {}
+
   ull hash() const {
-    ull r = isvec;
-    for (Image_ img : vimg) {
-      r += hashImage(img)*123413491;
+    ull r = isvec ? 1 : 0;
+    ull multiplier = 123413491;
+    size_t i = 0;
+    size_t n = vimg.size();
+
+    // Process 4 elements per iteration when possible
+    for (; i + 3 < n; i += 4) {
+      r = r * multiplier + hashImage(vimg[i]);
+      r = r * multiplier + hashImage(vimg[i + 1]);
+      r = r * multiplier + hashImage(vimg[i + 2]);
+      r = r * multiplier + hashImage(vimg[i + 3]);
+      multiplier *= 31;  // Update multiplier to reduce collision risk
     }
+
+    // Process any remaining elements
+    for (; i < n; ++i) {
+      r = r * multiplier + hashImage(vimg[i]);
+    }
+
     return r;
   }
 };
@@ -72,6 +90,7 @@ struct DAG {
   int add(const State&nxt, bool force = false);
   Image getImg(int nodei);
   void build();
+  
   void buildBinary();
   void initial(Image_ test_in, const vector<pair<Image,Image>>&train, vector<point> sizes, int ti);
   void benchmark();

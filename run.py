@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 run_list = range(0,416)
-run_depth = 3
+run_depth = 2
 
 from subprocess import call
 from concurrent.futures import ThreadPoolExecutor as Pool
@@ -15,7 +15,7 @@ version = str(69)
 if len(sys.argv) == 2: version = sys.argv[1]
 print("Updating to version", version)
 
-parallel = 10
+parallel = 12
 
 os.system('mkdir -p store/version/')
 os.system('mkdir -p store/tmp/')

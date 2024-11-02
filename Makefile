@@ -24,7 +24,7 @@ $(PREC).gch: $(PREC)
 obj/%.o: src/%.cpp $(HEAD_PATH)
 	g++ -c $< $(FLAGS) -o $@ -I headers
 
-all: $(OBJ)
+all: $(OBJ_PATH)
 
 run: src/main.cpp $(OBJ_PATH) $(HEAD_PATH) headers/tasks.hpp
 	g++ src/main.cpp $(OBJ_PATH) $(FLAGS) $(LIBS) -o run -I headers
@@ -34,13 +34,18 @@ count_tasks: src/count_tasks.cpp obj/read.o headers/utils.hpp
 
 # Clean target
 clean:
-	rm -rf obj/*.o run
+	rm -rf obj/*.o run output/* store/*
+clean_profiles:
+	rm -rf profilerdata/*
 
 gen_profile: FLAGS += -fprofile-generate -fprofile-dir=./profilerdata -Ofast
-gen_profile: clean obj run count_tasks
+gen_profile: clean_profiles all run count_tasks
 
 use_profile: FLAGS += -fprofile-use -fprofile-dir=./profilerdata -Ofast
-use_profile: clean obj run count_tasks
+use_profile: all run count_tasks
+
+test: FLAGS += -Ofast
+test: clean all run count_tasks
 
 save_space: FLAGS += -fprofile-use -fprofile-dir=./profilerdata -Os
-save_space: clean obj run count_tasks
+save_space: clean all run count_tasks
