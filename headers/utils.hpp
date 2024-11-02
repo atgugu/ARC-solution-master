@@ -101,7 +101,7 @@ inline ul hashImage(Image_ img) {
 struct Piece {
   vector<Image> imgs;
   double node_prob;
-  short keepi, knowi;
+  int keepi, knowi;
 };
 
 const Image badImg = {{0,0},{0,0},{}};

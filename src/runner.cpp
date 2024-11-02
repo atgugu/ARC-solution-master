@@ -38,7 +38,7 @@ string red(string s) {
 }
 
 
-void writeVerdict(int si, string sid, short verdict) {
+void writeVerdict(int si, string sid, int verdict) {
   
   printf("Task #%2d (%s): ", si, sid.c_str());
   switch (verdict) {
@@ -74,7 +74,7 @@ void run(int only_sid = -1, int arg = -1) {
 
     // Read all samples
     vector<Sample> sample = readAll(sample_dir, samples);
-    vector<short> verdict(sample.size());
+    vector<int> verdict(sample.size());
     Visu visu;
 
     // Prepare loaders and counters

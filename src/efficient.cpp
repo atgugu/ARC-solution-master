@@ -46,7 +46,7 @@ void TinyChildren::add(int fi, int to) {
     dense[fi] = to;
     // ham
     //#pragma omp parallel for
-    for (short i = 0; i < sz; ++i) {
+    for (int i = 0; i < sz; ++i) {
       auto [fi, to] = old[i];
       assert(fi >= 0);
       assert(fi < cap);
@@ -92,10 +92,10 @@ void TinyChildren::add(int fi, int to) {
 int TinyChildren::get(int fi) {
   assert(fi >= 0);
   if (sz < dense_thres) {
-    short low = 0, high = sz-1;
+    int low = 0, high = sz-1;
     while (low <= high) {
-      short mid = (low+high)>>1;
-      short cfi = sparse[mid].first;
+      int mid = (low+high)>>1;
+      int cfi = sparse[mid].first;
       if (cfi == fi) return sparse[mid].second;
       else if (cfi > fi) high = mid-1;
       else low = mid+1;
@@ -125,19 +125,19 @@ void TinyChildren::legacy(vector<pair<int,int>>&ret) {
 
 
 TinyImage::TinyImage(Image_ img, TinyBank&bank) {
-  for (short c : {img.x, img.y, img.w, img.h}) {
+  for (int c : {img.x, img.y, img.w, img.h}) {
     assert(c >= -128 && c < 128);
   }
   x = img.x, y = img.y, w = img.w, h = img.h;
 
-  short freq[10] = {};
+  int freq[10] = {};
   for (char c : img.mask) {
     assert(c >= 0 && c < 10);
     freq[c]++;
   }
 
-  priority_queue<pair<short,short>> pq;
-  for (short d = 0; d < 10; ++d) {
+  priority_queue<pair<int,int>> pq;
+  for (int d = 0; d < 10; ++d) {
     if (freq[d]) {
       pq.emplace(-freq[d], -d);
       //cout << d << ": " << freq[d] << endl;
@@ -145,9 +145,9 @@ TinyImage::TinyImage(Image_ img, TinyBank&bank) {
   }
   while (pq.size() < 2) pq.emplace(0,0);
 
-  const short nodes = pq.size()-1;
-  short pos = nodes-1;
-  auto convert = [](short a, short p) {
+  const int nodes = pq.size()-1;
+  int pos = nodes-1;
+  auto convert = [](int a, int p) {
     if (a <= 0) return -a;
     else {
       assert(9+a-p >= 10 && 9+a-p < 16);
@@ -160,12 +160,12 @@ TinyImage::TinyImage(Image_ img, TinyBank&bank) {
     tree[pos] = convert(a,pos) | convert(b,pos) << 4;
     pq.emplace(mfa+mfb, pos--);
   }
-  short code[10] = {}, codelen[10] = {};
-  short path[10] = {}, pathlen[10] = {};
-  for (short p = 0; p < nodes; ++p) {
-    for (short k : {0,1}) {
-      short child = tree[p]>>k*4&15;
-      short newpath = path[p] | k<<pathlen[p];
+  int code[10] = {}, codelen[10] = {};
+  int path[10] = {}, pathlen[10] = {};
+  for (int p = 0; p < nodes; ++p) {
+    for (int k : {0,1}) {
+      int child = tree[p]>>k*4&15;
+      int newpath = path[p] | k<<pathlen[p];
       if (child < 10) {
 	code[child] = newpath;
 	codelen[child] = pathlen[p]+1;
@@ -206,11 +206,11 @@ Image TinyImage::decompress(TinyBank&bank) {
   Image ret;
   ret.x = x, ret.y = y, ret.w = w, ret.h = h;
   ret.mask.resize(ret.w*ret.h);
-  short treep = 0, maski = 0;
+  int treep = 0, maski = 0;
   ll memstart = (ll)memi*align;
   for (ll i = memstart; i < memstart+sz; ++i) {
-    short bit = bank.get(i);
-    short child = tree[treep]>>bit*4&15;
+    int bit = bank.get(i);
+    int child = tree[treep]>>bit*4&15;
     if (child < 10) {
       ret.mask[maski++] = child;
       treep = 0;

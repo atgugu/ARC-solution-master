@@ -12,27 +12,27 @@ using namespace std;
 #include "deduce_op.hpp"
 
 pair<Image,Image> iOuterProductSI(Image_ img, int w, int h) {
-  const unsigned short imghh = img.h/h;
-  const unsigned short imgww = img.w/w;
+  const unsigned int imghh = img.h/h;
+  const unsigned int imgww = img.w/w;
   if (img.w*img.h <= 0 || img.w%w || img.h%h) return {badImg,badImg};
   Image big = core::full({img.w/w,imghh},-1);
   Image small = core::full({w,h},-1);
 
-  for (unsigned short ii = 0; ii < imghh; ++ii) {
-    const unsigned short iih = ii*h;
-    for (unsigned short jj = 0; jj < imgww; ++jj) {
-      const unsigned short jjw = jj*w;
+  for (unsigned int ii = 0; ii < imghh; ++ii) {
+    const unsigned int iih = ii*h;
+    for (unsigned int jj = 0; jj < imgww; ++jj) {
+      const unsigned int jjw = jj*w;
       unsigned all0 = 1;
-      for (unsigned short i = 0; i < h; ++i)
-	for (unsigned short j = 0; j < w; ++j)
+      for (unsigned int i = 0; i < h; ++i)
+	for (unsigned int j = 0; j < w; ++j)
 	  if (img(iih+i,jjw+j)) all0 = 0;
 
       big(ii,jj) = !all0;
 
       if (!all0) {
-	for (unsigned short i = 0; i < h; ++i) {
-    const unsigned short iihi = iih+i;
-	  for (unsigned short j = 0; j < w; ++j) {
+	for (unsigned int i = 0; i < h; ++i) {
+    const unsigned int iihi = iih+i;
+	  for (unsigned int j = 0; j < w; ++j) {
 	    char& a = small(i,j);
 	    const char b = img(iihi,jjw+j);
 	    if (a != -1 && a != b) return {badImg,badImg};
@@ -48,27 +48,27 @@ pair<Image,Image> iOuterProductSI(Image_ img, int w, int h) {
 
 pair<Image,Image> iOuterProductIS(Image_ img, int w, int h) {
   if (img.w*img.h <= 0 || img.w%w || img.h%h) return {badImg,badImg};
-  const unsigned short imghh = img.h/h;
-  const unsigned short imgww = img.w/w;
+  const unsigned int imghh = img.h/h;
+  const unsigned int imgww = img.w/w;
   Image big = core::full({imgww,imghh},-1);
   Image small = core::full({w,h},-1);
 
-  for (unsigned short ii = 0; ii < imghh; ++ii) {
-    const unsigned short iih = ii*h;
-    for (unsigned short jj = 0; jj < imgww; ++jj) {
-      const unsigned short jjw = jj*w;
-      unsigned short mask = 0;
-      for (unsigned short i = 0; i < h; ++i){
-        const unsigned short iihi = iih+i;
-	for (unsigned short j = 0; j < w; ++j)
+  for (unsigned int ii = 0; ii < imghh; ++ii) {
+    const unsigned int iih = ii*h;
+    for (unsigned int jj = 0; jj < imgww; ++jj) {
+      const unsigned int jjw = jj*w;
+      unsigned int mask = 0;
+      for (unsigned int i = 0; i < h; ++i){
+        const unsigned int iihi = iih+i;
+	for (unsigned int j = 0; j < w; ++j)
 	  mask |= 1<<img(iihi,jjw+j);}
 
       if (__builtin_popcount(mask&~1) > 1) return {badImg,badImg};
       big(ii,jj) = 31-__builtin_clz(mask);
       if (big(ii,jj)) {
-	for (unsigned short i = 0; i < h; ++i) {
-    const unsigned short iihi =iih+i;
-	  for (unsigned short j = 0; j < w; ++j) {
+	for (unsigned int i = 0; i < h; ++i) {
+    const unsigned int iihi =iih+i;
+	  for (unsigned int j = 0; j < w; ++j) {
 	    char& a = small(i,j);
 	    const char b = img(iihi,jjw+j) > 0;
 	    if (a != -1 && a != b) return {badImg,badImg};
@@ -102,7 +102,7 @@ deduceOuterProduct::deduceOuterProduct(vector<pair<Image,Image>> train) {
       //ham
       //#pragma omp parallel for
       for (Image_ img : imgs) {
-	const short cols = __builtin_popcount(core::colMask(img)&~1);
+	const int cols = __builtin_popcount(core::colMask(img)&~1);
 	if (cols <= 1 && core::isRectangle(img)) {
 	  ans += log(img.w+1)+log(img.h+1);
 	} else if (cols <= 1) {
@@ -159,17 +159,17 @@ deduceOuterProduct::deduceOuterProduct(vector<pair<Image,Image>> train) {
     }
   }
   assert(rec_funci != -1);
-  const unsigned short trainsize = train.size();
+  const unsigned int trainsize = train.size();
   for (int k : {0,1}) {
     auto f = k ? iOuterProductSI : iOuterProductIS;
     vector<double> best_at(trainsize, 1e9);
     vector<pair<Image,Image>> best_single(train.size(), {badImg,badImg});
     //ham
     //#pragma omp parallel for
-    for (unsigned short ti = 0; ti < trainsize; ++ti) {
+    for (unsigned int ti = 0; ti < trainsize; ++ti) {
       Image target = train[ti].second;
-      for (unsigned short h = 1; h <= target.h; ++h) {
-	for (unsigned short w = 1; w <= target.w; ++w) {
+      for (unsigned int h = 1; h <= target.h; ++h) {
+	for (unsigned int w = 1; w <= target.w; ++w) {
 	  const auto is = f(target, w, h);
 	  const double entropy = score({is},k);
 	  if (entropy < best_at[ti]) {

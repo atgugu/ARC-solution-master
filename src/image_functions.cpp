@@ -888,18 +888,18 @@ Image compose(vImage_ imgs, int id) {
 }
 
 void getRegular(vector<int>&col) {
-  const short colw = col.size();
+  const int colw = col.size();
 
-  for (short w = 1; w < colw; ++w) {
-    short s = -1;
+  for (int w = 1; w < colw; ++w) {
+    int s = -1;
     if (colw%(w+1) == w) { //No outer border
       s = w;
     } else if (colw%(w+1) == 1) { //Outer border
       s = 0;
     }
     if (s != -1) {
-      short ok = 1;
-      for (short i = 0; i < colw; ++i) {
+      int ok = 1;
+      for (int i = 0; i < colw; ++i) {
 	if (col[i] != (i%(w+1) == s)) {
 	  ok = 0;
 	  break;

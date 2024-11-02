@@ -10,22 +10,22 @@ using namespace std;
 #include "core_functions.hpp"
 
 namespace core {
-  unsigned short colMask(Image_ img) {
-    unsigned short mask = 0;
-    for (unsigned short i = 0; i < img.h; ++i)
-      for (unsigned short j = 0; j < img.w; ++j)
+  unsigned int colMask(Image_ img) {
+    unsigned int mask = 0;
+    for (unsigned int i = 0; i < img.h; ++i)
+      for (unsigned int j = 0; j < img.w; ++j)
 	mask |= 1<<img(i,j);
     return mask;
   }
-  unsigned short countCols(Image_ img, int include0) {//include0 = 0
-    unsigned short mask = colMask(img);
+  unsigned int countCols(Image_ img, int include0) {//include0 = 0
+    unsigned int mask = colMask(img);
     if (!include0) mask = mask&~1;
     return __builtin_popcount(mask);
   }
-  unsigned short count(Image_ img) {
-    unsigned short ans = 0;
-    for (unsigned short i = 0; i < img.h; ++i)
-      for (unsigned short j = 0; j < img.w; ++j)
+  unsigned int count(Image_ img) {
+    unsigned int ans = 0;
+    for (unsigned int i = 0; i < img.h; ++i)
+      for (unsigned int j = 0; j < img.w; ++j)
 	ans += img(i,j) > 0;
     return ans;
   }
@@ -60,18 +60,18 @@ namespace core {
     return count(a) == a.w*a.h;
   }
 
-  void countComponents_dfs(Image&img, unsigned short r, unsigned short c) {
+  void countComponents_dfs(Image&img, unsigned int r, unsigned int c) {
     img(r,c) = 0;
-    for (unsigned short nr = r-1; nr <= r+1; ++nr)
-      for (unsigned short nc = c-1; nc <= c+1; ++nc)
+    for (unsigned int nr = r-1; nr <= r+1; ++nr)
+      for (unsigned int nc = c-1; nc <= c+1; ++nc)
 	if (nr >= 0 && nr < img.h && nc >= 0 && nc < img.w && img(nr,nc))
 	  countComponents_dfs(img,nr,nc);
   }
 
-  unsigned short countComponents(Image img) {
-    unsigned short  ans = 0;
-    for (unsigned short i = 0; i < img.h; ++i) {
-      for (unsigned short j = 0; j < img.w; ++j) {
+  unsigned int countComponents(Image img) {
+    unsigned int  ans = 0;
+    for (unsigned int i = 0; i < img.h; ++i) {
+      for (unsigned int j = 0; j < img.w; ++j) {
 	if (img(i,j)) {
 	  countComponents_dfs(img,i,j);
 	  /*function<void(int,int)> dfs = [&](int r, int c) {
@@ -91,17 +91,17 @@ namespace core {
 
 
   char majorityCol(Image_ img, int include0) { //include0 = 0
-    short cnt[10] = {};
-    for (short i = 0; i < img.h; ++i)
-      for (short j = 0; j < img.w; ++j) {
+    int cnt[10] = {};
+    for (int i = 0; i < img.h; ++i)
+      for (int j = 0; j < img.w; ++j) {
 	char c = img(i,j);
 	if (c >= 0 && c < 10)
 	  cnt[c]++;
       }
     if (!include0) cnt[0] = 0;
-    short ret = 0;
-    short ma = cnt[ret];
-    for (short c = 1; c < 10; ++c) {
+    int ret = 0;
+    int ma = cnt[ret];
+    for (int c = 1; c < 10; ++c) {
       if (cnt[c] > ma) {
 	ma = cnt[c];
 	ret = c;

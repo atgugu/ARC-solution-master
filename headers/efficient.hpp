@@ -30,7 +30,7 @@ struct TinyChildren {
     int*dense;
     pair<int,int>*sparse;
   };
-  short sz = 0, cap = 0;
+  int sz = 0, cap = 0;
   TinyChildren() {
     dense = NULL;
   }
@@ -87,7 +87,7 @@ struct TinyBank {
 struct TinyImage {
   static constexpr int align = 16;
   uint32_t memi;
-  short sz;
+  int sz;
   char x, y, w, h;
   uint8_t tree[9];
   TinyImage(Image_ img, TinyBank&bank);
@@ -97,7 +97,7 @@ struct TinyImage {
 struct TinyNode {
   int*vimg = NULL;
   bool isvec, ispiece;
-  short imgs; //TODO change to unsigned char
+  int imgs; //TODO change to unsigned char
   char depth;
   TinyChildren child;
   TinyNode() {}

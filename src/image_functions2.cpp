@@ -12,26 +12,27 @@ using namespace std;
 #include <unordered_set>
 #include <functional>
 #include <tuple>
+#include <cmath>
 
 
 vImage splitAll(Image_ img) {
   vector<Image> ret;
   Image done = core::empty(img.p,img.sz);
-  for (short i = 0; i < img.h; ++i) {
-    for (short j = 0; j < img.w; ++j) {
+  for (int i = 0; i < img.h; ++i) {
+    for (int j = 0; j < img.w; ++j) {
       if (!done(i,j)) {
 	Image toadd = core::empty(img.p,img.sz);
-	function<void(short,short,short)> dfs = [&](short r, short c, short col) {
+	function<void(int,int,int)> dfs = [&](int r, int c, int col) {
 	  if (r < 0 || r >= img.h || c < 0 || c >= img.w || img(r,c) != col || done(r,c)) return;
 	  toadd(r,c) = img(r,c)+1;
 	  done(r,c) = 1;
-	  for (short d = 0; d < 4; ++d)
+	  for (int d = 0; d < 4; ++d)
 	    dfs(r+(d==0)-(d==1),c+(d==2)-(d==3),col);
 	};
 	dfs(i,j,img(i,j));
 	toadd = compress(toadd);
-	for (short i = 0; i < toadd.h; ++i) {
-	  for (short j = 0; j < toadd.w; ++j) {
+	for (int i = 0; i < toadd.h; ++i) {
+	  for (int j = 0; j < toadd.w; ++j) {
 	    toadd(i,j) = max(0, toadd(i,j)-1);
 	  }
 	}
@@ -47,15 +48,98 @@ vImage splitAll(Image_ img) {
 
 
 Image eraseCol(Image img, int col) {
-  for (short i = 0; i < img.h; ++i)
-    for (short j = 0; j < img.w; ++j)
+  for (int i = 0; i < img.h; ++i)
+    for (int j = 0; j < img.w; ++j)
       if (img(i,j) == col) img(i,j) = 0;
   return img;
 }
 
-#include <vector>
-#include <algorithm>
-#include <unordered_set>
+Image removeGrid(const Image& img) {
+    if (img.w <= 1 || img.h <= 1) {
+        return img;  // Return original if too small for a grid
+    }
+
+    std::vector<int> rowGridLines, colGridLines;
+
+    // Detect potential row grid lines
+    for (int i = 1; i < img.h - 1; ++i) {
+        bool isGridLine = true;
+        for (int j = 1; j < img.w; ++j) {
+            if (img(i, j) != img(i, j - 1)) {
+                isGridLine = false;
+                break;
+            }
+        }
+        if (isGridLine) {
+            rowGridLines.push_back(i);
+        }
+    }
+
+    // Detect potential column grid lines
+    for (int j = 1; j < img.w - 1; ++j) {
+        bool isGridLine = true;
+        for (int i = 1; i < img.h; ++i) {
+            if (img(i, j) != img(i - 1, j)) {
+                isGridLine = false;
+                break;
+            }
+        }
+        if (isGridLine) {
+            colGridLines.push_back(j);
+        }
+    }
+
+    // Check if grid lines are regularly spaced
+    if (rowGridLines.size() > 1) {
+        int rowSpacing = rowGridLines[1] - rowGridLines[0];
+        for (size_t i = 1; i < rowGridLines.size(); ++i) {
+            if (rowGridLines[i] - rowGridLines[i - 1] != rowSpacing) {
+                return img;  // Irregular spacing indicates no grid
+            }
+        }
+    } else {
+        rowGridLines.clear();
+    }
+
+    if (colGridLines.size() > 1) {
+        int colSpacing = colGridLines[1] - colGridLines[0];
+        for (size_t j = 1; j < colGridLines.size(); ++j) {
+            if (colGridLines[j] - colGridLines[j - 1] != colSpacing) {
+                return img;  // Irregular spacing indicates no grid
+            }
+        }
+    } else {
+        colGridLines.clear();
+    }
+
+    // If no regular grid was found, return the original image
+    if (rowGridLines.empty() && colGridLines.empty()) {
+        return img;
+    }
+
+    // Create a new image by excluding detected grid lines
+    int newHeight = img.h - rowGridLines.size();
+    int newWidth = img.w - colGridLines.size();
+    Image result = core::empty({img.p.x, img.p.y}, {newWidth, newHeight});
+
+    int newRow = 0;
+    for (int i = 0; i < img.h; ++i) {
+        if (std::find(rowGridLines.begin(), rowGridLines.end(), i) != rowGridLines.end()) {
+            continue;  // Skip grid row
+        }
+        int newCol = 0;
+        for (int j = 0; j < img.w; ++j) {
+            if (std::find(colGridLines.begin(), colGridLines.end(), j) != colGridLines.end()) {
+                continue;  // Skip grid column
+            }
+            result(newRow, newCol) = img(i, j);
+            ++newCol;
+        }
+        ++newRow;
+    }
+
+    return result;
+}
 
 Image detectRepeatingPatternWithHole(
     Image_ img,
@@ -171,7 +255,7 @@ Image detectRepeatingPatternWithHole(
     // No repeating pattern found that matches the image with the hole
     return Image{{0, 0}, {0, 0}, {}};  // Return an empty image to indicate no pattern found
 }
-Image enforceSymmetry(Image_ img, unsigned short symmetryType = 0) {
+Image enforceSymmetry(Image_ img, unsigned int symmetryType = 0) {
     Image result = img;
     if (symmetryType ==  0) {
         for (int i = 0; i < img.h / 2; ++i) {
@@ -196,6 +280,92 @@ Image enforceSymmetry(Image_ img, unsigned short symmetryType = 0) {
     }
     return result;
 }
+
+// Helper function to upscale for morphological comparison
+Image upscaleImageHelper(const Image& img, int factor) {
+    int newWidth = img.w * factor;
+    int newHeight = img.h * factor;
+    Image upscaled = core::empty({img.p.x, img.p.y}, {newWidth, newHeight});
+
+    for (int i = 0; i < img.h; ++i) {
+        for (int j = 0; j < img.w; ++j) {
+            char pixel = img(i, j);
+            for (int y = i * factor; y < (i + 1) * factor; ++y) {
+                for (int x = j * factor; x < (j + 1) * factor; ++x) {
+                    upscaled(y, x) = pixel;
+                }
+            }
+        }
+    }
+    return upscaled;
+}
+
+// Function to check if two images are morphologically similar
+bool morphologicallySimilar(const Image& img1, const Image& img2) {
+    if (img1.w != img2.w || img1.h != img2.h) return false;
+    int similarCount = 0, totalPixels = img1.w * img1.h;
+    for (int i = 0; i < img1.h; ++i) {
+        for (int j = 0; j < img1.w; ++j) {
+            if (img1(i, j) == img2(i, j)) {
+                similarCount++;
+            }
+        }
+    }
+    double similarityRatio = static_cast<double>(similarCount) / totalPixels;
+    return similarityRatio > 0.95;  // Consider morphologically similar if 95% or more pixels match
+}
+
+Image downscaleImage(const Image& img, int factor) {
+    // Determine the new dimensions
+    int newWidth = img.w / factor;
+    int newHeight = img.h / factor;
+
+    // Ensure the dimensions remain at least 1x1
+    if (newWidth < 1 || newHeight < 1) {
+        return img;  // Downscale too aggressive, return original image
+    }
+
+    // Initialize the downscaled image
+    Image downscaled = core::empty({img.p.x, img.p.y}, {newWidth, newHeight});
+
+    // Populate the downscaled image by taking the most common color in each block
+    for (int i = 0; i < newHeight; ++i) {
+        for (int j = 0; j < newWidth; ++j) {
+            std::unordered_map<char, int> colorCount;
+            int startY = i * factor;
+            int startX = j * factor;
+            
+            // Count colors in the current block
+            for (int y = startY; y < std::min(startY + factor, img.h); ++y) {
+                for (int x = startX; x < std::min(startX + factor, img.w); ++x) {
+                    colorCount[img(y, x)]++;
+                }
+            }
+            
+            // Find the most common color in this block
+            char dominantColor = 0;
+            int maxCount = 0;
+            for (const auto& [color, count] : colorCount) {
+                if (count > maxCount) {
+                    maxCount = count;
+                    dominantColor = color;
+                }
+            }
+            downscaled(i, j) = dominantColor;
+        }
+    }
+
+    // Check if the downscaled image retains morphology by upscaling it back and comparing
+    Image reupscaled = upscaleImageHelper(downscaled, factor);
+    if (morphologicallySimilar(img, reupscaled)) {
+        return downscaled;
+    } else {
+        return img;  // If morphology changes significantly, return the original image
+    }
+}
+
+
+
 bool detectRepeatingPattern(Image_ img, Image& pattern, int& offsetX, int& offsetY) {
     // Try different tile sizes starting from 1x1 up to half the image size
     for (int tileHeight = 1; tileHeight <= img.h / 2; ++tileHeight) {
@@ -268,16 +438,16 @@ Image gridFilter(Image_ img, int cellHeight, int cellWidth) {
 // Looks for 4 corners
 vImage insideMarked(Image_ in) {
   vector<Image> ret;
-  for (short i = 0; i+1 < in.h; ++i) {
-    for (short j = 0; j+1 < in.w; ++j) {
-      for (short h = 1; i+h+1 < in.h; ++h) {
-	for (short w = 1; j+w+1 < in.w; ++w) {
+  for (int i = 0; i+1 < in.h; ++i) {
+    for (int j = 0; j+1 < in.w; ++j) {
+      for (int h = 1; i+h+1 < in.h; ++h) {
+	for (int w = 1; j+w+1 < in.w; ++w) {
 	  char col = in(i,j);
 	  if (!col) continue;
-	  short ok = 1;
-	  for (short k = 0; k < 4; ++k) {
-	    short x = j+k%2*w, y = i+k/2*h;
-	    for (short d = 0; d < 4; ++d) {
+	  int ok = 1;
+	  for (int k = 0; k < 4; ++k) {
+	    int x = j+k%2*w, y = i+k/2*h;
+	    for (int d = 0; d < 4; ++d) {
 	      if ((d != 3-k) == (in(y+d/2,x+d%2) != col)) {
 		ok = 0;
 		goto fail;
@@ -407,22 +577,22 @@ Image compress3(Image_ img) {
 }
 
 
-Image greedyFill(Image &ret, std::vector<std::pair<short, std::vector<short>>> &pieces, Spec &done, short bw, short bh, int &donew) {
+Image greedyFill(Image &ret, std::vector<std::pair<int, std::vector<int>>> &pieces, Spec &done, int bw, int bh, int &donew) {
     // Sort pieces by size descending for better filling priority
     std::sort(pieces.rbegin(), pieces.rend());
 
-    const short dw = ret.w - bw + 1, dh = ret.h - bh + 1;
+    const int dw = ret.w - bw + 1, dh = ret.h - bh + 1;
     if (dw < 1 || dh < 1)
         return badImg;
 
     std::vector<int> dones(dw * dh, -1);
-    std::priority_queue<std::tuple<unsigned short, short, short>> pq;
+    std::priority_queue<std::tuple<unsigned int, int, int>> pq;
 
     // Function to recalculate priorities for each grid position efficiently
-    auto recalc = [&](short i, short j) {
-        unsigned short count = 0;
-        for (short y = 0; y < bh; ++y)
-            for (short x = 0; x < bw; ++x)
+    auto recalc = [&](int i, int j) {
+        unsigned int count = 0;
+        for (int y = 0; y < bh; ++y)
+            for (int x = 0; x < bw; ++x)
                 count += done(i + y, j + x);
 
         if (count != dones[i * dw + j]) {
@@ -432,8 +602,8 @@ Image greedyFill(Image &ret, std::vector<std::pair<short, std::vector<short>>> &
     };
 
     // Initialize priority queue by calculating initial counts for each window in the image
-    for (short i = 0; i + bh <= ret.h; ++i)
-        for (short j = 0; j + bw <= ret.w; ++j)
+    for (int i = 0; i + bh <= ret.h; ++i)
+        for (int j = 0; j + bw <= ret.w; ++j)
             recalc(i, j);
 
     while (!pq.empty()) {
@@ -450,9 +620,9 @@ Image greedyFill(Image &ret, std::vector<std::pair<short, std::vector<short>>> &
         for (auto &[cnt, mask] : pieces) {
             bool canPlace = true;
 
-            for (short y = 0; y < bh && canPlace; ++y) {
-                const short iy = i + y;
-                for (short x = 0; x < bw; ++x) {
+            for (int y = 0; y < bh && canPlace; ++y) {
+                const int iy = i + y;
+                for (int x = 0; x < bw; ++x) {
                     if (done(iy, j + x) && ret(iy, j + x) != mask[y * bw + x]) {
                         canPlace = false;
                         break;
@@ -462,9 +632,9 @@ Image greedyFill(Image &ret, std::vector<std::pair<short, std::vector<short>>> &
 
             // If pattern can be placed, apply it to the output image and update `done`
             if (canPlace) {
-                for (short y = 0; y < bh; ++y) {
-                    const short iy = i + y;
-                    for (short x = 0; x < bw; ++x) {
+                for (int y = 0; y < bh; ++y) {
+                    const int iy = i + y;
+                    for (int x = 0; x < bw; ++x) {
                         if (!done(iy, j + x)) {
                             done(iy, j + x) = donew;
                             ret(iy, j + x) = mask[y * bw + x];
@@ -473,11 +643,11 @@ Image greedyFill(Image &ret, std::vector<std::pair<short, std::vector<short>>> &
                 }
 
                 // Update the relevant region around the newly placed pattern
-                const short ibh = min(static_cast<short>(i + bh), dh);
-                const short jbw = std::min(static_cast<short>(j + bw), dw);
+                const int ibh = min(static_cast<int>(i + bh), dh);
+                const int jbw = std::min(static_cast<int>(j + bw), dw);
 
-                for (short y = std::max(static_cast<short>(i - bh + 1), short(0)); y < ibh; ++y)
-                    for (short x = std::max(static_cast<short>(j - bw + 1), short(0)); x < jbw; ++x)
+                for (int y = std::max(static_cast<int>(i - bh + 1), int(0)); y < ibh; ++y)
+                    for (int x = std::max(static_cast<int>(j - bw + 1), int(0)); x < jbw; ++x)
                         recalc(y, x);
 
                 placedPattern = true;
@@ -501,8 +671,8 @@ Image greedyFillBlack(Image_ img, int N = 3) {
 
   int donew = 1e6;
   //#pragma omp parallel for
-  for (short i = 0; i < ret.h; ++i) {
-    for (short j = 0; j < ret.w; ++j) {
+  for (int i = 0; i < ret.h; ++i) {
+    for (int j = 0; j < ret.w; ++j) {
       if (img(i,j)) {
 	ret(i,j) = img(i,j);
 	done(i,j) = donew;
@@ -510,20 +680,20 @@ Image greedyFillBlack(Image_ img, int N = 3) {
     }
   }
 
-  map<vector<short>,short> piece_cnt;
-  vector<short> mask;
-  const short bw = N, bh = N;
+  map<vector<int>,int> piece_cnt;
+  vector<int> mask;
+  const int bw = N, bh = N;
   mask.reserve(bw*bh);
 
-  for (short r = 0; r < 8; ++r) {
+  for (int r = 0; r < 8; ++r) {
     Image rot = rigid(img,r);
-    for (short i = 0; i+bh <= rot.h; ++i) {
-      for (short j = 0; j+bw <= rot.w; ++j) {
+    for (int i = 0; i+bh <= rot.h; ++i) {
+      for (int j = 0; j+bw <= rot.w; ++j) {
 	mask.resize(0);
-	short ok = 1;
-	for (short y = 0; y < bh; ++y){
-    const short iy = i+y;
-	  for (short x = 0; x < bw; ++x) {
+	int ok = 1;
+	for (int y = 0; y < bh; ++y){
+    const int iy = i+y;
+	  for (int x = 0; x < bw; ++x) {
 	    char c = rot(iy,j+x);
 	    mask.push_back(c);
 	    if (!c) ok = 0;
@@ -533,7 +703,7 @@ Image greedyFillBlack(Image_ img, int N = 3) {
       }
     }
   }
-  vector<pair<short,vector<short>>> piece;
+  vector<pair<int,vector<int>>> piece;
   for (auto&[p,c] : piece_cnt)
     piece.emplace_back(c,p);
 
@@ -555,10 +725,10 @@ Image extend2(Image_ img, Image_ room) {
   int donew = 1e6;
   //ham
   //#pragma omp parallel for
-  for (short i = 0; i < ret.h; ++i) {
-    for (short j = 0; j < ret.w; ++j) {
-      const short x = j+d.x;
-      const short y = i+d.y;
+  for (int i = 0; i < ret.h; ++i) {
+    for (int j = 0; j < ret.w; ++j) {
+      const int x = j+d.x;
+      const int y = i+d.y;
       if (x >= 0 && y >= 0 && x < img.w && y < img.h) {
 	ret(i,j) = img(y,x);
 	done(i,j) = donew;
@@ -566,25 +736,25 @@ Image extend2(Image_ img, Image_ room) {
     }
   }
 
-  map<vector<short>,short> piece_cnt;
-  vector<short> mask;
-  const short bw = 3, bh = 3;
+  map<vector<int>,int> piece_cnt;
+  vector<int> mask;
+  const int bw = 3, bh = 3;
   mask.reserve(bw*bh);
   //ham
   //#pragma omp parallel for
-  for (short r = 0; r < 8; ++r) {
+  for (int r = 0; r < 8; ++r) {
     Image rot = rigid(img,r);
-    for (short i = 0; i+bh <= rot.h; ++i) {
-      for (short j = 0; j+bw <= rot.w; ++j) {
+    for (int i = 0; i+bh <= rot.h; ++i) {
+      for (int j = 0; j+bw <= rot.w; ++j) {
 	mask.resize(0);
-	for (short y = 0; y < bh; ++y)
-	  for (short x = 0; x < bw; ++x)
+	for (int y = 0; y < bh; ++y)
+	  for (int x = 0; x < bw; ++x)
 	    mask.push_back(rot(i+y,j+x));
 	++piece_cnt[mask];
       }
     }
   }
-  vector<pair<short,vector<short>>> piece;
+  vector<pair<int,vector<int>>> piece;
   for (auto&[p,c] : piece_cnt)
     piece.emplace_back(c,p);
 
@@ -599,12 +769,12 @@ Image connect(Image_ img, int id) {
 
   //Horizontal
   if (id == 0 || id == 2) {
-    for (short i = 0; i < img.h; ++i) {
-      short last = -1, lastc = -1;
-      for (short j = 0; j < img.w; ++j) {
+    for (int i = 0; i < img.h; ++i) {
+      int last = -1, lastc = -1;
+      for (int j = 0; j < img.w; ++j) {
 	if (img(i,j)) {
 	  if (img(i,j) == lastc) {
-	    for (short k = last+1; k < j; ++k)
+	    for (int k = last+1; k < j; ++k)
 	      ret(i,k) = lastc;
 	  }
 	  lastc = img(i,j);
@@ -618,12 +788,12 @@ Image connect(Image_ img, int id) {
 
   if (id == 1 || id == 2) {
 
-    for (short j = 0; j < img.w; ++j) {
-      short last = -1, lastc = -1;
-      for (short i = 0; i < img.h; ++i) {
+    for (int j = 0; j < img.w; ++j) {
+      int last = -1, lastc = -1;
+      for (int i = 0; i < img.h; ++i) {
 	if (img(i,j)) {
 	  if (img(i,j) == lastc) {
-	    for (short k = last+1; k < i; ++k)
+	    for (int k = last+1; k < i; ++k)
 	      ret(k,j) = lastc;
 	  }
 	  lastc = img(i,j);
@@ -644,7 +814,7 @@ Image replaceTemplate(Image_ in, Image_ need_, Image_ marked_, int overlapping =
   vector<Image> needr(rots), markedr(rots);
   //ham
   //#pragma omp parallel for
-  for (short r = 0; r < rots; ++r) {
+  for (int r = 0; r < rots; ++r) {
     needr[r] = rigid(need_,r);
     markedr[r] = rigid(marked_,r);
   }
@@ -652,7 +822,7 @@ Image replaceTemplate(Image_ in, Image_ need_, Image_ marked_, int overlapping =
   Image ret = in;
   //ham
   //#pragma omp parallel for
-  for (short r = 0; r < rots; ++r) {
+  for (int r = 0; r < rots; ++r) {
     Image_ need = needr[r];
     Image_ marked = markedr[r];
 
@@ -703,22 +873,22 @@ Image swapTemplate(Image_ in, Image_ a, Image_ b, int rigids = 0) {
   Image done = hull0(in), ret = in;
   //ham
   //#pragma omp parallel for
-  for (short k : {0,1}) {
+  for (int k : {0,1}) {
     //#pragma omp parallel for
-    for (short r = 0; r < rots; ++r) {
+    for (int r = 0; r < rots; ++r) {
       Image_ need = k ? ar[r] : br[r];
       Image_ to   = k ? br[r] : ar[r];
 
-      for (short i = 0; i+need.h <= ret.h; ++i) {
-	for (short j = 0; j+need.w <= ret.w; ++j) {
+      for (int i = 0; i+need.h <= ret.h; ++i) {
+	for (int j = 0; j+need.w <= ret.w; ++j) {
 
 	  int ok = 1;
-	  for (short y = 0; y < need.h; ++y)
-	    for (short x = 0; x < need.w; ++x)
+	  for (int y = 0; y < need.h; ++y)
+	    for (int x = 0; x < need.w; ++x)
 	      if (done(i+y,j+x) || ret(i+y,j+x) != need(y,x)) { ok = 0; break; } //ham
 	  if (ok) {
-	    for (short y = 0; y < need.h; ++y) {
-	      for (short x = 0; x < need.w; ++x) {
+	    for (int y = 0; y < need.h; ++y) {
+	      for (int x = 0; x < need.w; ++x) {
 		ret(i+y,j+x) = to(y,x);
 		done(i+y,j+x) = 1;
 	      }
@@ -805,7 +975,7 @@ Image erosion(Image_ img) {
     return result;
 }
 
-Image detectCrossPattern(Image_ img, unsigned short size = 3) {
+Image detectCrossPattern(Image_ img, unsigned int size = 3) {
     if (img.h < size || img.w < size || size < 3) return img;
 
     Image pattern = {{0, 0}, img.sz, std::vector<char>(img.h * img.w, 0)};
@@ -831,7 +1001,7 @@ Image detectCrossPattern(Image_ img, unsigned short size = 3) {
     }
     return pattern;
 }
-Image detectHorizontalStripes(Image_ img, unsigned short size = 2) {
+Image detectHorizontalStripes(Image_ img, unsigned int size = 2) {
     if (img.h < size) return img;
 
     Image pattern = {{0, 0}, img.sz, std::vector<char>(img.h * img.w, 0)};
@@ -854,7 +1024,7 @@ Image detectHorizontalStripes(Image_ img, unsigned short size = 2) {
     }
     return pattern;
 }
-Image detectVerticalStripes(Image_ img, unsigned short size = 2) {
+Image detectVerticalStripes(Image_ img, unsigned int size = 2) {
     if (img.w < size) return img;
 
     Image pattern = {{0, 0}, img.sz, std::vector<char>(img.h * img.w, 0)};
@@ -1069,7 +1239,7 @@ Image detectTranslation1DPattern(Image_ img) {
 
 
 
-Image detectDiagonalPattern(Image_ img, unsigned short size = 2) {
+Image detectDiagonalPattern(Image_ img, unsigned int size = 2) {
     if (img.h < size || img.w < size) return img;
 
     Image pattern = {{0, 0}, img.sz, std::vector<char>(img.h * img.w, 0)};
@@ -1093,7 +1263,7 @@ Image detectDiagonalPattern(Image_ img, unsigned short size = 2) {
     return pattern;
 }
 
-Image detectCheckerboardPattern(Image_ img, unsigned short size = 2) {
+Image detectCheckerboardPattern(Image_ img, unsigned int size = 2) {
     if (img.h < size || img.w < size) return img;
 
     Image pattern = {{0, 0}, img.sz, std::vector<char>(img.h * img.w, 0)};
@@ -1173,7 +1343,7 @@ Image applyColorMapping(const Image_ &img, const std::unordered_map<int, int> &c
 
     return result;
 }
-Image detectPatterns(Image_ img, unsigned short size = 2) {
+Image detectPatterns(Image_ img, unsigned int size = 2) {
     if(img.h < size || img.w < size) return img;
 
     Image pattern = {{0,0}, img.sz, vector<char>(img.h * img.w, 0)};
@@ -1816,6 +1986,153 @@ Image diagonalGravity(Image_ img, int corner) {
 
     return result;
 }
+
+
+Image upscaleImage(const Image& img, int scaleFactor) {
+    // Calculate new dimensions
+    int newWidth = img.w * scaleFactor;
+    int newHeight = img.h * scaleFactor;
+
+    // Ensure the upscaled image fits within 30x30
+    if (newWidth > 30 || newHeight > 30) {
+        // Return original image if it cannot be upscaled within the 30x30 limit
+        return img;
+    }
+
+    // Create a new image with the upscaled dimensions
+    Image upscaled = core::empty({img.p.x, img.p.y}, {newWidth, newHeight});
+
+    // Duplicate each pixel according to the scale factor
+    for (int i = 0; i < img.h; ++i) {
+        for (int j = 0; j < img.w; ++j) {
+            char pixelValue = img(i, j);
+            for (int dy = 0; dy < scaleFactor; ++dy) {
+                for (int dx = 0; dx < scaleFactor; ++dx) {
+                    upscaled(i * scaleFactor + dy, j * scaleFactor + dx) = pixelValue;
+                }
+            }
+        }
+    }
+
+    return upscaled;
+}
+
+Image stretchImage(const Image& img, int stretchFactor, int direction) {
+    int newWidth = img.w;
+    int newHeight = img.h;
+
+    // Determine new dimensions based on the direction of the stretch
+    if (direction == 0) {
+        newWidth = img.w * stretchFactor;
+    } else if (direction == 1) {
+        newHeight = img.h * stretchFactor;
+    }
+
+    // Ensure the stretched image fits within 30x30
+    if (newWidth > 30 || newHeight > 30) {
+        // Return the original image if the stretched version exceeds the limit
+        return img;
+    }
+
+    // Create a new image with the stretched dimensions
+    Image stretched = core::empty({img.p.x, img.p.y}, {newWidth, newHeight});
+
+    // Populate the stretched image
+    for (int i = 0; i < img.h; ++i) {
+        for (int j = 0; j < img.w; ++j) {
+            char pixelValue = img(i, j);
+
+            // Fill the appropriate region in the stretched image
+            if (direction == 0) {
+                // Horizontally duplicate pixels
+                for (int dx = 0; dx < stretchFactor; ++dx) {
+                    stretched(i, j * stretchFactor + dx) = pixelValue;
+                }
+            } else if (direction == 1) {
+                // Vertically duplicate pixels
+                for (int dy = 0; dy < stretchFactor; ++dy) {
+                    stretched(i * stretchFactor + dy, j) = pixelValue;
+                }
+            }
+        }
+    }
+
+    return stretched;
+}
+
+
+Image zoomIn(const Image& img, int id) {
+    int newWidth, newHeight;
+    int startX = 0, startY = 0;
+    Image result;
+
+    // Determine the region based on the id
+    switch (id) {
+        case 1: // First quarter (top-left)
+            newWidth = img.w / 2;
+            newHeight = img.h / 2;
+            startX = 0;
+            startY = 0;
+            break;
+        case 2: // Second quarter (top-right)
+            newWidth = img.w / 2;
+            newHeight = img.h / 2;
+            startX = img.w / 2;
+            startY = 0;
+            break;
+        case 3: // Third quarter (bottom-left)
+            newWidth = img.w / 2;
+            newHeight = img.h / 2;
+            startX = 0;
+            startY = img.h / 2;
+            break;
+        case 4: // Fourth quarter (bottom-right)
+            newWidth = img.w / 2;
+            newHeight = img.h / 2;
+            startX = img.w / 2;
+            startY = img.h / 2;
+            break;
+        case 5: // Top half
+            newWidth = img.w;
+            newHeight = img.h / 2;
+            startX = 0;
+            startY = 0;
+            break;
+        case 6: // Bottom half
+            newWidth = img.w;
+            newHeight = img.h / 2;
+            startX = 0;
+            startY = img.h / 2;
+            break;
+        case 7: // Left half
+            newWidth = img.w / 2;
+            newHeight = img.h;
+            startX = 0;
+            startY = 0;
+            break;
+        case 8: // Right half
+            newWidth = img.w / 2;
+            newHeight = img.h;
+            startX = img.w / 2;
+            startY = 0;
+            break;
+        default:
+            // If an unsupported ID is provided, return an empty image
+            return core::empty(img.p, {0, 0});
+    }
+
+    // Create the result image and copy the specified region from the original image
+    result = core::empty({startX, startY}, {newWidth, newHeight});
+    for (int i = 0; i < newHeight; ++i) {
+        for (int j = 0; j < newWidth; ++j) {
+            result(i, j) = img(startY + i, startX + j);
+        }
+    }
+
+    return result;
+}
+
+
 
 Image circularShift(Image_ img, bool isRowShift, int shiftAmount) {
     Image result = img;

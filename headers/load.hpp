@@ -1,9 +1,9 @@
 struct Loader {
-  long n;
+  long long n;
   string text;
   long long counter;
-  long prev;
-  short keep_title;
+  long long prev;
+  int keep_title;
   Loader(long long n_, string text_ = "") {
     n = n_;
     text = text_;

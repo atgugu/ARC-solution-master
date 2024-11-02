@@ -29,7 +29,7 @@ struct Spec {
   bool check(Image_ img) const {
     if (bad) return 0;
     if (img.sz != sz || (!anypos && img.p != p)) return 0;
-    for (short i = 0; i < mask.size();++i)
+    for (int i = 0; i < mask.size();++i)
       if ((mask[i]>>img.mask[i]&1) == 0) return 0;
     return 1;
   }

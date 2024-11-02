@@ -204,6 +204,8 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
   funcs.add("detectPatterns2Image7", 10, detectPatterns2Image7);
   funcs.add("detectPatterns2Image8", 10, detectPatterns2Image8);
   funcs.add("detectPatterns2Image9", 10, detectPatterns2Image9);
+  funcs.add("removeGrid", 10, removeGrid);
+
 
   funcs.add("detectVerticalStripes2", 10, [](Image_ img) { return detectVerticalStripes(img, 2); });
   funcs.add("detectVerticalStripes3", 10, [](Image_ img) { return detectVerticalStripes(img, 3); });
@@ -289,6 +291,28 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
     funcs.add("half "+to_string(id), 10,
 	      [id](Image_ img) {return half(img, id);});
 
+  for (int id = 1; id < 5; ++id)
+    funcs.add("zoomIn "+to_string(id), 10,
+	      [id](Image_ img) {return zoomIn(img, id);});
+
+  for (int id = 2; id <= 5; ++id)
+    funcs.add("upscaleImage "+to_string(id), 10,
+	      [id](Image_ img) {return upscaleImage(img, id);});
+
+  for (int id = 2; id <= 3; ++id)
+    funcs.add("downscaleImage "+to_string(id), 10,
+	      [id](Image_ img) {return downscaleImage(img, id);});
+
+  // strech horizontally
+  for (int id = 2; id <= 4; ++id)
+    funcs.add("stretchImageH "+to_string(id), 10,
+	      [id](Image_ img) {return stretchImage(img, id, 0);});
+
+  // strech vert
+  for (int id = 2; id <= 4; ++id)
+    funcs.add("stretchImageV "+to_string(id), 10,
+	      [id](Image_ img) {return stretchImage(img, id, 1);});
+
 
   for (int dy = -4; dy <= 4; ++dy) {
     for (int dx = -4; dx <= 4; ++dx) {
@@ -323,6 +347,7 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
   // funcs.add(sizes, "mirror 8",  10, [](Image_ a, Image_ b) {return mirror(a,b,8);});
   // funcs.add(sizes, "mirror 9",  10, [](Image_ a, Image_ b) {return mirror(a,b,9);});
   funcs.add(sizes, "ringSmear",  10, [](Image_ a, Image_ b) {return ringSmear(a,b);});
+  // crash
   // funcs.add(sizes, "diagonalSmear1",  10, [](Image_ a, Image_ b) {return diagonalSmear(a,b,1);});
   // funcs.add(sizes, "diagonalSmear2",  10, [](Image_ a, Image_ b) {return diagonalSmear(a,b,2);});
   // funcs.add(sizes, "diagonalSmear3",  10, [](Image_ a, Image_ b) {return diagonalSmear(a,b,3);});
@@ -351,7 +376,7 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
 
   funcs.add("composeGrowing", 10, composeGrowing);
   funcs.add("stackLine", 10, stackLine);
-  for (int id = 0; id < 2; ++id) //consider going to 4
+  for (int id = 0; id < 3; ++id) //consider going to 4
     funcs.add("myStack "+to_string(id), 10,
 	      [id](vImage_ v) {return myStack(v,id);}); //
 
