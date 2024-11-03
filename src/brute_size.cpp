@@ -147,9 +147,9 @@ point solveSize(vector<vector<point>>&seeds, const vector<point>& target) {
   return ans;
 }
 
-vector<point> bruteSize(Image_ test_in, vector<pair<Image,Image>> train) {
+vector<point> bruteSize(Image_ test_in, const vector<pair<Image,Image>>& train) {
   vector<point> out_sizes;
-  for (auto [in,out] : train) {
+  for (const auto& [in,out] : train) {
     out_sizes.push_back(out.sz);
   }
   const int cp = MAXDEPTH;
@@ -164,7 +164,7 @@ vector<point> bruteSize(Image_ test_in, vector<pair<Image,Image>> train) {
   MAXDEPTH = cp;
 
   vector<point> target;
-  for (auto [in,out] : train) target.push_back(out.sz);
+  for (const auto& [in,out] : train) target.push_back(out.sz);
 
   //cout << pieces.piece.size() << endl;
   //cout << pieces.seen.size() << endl;
@@ -191,11 +191,11 @@ vector<point> bruteSize(Image_ test_in, vector<pair<Image,Image>> train) {
   return out_sizes;
 }
 
-vector<point> cheatSize(Image_ test_out, vector<pair<Image,Image>> train) {
+vector<point> cheatSize(Image_ test_out, const vector<pair<Image,Image>>& train) {
   vector<point> out_sizes;
-  for (auto [in,out] : train) {
+  for (const auto& [in,out] : train) {
     out_sizes.push_back(out.sz);
   }
   out_sizes.push_back(test_out.sz);
-  return out_sizes;
+  return move(out_sizes);
 }

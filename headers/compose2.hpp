@@ -15,5 +15,5 @@ inline bool operator<(const Candidate& a, const Candidate& b) {
   return a.score > b.score;
 }
 
-vector<Candidate> composePieces2(Pieces&pieces, vector<pair<Image, Image>> train, vector<point> out_sizes);
-vector<Candidate> evaluateCands(const vector<Candidate>&cand, vector<pair<Image,Image>> train);
+vector<Candidate> composePieces2(Pieces&pieces, const vector<pair<Image, Image>>& train, vector<point> out_sizes);
+vector<Candidate> evaluateCands(const vector<Candidate>&cand, const vector<pair<Image,Image>>& train);

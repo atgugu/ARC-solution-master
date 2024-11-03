@@ -300,15 +300,15 @@ vector<Candidate> greedyCompose2(Pieces& pieces, vector<Image>& target, vector<p
     }
 
     if (print_times) greedy_fill_time.print("Greedy fill time");
-    return rets;
+    return move(rets);
 }
 
 
-vector<Candidate> composePieces2(Pieces&pieces, vector<pair<Image, Image>> train, vector<point> out_sizes) {
+vector<Candidate> composePieces2(Pieces&pieces, const vector<pair<Image, Image>>& train, vector<point> out_sizes) {
   vector<Candidate> cands;
 
   vector<Image> target;
-  for (auto [in,out] : train)
+  for (const auto& [in,out] : train)
     target.push_back(out);
 
   /*
@@ -327,11 +327,11 @@ vector<Candidate> composePieces2(Pieces&pieces, vector<pair<Image, Image>> train
   for (const Candidate&cand : greedyCompose2(pieces, target, out_sizes)) {
     cands.push_back(cand);
   }
-  return cands;
+  return move(cands);
 }
 
 
-vector<Candidate> evaluateCands(const vector<Candidate>&cands, vector<pair<Image,Image>> train) {
+vector<Candidate> evaluateCands(const vector<Candidate>&cands, const vector<pair<Image,Image>>& train) {
   vector<Candidate> ret;
   for (const Candidate& cand : cands) {
     vImage_ imgs = cand.imgs;
@@ -363,5 +363,5 @@ vector<Candidate> evaluateCands(const vector<Candidate>&cands, vector<pair<Image
   }
   sort(ret.begin(), ret.end());
   //printf("%.20f\n\n", ret[0].score);
-  return ret;
+  return move(ret);
 }

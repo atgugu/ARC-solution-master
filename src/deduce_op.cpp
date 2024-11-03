@@ -88,7 +88,7 @@ pair<Image,Image> iOuterProductIS(Image_ img, unsigned int w, unsigned int h) {
 
 
 
-deduceOuterProduct::deduceOuterProduct(vector<pair<Image,Image>> train) {
+deduceOuterProduct::deduceOuterProduct(const vector<pair<Image,Image>>& train) {
 
   auto score = [](vector<pair<Image,Image>> pa, int fi) {
     double ans = 0;
@@ -122,7 +122,7 @@ deduceOuterProduct::deduceOuterProduct(vector<pair<Image,Image>> train) {
 
 
   int minw = 1e9, minh = 1e9;
-  for (auto [in,out] : train) {
+  for (const auto& [in,out] : train) {
     minw = min(minw, out.w);
     minh = min(minh, out.h);
   }
@@ -143,7 +143,7 @@ deduceOuterProduct::deduceOuterProduct(vector<pair<Image,Image>> train) {
 	  auto f = k ? iOuterProductSI : iOuterProductIS;
 	  vector<pair<Image,Image>> is;
 	  int bad = 0;
-	  for (auto [in,out] : train) {
+	  for (const auto& [in,out] : train) {
 	    int sw = w, sh = h;
 	    if (l) {
 	      if (out.w%w || out.h%h) bad = 1;
@@ -167,7 +167,7 @@ deduceOuterProduct::deduceOuterProduct(vector<pair<Image,Image>> train) {
   for (int k : {0,1}) {
     auto f = k ? iOuterProductSI : iOuterProductIS;
     vector<double> best_at(trainsize, 1e9);
-    vector<pair<Image,Image>> best_single(train.size(), {badImg,badImg});
+    vector<pair<Image,Image>> best_single(trainsize, {badImg,badImg});
     //ham
     //#pragma omp parallel for
     for (unsigned int ti = 0; ti < trainsize; ++ti) {
@@ -218,7 +218,7 @@ void addDeduceOuterProduct(Pieces&pieces, const vector<pair<Image,Image>>& train
   deduceOuterProduct deduce_op(train);
 
   int interestings = 0;
-  for (auto [in,out] : deduce_op.train_targets) {
+  for (const auto& [in,out] : deduce_op.train_targets) {
     if (core::count(in) > 1 && core::count(out) > 1) ++interestings;
   }
   const unsigned trainsize = train.size();
