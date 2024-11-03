@@ -188,7 +188,7 @@ vector<point> bruteSize(Image_ test_in, const vector<pair<Image,Image>>& train) 
 
   point ans = solveSize(seeds, target);
   out_sizes.push_back(ans);
-  return out_sizes;
+  return move(out_sizes);
 }
 
 vector<point> cheatSize(Image_ test_out, const vector<pair<Image,Image>>& train) {

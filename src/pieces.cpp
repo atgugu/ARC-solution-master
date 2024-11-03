@@ -272,5 +272,5 @@ Pieces makePieces2(vector<DAG>&dag, vector<pair<Image,Image>> train, vector<poin
     }
   }
 
-  return pieces;
+  return move(pieces);
 }

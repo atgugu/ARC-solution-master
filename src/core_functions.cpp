@@ -133,6 +133,6 @@ namespace core {
 	ret.emplace_back(s, c);
       }
     }
-    return ret;
+    return move(ret);
   }
 };

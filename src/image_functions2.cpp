@@ -1687,7 +1687,7 @@ vector<Image> extractConnectedComponents(Image_ img) {
         }
     }
 
-    return components;
+    return move(components);
 }
 
 

@@ -173,9 +173,9 @@ struct UniquePicker {
       features.push_back(shapeFeatures(sh, col));
       splitcol.push_back(col);
     }
-
-    vector<int> order, fdone(features.size());
-    for (int it = 0; it < features.size(); ++it) {
+    const size_t featuresSize = features.size();
+    vector<int> order, fdone(featuresSize);
+    for (int it = 0; it < featuresSize; ++it) {
       int fi = it < feature_dim.size() ? feature_dim[it] : -1;
       int i = getUnique(features, fdone, fi);
       fdone[i] = 1;
@@ -199,10 +199,6 @@ struct UniquePicker {
 };
 
 
-
-
-
-
 Image remapCols(Image_ img, int cols[10]) {
   Image r = img;
   for (int i = 0; i < r.h; ++i)
@@ -214,17 +210,17 @@ Image remapCols(Image_ img, int cols[10]) {
 
 
 void remapCols(const vector<pair<Image,Image>>&train, vector<Simplifier>&sims) {
-  int orin = 0, orout = 0, andin = ~0, andout = ~0;
+  unsigned int orin = 0, orout = 0, andin = ~0, andout = ~0;
   for (auto [in,out] : train) {
-    int maskin = core::colMask(in);
-    int maskout = core::colMask(out);
+    const unsigned int maskin = core::colMask(in);
+    const unsigned int maskout = core::colMask(out);
     orin |= maskin;
     andin &= maskin;
     orout |= maskout;
     andout &= maskout;
   }
 
-  int save = andout & ~orin;
+  unsigned int save = andout & ~orin;
   if (orout == andout) save = andout;
   save |= andin&~orout;
 
@@ -258,21 +254,18 @@ void remapCols(const vector<pair<Image,Image>>&train, vector<Simplifier>&sims) {
 
 
 Image listCols(Image_ img, int extra) {
-  int mask = core::colMask(img);
-  int w = __builtin_popcount(mask);
-  Image ret = core::full({w,2}, 9);
-  int j = 0;
-  for (int i = 0; i < 10; ++i)
-    if ((mask>>i&1) && !(extra>>i&1))
-      ret(0,j++) = i;
-  j = 0;
-  for (int i = 0; i < 10; ++i)
-    if (extra>>i&1)
-      ret(1,j++) = i;
+  const unsigned int mask = core::colMask(img);
+  Image ret = core::full({__builtin_popcount(mask), 2}, 9);
+  int j0 = 0, j1 = 0;
+  for (int i = 0; i < 10; ++i) {
+    const unsigned int bit = 1 << i;
+    if (mask & bit) {
+      if (!(extra & bit)) ret(0, j0++) = i;
+      else ret(1, j1++) = i;
+    }
+  }
   return ret;
 }
-
-
 
 void normalizeCols(vector<Sample>&sample) {
   Visu visu;
@@ -285,50 +278,16 @@ void normalizeCols(vector<Sample>&sample) {
     if (sims.size()) {
       Simplifier&sim = sims[0];
       for (auto&[in,out] : train) {
-	Image cp = out;
-	out = sim.out(in, out);
-	assert(cp == sim.rec(in, out));
 	in = sim.in(in);
+	out = sim.out(in,out);
       }
 
       ++count;
       visu.next(s.id);
       for (auto [in,out] : s.train)
 	visu.add(in,out);
-      visu.next(s.id);
-      for (auto [in,out] : train) {
-	visu.add(in,out);
-      }
-    }
-    continue;
-    vector<pair<int,int>> masks;
-    int orin = 0, orout = 0, andin = ~0, andout = ~0;
-    for (auto [in,out] : s.train) {
-      masks.emplace_back(core::colMask(in), core::colMask(out));
-      orin |= masks.back().first;
-      andin &= masks.back().first;
-      orout |= masks.back().second;
-      andout &= masks.back().second;
-    }
-    int eq = core::countCols(s.train[0].first);
-
-    int meaningCols = checkAll(s.train, [&](pair<Image,Image> p) {
-	return core::countCols(p.first) == eq;});
-    //if (__builtin_popcount(eq&~1) != 1) continue;
-
-    if (meaningCols) {
-      ++count;
-      visu.next(s.id);
-      for (auto [in,out] : s.train)
-	visu.add(in,out);
-      visu.next(s.id);
-      for (auto [in,out] : s.train) {
-	//visu.add(in,core::embed(core::filterCol(out,10), out.sz));
-	visu.add(listCols(in, andin&~orout),listCols(out, andout&~orin));
-      }
     }
   }
-  //cout << count << " tasks" << endl;
 }
 
 
@@ -571,7 +530,7 @@ pair<Image,Image> Simplifier::operator()(Image_ a, Image_ b) {
 Simplifier normalizeCols(const vector<pair<Image,Image>>&train) {
   vector<Simplifier> sims;
   remapCols(train, sims);
-  return sims[0];
+  return move(sims[0]);
 }
 
 Simplifier normalizeDummy(const vector<pair<Image,Image>>&train) {
