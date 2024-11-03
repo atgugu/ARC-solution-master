@@ -1,6 +1,6 @@
 DEBUG = -Wshadow -Wall -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG -g -Wno-sign-compare -Wno-shadow -Wno-char-subscripts -Wno-unused-variable
 #-fprofile-generate -fprofile-update -mcpu=sandybridge
-FLAGS = -std=c++17 -mavx2 -mfma -ftree-vectorize -fgcse -fopenmp -flto=auto  -march=native -mtune=native -funroll-loops -finline-functions -fomit-frame-pointer -ffast-math -fno-stack-protector -fno-math-errno -funsafe-math-optimizations -fno-trapping-math -fno-signed-zeros -fassociative-math -freciprocal-math -ffinite-math-only -fexcess-precision=fast -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno
+FLAGS = -std=c++17 -floop-interchange -mavx2 -floop-interchange -floop-unroll-and-jam -mfma -ftree-vectorize -fno-strict-aliasing -foptimize-sibling-calls -fprefetch-loop-arrays -floop-nest-optimize -fipa-pta -fno-strict-overflow -fgcse -fopenmp -flto=auto  -march=native -mtune=native -funroll-loops -finline-functions -fomit-frame-pointer -ffast-math -fno-stack-protector -fno-math-errno -funsafe-math-optimizations -fno-trapping-math -fno-signed-zeros -fassociative-math -freciprocal-math -ffinite-math-only -fexcess-precision=fast -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fno-math-errno
 
 LIBS = -lstdc++ -lstdc++fs
 

@@ -587,7 +587,9 @@ Image rigid(Image_ img, int id) {
   else if (id == 6) return transform(img, 0, 1, 1, 0); //swap xy
   else if (id == 7) return transform(img, 0,-1,-1, 0); //swap other diagonal
   else if (id == 8) return rigid(img, 4+mirrorHeuristic(img));
-  else assert(id >= 0 && id < 9);
+  else if (id == 9) return transform(img, 1, 1, 1, 1); // Simple shear (skew)
+  else if (id == 10) return transform(img, -1, -1, 1, -1); // Reflect both axes (180-degree flip plus mirror)
+  else assert(id >= 0 && id < 11);
   return badImg;
 }
 
@@ -778,13 +780,6 @@ Image extend(Image_ img, Image_ room) {
   }
   return ret;
 }
-
-
-
-
-
-
-
 
 Image pickMax(vImage_ v, const function<int(Image_)>& f) {
   if (v.empty()) return badImg;

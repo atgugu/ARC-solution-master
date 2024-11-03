@@ -15,7 +15,7 @@ version = str(69)
 if len(sys.argv) == 2: version = sys.argv[1]
 print("Updating to version", version)
 
-parallel = 12
+parallel = 8
 
 os.system('mkdir -p store/version/')
 os.system('mkdir -p store/tmp/')

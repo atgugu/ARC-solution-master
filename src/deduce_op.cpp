@@ -11,47 +11,51 @@ using namespace std;
 
 #include "deduce_op.hpp"
 
-pair<Image,Image> iOuterProductSI(Image_ img, int w, int h) {
-  const unsigned int imghh = img.h/h;
-  const unsigned int imgww = img.w/w;
-  if (img.w*img.h <= 0 || img.w%w || img.h%h) return {badImg,badImg};
-  Image big = core::full({img.w/w,imghh},-1);
-  Image small = core::full({w,h},-1);
+pair<Image,Image> iOuterProductSI(Image_ img, unsigned int w, unsigned int h) {
+    const unsigned int imghh = img.h / h;
+    const unsigned int imgww = img.w / w;
+    if (img.w * img.h <= 0 || img.w % w || img.h % h) return {badImg, badImg};
+    
+    Image big = core::full({static_cast<int>(imgww), static_cast<int>(imghh)}, -1);
+    Image small = core::full({static_cast<int>(w), static_cast<int>(h)}, -1);
 
-  for (unsigned int ii = 0; ii < imghh; ++ii) {
-    const unsigned int iih = ii*h;
-    for (unsigned int jj = 0; jj < imgww; ++jj) {
-      const unsigned int jjw = jj*w;
-      unsigned all0 = 1;
-      for (unsigned int i = 0; i < h; ++i)
-	for (unsigned int j = 0; j < w; ++j)
-	  if (img(iih+i,jjw+j)) all0 = 0;
+    for (int ii = 0; ii < imghh; ++ii) {
+        const unsigned int iih = ii * h;
+        for (int jj = 0; jj < imgww; ++jj) {
+            const unsigned int jjw = jj * w;
+            bool all0 = true;
+            for (unsigned int i = 0; i < h && all0; ++i) {
+                const unsigned int iihi = iih + i;
+                for (unsigned int j = 0; j < w && all0; ++j) {
+                    if (img(iihi, jjw + j)) all0 = false;
+                }
+            }
 
-      big(ii,jj) = !all0;
+            big(ii, jj) = !all0;
 
-      if (!all0) {
-	for (unsigned int i = 0; i < h; ++i) {
-    const unsigned int iihi = iih+i;
-	  for (unsigned int j = 0; j < w; ++j) {
-	    char& a = small(i,j);
-	    const char b = img(iihi,jjw+j);
-	    if (a != -1 && a != b) return {badImg,badImg};
-	    a = b;
-	  }
-	}
-      }
+            if (!all0) {
+                for (unsigned int i = 0; i < h; ++i) {
+                    const unsigned int iihi = iih + i;
+                    for (unsigned int j = 0; j < w; ++j) {
+                        char& a = small(i, j);
+                        const unsigned char b = img(iihi, jjw + j);
+                        if (a != -1 && a != b) return {badImg, badImg};
+                        a = b;
+                    }
+                }
+            }
+        }
     }
-  }
-  return {big, small};
+    return {big, small};
 }
 
 
-pair<Image,Image> iOuterProductIS(Image_ img, int w, int h) {
+pair<Image,Image> iOuterProductIS(Image_ img, unsigned int w, unsigned int h) {
   if (img.w*img.h <= 0 || img.w%w || img.h%h) return {badImg,badImg};
   const unsigned int imghh = img.h/h;
   const unsigned int imgww = img.w/w;
-  Image big = core::full({imgww,imghh},-1);
-  Image small = core::full({w,h},-1);
+  Image big = core::full({static_cast<int>(imgww),static_cast<int>(imghh)},-1);
+  Image small = core::full({static_cast<int>(w),static_cast<int>(h)},-1);
 
   for (unsigned int ii = 0; ii < imghh; ++ii) {
     const unsigned int iih = ii*h;
@@ -70,7 +74,7 @@ pair<Image,Image> iOuterProductIS(Image_ img, int w, int h) {
     const unsigned int iihi =iih+i;
 	  for (unsigned int j = 0; j < w; ++j) {
 	    char& a = small(i,j);
-	    const char b = img(iihi,jjw+j) > 0;
+	    const unsigned char b = img(iihi,jjw+j) > 0;
 	    if (a != -1 && a != b) return {badImg,badImg};
 	    a = b;
 	  }
@@ -210,7 +214,7 @@ Image deduceOuterProduct::reconstruct(Image_ a, Image_ b) {
 
 extern int MAXDEPTH;
 
-void addDeduceOuterProduct(Pieces&pieces, vector<pair<Image,Image>> train, vector<Candidate>&cands) {
+void addDeduceOuterProduct(Pieces&pieces, const vector<pair<Image,Image>>& train, vector<Candidate>&cands) {
   deduceOuterProduct deduce_op(train);
 
   int interestings = 0;

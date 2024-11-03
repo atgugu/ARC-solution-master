@@ -29,8 +29,8 @@ double now() {
 }
 //double now() { return chrono::steady_clock::now().time_since_epoch().count()*1e-9;}
 
-Timer build_f_time, apply_f_time, real_f_time, add_time, find_child_time, add_child_time, hash_time, map_time, total_time;
-Timer state_time;
+// Timer build_f_time, apply_f_time, real_f_time, add_time, find_child_time, add_child_time, hash_time, map_time, total_time;
+// Timer state_time;
 
 void Functions3::add(const string& name, int cost_, const function<bool(const State&,State&)>&func, int list) {
   //if (cost_ != 10) cout << name << endl;
@@ -51,9 +51,9 @@ void Functions3::add(string name, int cost, const function<Image(Image_)>&f, int
 
     int area = 0;
     for (int i = 0; i < cur.vimg.size(); ++i) {
-      real_f_time.start();
+      // real_f_time.start();
       nxt.vimg[i] = f(cur.vimg[i]);
-      real_f_time.stop();
+      // real_f_time.stop();
 
       area += nxt.vimg[i].w*nxt.vimg[i].h;
       if (area > MAXPIXELS) return false;
@@ -67,9 +67,9 @@ void Functions3::add(string name, int cost, const function<vImage(Image_)>&f, in
   const int buffer = 5;
   auto func = [f,cost](const State& cur, State& nxt) {
     if (cur.isvec || cur.depth+cost+buffer > MAXDEPTH) return false;
-    real_f_time.start();
+    // real_f_time.start();
     nxt.vimg = f(cur.vimg[0]);
-    real_f_time.stop();
+    // real_f_time.stop();
     nxt.isvec = true;
     return true;
   };
@@ -80,9 +80,9 @@ void Functions3::add(string name, int cost, const function<Image(vImage_)>&f, in
   auto func = [f](const State& cur, State& nxt) {
     if (!cur.isvec) return false;
     nxt.vimg.resize(1);
-    real_f_time.start();
+    // real_f_time.start();
     nxt.vimg[0] = f(cur.vimg);
-    real_f_time.stop();
+    // real_f_time.stop();
     nxt.isvec = false;
     return true;
   };
@@ -92,9 +92,9 @@ void Functions3::add(string name, int cost, const function<Image(vImage_)>&f, in
 void Functions3::add(string name, int cost, const function<vImage(vImage_)>&f, int list) { //list = 1
   auto func = [f](const State& cur, State& nxt) {
     if (!cur.isvec) return false;
-    real_f_time.start();
+    // real_f_time.start();
     nxt.vimg = f(cur.vimg);
-    real_f_time.stop();
+    // real_f_time.stop();
     nxt.isvec = true;
     return true;
   };
@@ -113,9 +113,9 @@ void Functions3::add(const vector<point>&sizes, string name, int cost, const fun
 
       int area = 0;
       for (int i = 0; i < cur.vimg.size(); ++i) {
-	real_f_time.start();
+	// real_f_time.start();
 	nxt.vimg[i] = f(cur.vimg[i], arg2);
-	real_f_time.stop();
+	// real_f_time.stop();
 
 	area += nxt.vimg[i].w*nxt.vimg[i].h;
 	if (area > MAXPIXELS) return false;
@@ -148,53 +148,56 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
 
   //invert is filterCol(img, 0)
   for (int c = 0; c < 10;++c)
-    funcs.add("filterCol "+to_string(c), 10, [c](Image_ img) {return filterCol(img, c);});
+    funcs.add("filterCol "+to_string(c), 6, [c](Image_ img) {return filterCol(img, c);});
   for (int c = 1; c < 10;++c)
-    funcs.add("eraseCol "+to_string(c), 10,
+    funcs.add("eraseCol "+to_string(c), 6,
 	      [c](Image_ img) {return eraseCol(img, c);});
 
   for (int c = 1; c < 10;++c)
-    funcs.add("colShape "+to_string(c), 10,
+    funcs.add("colShape "+to_string(c), 7,
 	      [c](Image_ img) {return colShape(img, c);}, 0);
 
-  funcs.add("compress", 10, [](Image_ img) {return compress(img);});
-  funcs.add("getPos", 10, getPos);
-  funcs.add("getSize0", 10, getSize0);
-  funcs.add("getSize", 10, getSize);
+  funcs.add("compress", 6, [](Image_ img) {return compress(img);});
+  funcs.add("getPos", 8, getPos);
+  funcs.add("getSize0", 6, getSize0);
+  funcs.add("getSize", 6, getSize);
   funcs.add("hull0", 10, hull0);
-  funcs.add("hull", 10, hull);
+  funcs.add("hull", 8, hull);
   funcs.add("toOrigin", 10, toOrigin);
-  funcs.add("Fill", 10, Fill);
-  funcs.add("interior", 10, interior);
-  funcs.add("interior2", 10, interior2);
-  funcs.add("border", 10, border);
-  funcs.add("center", 10, center);
-  funcs.add("majCol", 10, majCol);
+  funcs.add("Fill", 9, Fill);
+  funcs.add("interior", 6, interior);
+  funcs.add("interior2", 6, interior2);
+  funcs.add("border", 9, border);
+  funcs.add("center", 7, center);
+  funcs.add("majCol", 8, majCol);
 
-  funcs.add("greedyFillBlack", 10, [](Image_ img) {return greedyFillBlack(img);});
-  funcs.add("greedyFillBlack2", 10, [](Image_ img) {return greedyFillBlack2(img);});
+  funcs.add("greedyFillBlack", 12, [](Image_ img) {return greedyFillBlack(img);});
+  funcs.add("greedyFillBlack2", 12, [](Image_ img) {return greedyFillBlack2(img);});
 
-  for (int i = 1; i < 9; ++i)
-    funcs.add("rigid "+to_string(i), 10,
+  for (int i = 1; i < 11; ++i)
+    funcs.add("rigid "+to_string(i), 6,
 	      [i](Image_ img) {return rigid(img, i);});
   for (int a = 0; a < 3; ++a)
-    for (int b = 0; b < 3; ++b)
+    for (int b = 0; b < 3; ++b){
+      int comp = 10;
+      if (b==0) comp = 2;
       funcs.add("count "+to_string(a)+" "+to_string(b), 10,
 		[a,b](Image_ img) {return count(img, a, b);});
+    }
   for (int i = 0; i < 15; ++i)
-    funcs.add("smear "+to_string(i), 10,
+    funcs.add("smear "+to_string(i), 9,
 	      [i](Image_ img) {return smear(img, i);});
 
   for (int i = 0; i < 4; ++i)
-  funcs.add("diagonalSmear "+to_string(i), 10,
+  funcs.add("diagonalSmear "+to_string(i), 9,
     [i](Image_ img) {return diagonalSmear(img, i);});
 
-  funcs.add("dilate1", 10, dilate1);
-  funcs.add("erode1", 10, erode1);
-  funcs.add("dilate2", 10, dilate2);
-  funcs.add("erode2", 10, erode2);
-  funcs.add("dilate3", 10, dilate3);
-  funcs.add("erode3", 10, erode3);
+  funcs.add("dilate1", 5, dilate1);
+  funcs.add("erode1", 5, erode1);
+  funcs.add("dilate2", 6, dilate2);
+  funcs.add("erode2", 6, erode2);
+  funcs.add("dilate3", 7, dilate3);
+  funcs.add("erode3", 7, erode3);
 
   funcs.add("detectPatterns2Image2", 10, detectPatterns2Image2);
   funcs.add("detectPatterns2Image3", 10, detectPatterns2Image3);
@@ -240,13 +243,13 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
     });
 
   funcs.add("trimToContent", 10, trimToContent);
-  funcs.add("detectRepeatingPatternWithHole1", 10,
+  funcs.add("detectRepeatingPatternWithHole1", 15,
 	      [](Image_ img) {return detectRepeatingPatternWithHole(img, true);});
-  funcs.add("detectRepeatingPatternWithHole1", 10,
+  funcs.add("detectRepeatingPatternWithHole1", 15,
 	      [](Image_ img) {return detectRepeatingPatternWithHole(img, false);});
 
   for (int id = -3; id < 3; ++id)
-    funcs.add("circularShiftRow "+to_string(id), 10,
+    funcs.add("circularShiftRow "+to_string(id), 15,
 	      [id](Image_ img) {return circularShift(img, true, id);});
 
   // funcs.add("detectTranslation1DPattern", 10, detectTranslation1DPattern);
@@ -267,20 +270,20 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
     funcs.add("diagonalGravity "+to_string(id), 10,
 	      [id](Image_ img) {return diagonalGravity(img,id);});
 
-  funcs.add("mostCommonShape", 10, mostCommonShape);
+  funcs.add("mostCommonShape", 15, mostCommonShape);
   // funcs.add("repairRotationalSymmetry", 10, repairRotationalSymmetry);
 
-  funcs.add("makeBorder", 10,
+  funcs.add("makeBorder", 8,
 	    [](Image_ img) {return makeBorder(img, 1);});
 
   for (int id : {0,1})
-    funcs.add("makeBorder2 "+to_string(id), 10,
+    funcs.add("makeBorder2 "+to_string(id), 8,
 	      [id](Image_ img) {return makeBorder2(img, id);});
-  funcs.add("compress2", 10, compress2);
+  funcs.add("compress2", 8, compress2);
   funcs.add("compress3", 10, compress3);
 
-  for (int id = 0; id < 3; ++id)
-    funcs.add("connect "+to_string(id), 10,
+  for (int id = 0; id < 5; ++id)
+    funcs.add("connect "+to_string(id), 8,
 	      [id](Image_ img) {return connect(img,id);});
 
   for (int id : {0,1})
@@ -288,15 +291,15 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
 	      [id](Image_ img) {return spreadCols(img, id);});
 
   for (int id = 0; id < 4; ++id)
-    funcs.add("half "+to_string(id), 10,
+    funcs.add("half "+to_string(id), 8,
 	      [id](Image_ img) {return half(img, id);});
 
   for (int id = 1; id < 5; ++id)
-    funcs.add("zoomIn "+to_string(id), 10,
+    funcs.add("zoomIn "+to_string(id), 8,
 	      [id](Image_ img) {return zoomIn(img, id);});
 
   for (int id = 2; id <= 5; ++id)
-    funcs.add("upscaleImage "+to_string(id), 10,
+    funcs.add("upscaleImage "+to_string(id), 8,
 	      [id](Image_ img) {return upscaleImage(img, id);});
 
   for (int id = 2; id <= 3; ++id)
@@ -305,18 +308,28 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
 
   // strech horizontally
   for (int id = 2; id <= 4; ++id)
-    funcs.add("stretchImageH "+to_string(id), 10,
+    funcs.add("stretchImageH "+to_string(id), 8,
 	      [id](Image_ img) {return stretchImage(img, id, 0);});
 
   // strech vert
   for (int id = 2; id <= 4; ++id)
-    funcs.add("stretchImageV "+to_string(id), 10,
+    funcs.add("stretchImageV "+to_string(id), 8,
 	      [id](Image_ img) {return stretchImage(img, id, 1);});
 
+  // for (int ammount = 0; ammount < 3; ++ammount)
+  // for (int id = 0; id < 8; ++id)
+  //   funcs.add("shiftImageCrop "+to_string(id), 5,
+	//       [id, ammount](Image_ img) {return shiftImageCrop(img, id, ammount);});
 
-  for (int dy = -4; dy <= 4; ++dy) {
-    for (int dx = -4; dx <= 4; ++dx) {
-      funcs.add("Move "+to_string(dx)+" "+to_string(dy), 10,
+  // // for (int ammount = 0; ammount < 3; ++ammount)
+  // // for (int id = 0; id < 8; ++id)
+  // //   funcs.add("shiftImageExpand "+to_string(id), 5,
+  // //       [id, ammount](Image_ img) {return shiftImageExpand(img, id, ammount);});
+
+
+  for (int dy = -6; dy <= 6; ++dy) {
+    for (int dx = -6; dx <= 6; ++dx) {
+      funcs.add("Move "+to_string(dx)+" "+to_string(dy), 7,
 		[dx,dy](Image_ img) {return Move(img, Pos(dx,dy));}, 0);
     }
   }
@@ -330,6 +343,8 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
   funcs.add(sizes, "repeat 2",  10, [](Image_ a, Image_ b) {return repeat(a,b,2);});
   funcs.add(sizes, "repeat 3",  10, [](Image_ a, Image_ b) {return repeat(a,b,3);});
   funcs.add(sizes, "repeat 4",  10, [](Image_ a, Image_ b) {return repeat(a,b,4);});
+  funcs.add(sizes, "extend2",  15, [](Image_ a, Image_ b) {return extend2(a,b);});
+
   // funcs.add(sizes, "repeat 5",  10, [](Image_ a, Image_ b) {return repeat(a,b,5);});
   // funcs.add(sizes, "repeat 6",  10, [](Image_ a, Image_ b) {return repeat(a,b,6);});
   // funcs.add(sizes, "repeat 7",  10, [](Image_ a, Image_ b) {return repeat(a,b,7);});
@@ -355,12 +370,12 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
 
 
   //Split
-  funcs.add("cut",       10, [](Image_ img) {return cut(img);});
-  funcs.add("splitCols", 10, [](Image_ img) {return splitCols(img);});
-  funcs.add("splitAll",     10, splitAll);
-  funcs.add("splitColumns", 10, splitColumns);
-  funcs.add("splitRows",    10, splitRows);
-  funcs.add("insideMarked", 10, insideMarked);
+  funcs.add("cut",       8, [](Image_ img) {return cut(img);});
+  funcs.add("splitCols", 7, [](Image_ img) {return splitCols(img);});
+  funcs.add("splitAll",     8, splitAll);
+  funcs.add("splitColumns", 8, splitColumns);
+  funcs.add("splitRows",    7, splitRows);
+  funcs.add("insideMarked", 20, insideMarked);
   for (int id = 0; id < 4; ++id)
     funcs.add("gravity "+to_string(id), 10,
 	      [id](Image_ img) {return gravity(img,id);});
@@ -368,14 +383,14 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
 
   //Join
   for (int id = 0; id < 14; ++id)
-    funcs.add("pickMax "+to_string(id), 10,
+    funcs.add("pickMax "+to_string(id), 8,
 	      [id](vImage_ v) {return pickMax(v,id);});
   for (int id = 0; id < 1; ++id)
-    funcs.add("pickUnique "+to_string(id), 10,
+    funcs.add("pickUnique "+to_string(id), 8,
 	      [id](vImage_ v) {return pickUnique(v,id);});
 
   funcs.add("composeGrowing", 10, composeGrowing);
-  funcs.add("stackLine", 10, stackLine);
+  funcs.add("stackLine", 7, stackLine);
   for (int id = 0; id < 3; ++id) //consider going to 4
     funcs.add("myStack "+to_string(id), 10,
 	      [id](vImage_ v) {return myStack(v,id);}); //
@@ -383,10 +398,10 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
 
   //Vector
   for (int id = 0; id < 14; ++id)
-    funcs.add("pickMaxes "+to_string(id), 10,
+    funcs.add("pickMaxes "+to_string(id), 8,
 	      [id](vImage_ v) {return pickMaxes(v,id);});
   for (int id = 0; id < 14; ++id)
-    funcs.add("pickNotMaxes "+to_string(id), 10,
+    funcs.add("pickNotMaxes "+to_string(id), 8,
 	      [id](vImage_ v) {return pickNotMaxes(v,id);});
 
 
@@ -440,19 +455,19 @@ Image DAG::getImg(int ni) {
 
 
 int DAG::add(const State&nxt, bool force) { //force = false
-  hash_time.start();
+  // hash_time.start();
   ull h = nxt.hash();
-  hash_time.stop();
-  int nodes = tiny_node.size();
-  map_time.start();
+  // hash_time.stop();
+  const int nodes = tiny_node.size();
+  // map_time.start();
   auto [nodei,inserted] = hashi.insert(h,nodes);
   //auto [it,inserted] = hashi.insert({h,nodes}); int nodei = it->second;
   //assert(inserted == tiny_inserted);
   //assert(nodei == tiny_nodei);
 
-  map_time.stop();
+  // map_time.stop();
 
-  add_time.start();
+  // add_time.start();
   if (inserted || force) {
     bool ispiece = !nxt.isvec;
     if (!nxt.isvec && target_size != point{-1,-1})
@@ -466,23 +481,23 @@ int DAG::add(const State&nxt, bool force) { //force = false
       }*/
     tiny_node.append(nxt, ispiece);
   }
-  add_time.stop();
+  // add_time.stop();
   return nodei;
 }
 
 
 void DAG::build() {
-  build_f_time.start();
+  // build_f_time.start();
 
   for (int curi = 0; curi < tiny_node.size(); ++curi) {
-    int depth = tiny_node[curi].depth;
+    const int depth = tiny_node[curi].depth;
     if (depth+1 > MAXDEPTH) continue;
 
     //vector<pair<int,int>> child;
     State nxt;
-    state_time.start();
+    // state_time.start();
     State cur_state = tiny_node.getState(curi);
-    state_time.stop();
+    // state_time.stop();
     for (int fi : funcs.listed) {
       nxt.depth = depth+funcs.cost[fi];
       if (nxt.depth > MAXDEPTH) continue;
@@ -499,7 +514,7 @@ void DAG::build() {
     //node[curi].child = child;
   }
 
-  build_f_time.stop();
+  // build_f_time.stop();
 }
 
 void DAG::initial(Image_ test_in, const vector<pair<Image,Image>>&train, vector<point> sizes, int ti) {
@@ -528,29 +543,29 @@ void DAG::initial(Image_ test_in, const vector<pair<Image,Image>>&train, vector<
 }
 
 //time each function
-void DAG::benchmark() {
-  vector<pair<double,int>> v;
-  const unsigned int tinynodesize =tiny_node.size();
-  for (int fi : funcs.listed) {
-    double start_time = now();
-    State nxt;
-    for (int i = 0; i < tinynodesize; ++i) {
-      funcs.f_list[fi](tiny_node.getState(i), nxt);
-    }
-    double elapsed = now()-start_time;
-    v.emplace_back(elapsed, fi);
-  }
-  sort(v.begin(), v.end());
-  for (auto [t,fi] : v)
-    printf("%.1f ms - %s\n", t*1e3, funcs.getName(fi).c_str());
-}
+// void DAG::benchmark() {
+//   vector<pair<double,int>> v;
+//   const unsigned int tinynodesize =tiny_node.size();
+//   for (int fi : funcs.listed) {
+//     double start_time = now();
+//     State nxt;
+//     for (int i = 0; i < tinynodesize; ++i) {
+//       funcs.f_list[fi](tiny_node.getState(i), nxt);
+//     }
+//     double elapsed = now()-start_time;
+//     v.emplace_back(elapsed, fi);
+//   }
+//   sort(v.begin(), v.end());
+//   for (auto [t,fi] : v)
+//     printf("%.1f ms - %s\n", t*1e3, funcs.getName(fi).c_str());
+// }
 
 int DAG::applyFunc(int curi, int fi, const State&state) {
 
-  find_child_time.start();
+  // find_child_time.start();
   //auto it = lower_bound(node[curi].child.begin(), node[curi].child.end(), make_pair(fi,-1));
   int it2 = tiny_node.getChild(curi, fi);
-  find_child_time.stop();
+  // find_child_time.stop();
   if (it2 != TinyChildren::None) {//it != node[curi].child.end() && it->first == fi) {
     //if (it2 != it->second) cout << it2 << ' ' << it->second << endl;
     //assert(it2 == it->second);
@@ -565,27 +580,27 @@ int DAG::applyFunc(int curi, int fi, const State&state) {
 
   int newi = -1;
 
-  apply_f_time.start();
+  // apply_f_time.start();
   bool ok = funcs.f_list[fi](state, nxt);
-  apply_f_time.stop();
+  // apply_f_time.stop();
 
   if (ok) {
     //nxt.pfi = fi;
     newi = add(nxt);
   }
 
-  add_child_time.start();
+  // add_child_time.start();
   tiny_node.addChild(curi, fi, newi);
   //node[curi].child.emplace_back(fi, newi);
   //sort(node[curi].child.begin(), node[curi].child.end());
-  add_child_time.stop();
+  // add_child_time.stop();
   return newi;
 }
 
 int DAG::applyFunc(int curi, int fi) {
-  state_time.start();
+  // state_time.start();
   State state = tiny_node.getState(curi);
-  state_time.stop();
+  // state_time.stop();
   return applyFunc(curi, fi, state);
 }
 
@@ -610,9 +625,9 @@ void DAG::applyFuncs(vector<pair<string,int>> names, bool vec) {
   const unsigned int fissize = fis.size();
   for (int curi = 0; curi < tinynodesize; ++curi) {
     if (tiny_node[curi].isvec != vec) continue;
-    state_time.start();
+    // state_time.start();
     State state = tiny_node.getState(curi);
-    state_time.stop();
+    // state_time.stop();
 
     for (int i = 0; i < fissize; ++i) {
       auto [fi,id] = fis[i];
@@ -760,7 +775,7 @@ vector<DAG> brutePieces2(Image_ test_in, const vector<pair<Image,Image>>&train, 
 
     dag[ti].initial(test_in, train, sizes, ti);
 
-    total_time.start();
+    // total_time.start();
 
     double start_time = now();
     dag[ti].build();
@@ -808,20 +823,20 @@ vector<DAG> brutePieces2(Image_ test_in, const vector<pair<Image,Image>>&train, 
 
 	if (print) cout << now()-start_time << endl;*/
 
-      total_time.stop();
+      // total_time.stop();
       if(print){
-        total_time.print("Total time");
-        build_f_time.print("Build f time");
-        apply_f_time.print("Apply f time");
-        real_f_time .print("Real f time ");
+        // total_time.print("Total time");
+        // build_f_time.print("Build f time");
+        // apply_f_time.print("Apply f time");
+        // real_f_time .print("Real f time ");
 
-        add_time.print("Add time");
-        find_child_time.print("Find child");
-        add_child_time.print("Add child");
-        hash_time.print("Hash");
-        map_time.print("Map");
+        // add_time.print("Add time");
+        // find_child_time.print("Find child");
+        // add_child_time.print("Add child");
+        // hash_time.print("Hash");
+        // map_time.print("Map");
 
-        state_time.print("getState");
+        // state_time.print("getState");
       }
       //exit(0);
       /*FILE*fp = fopen("images.txt", "w");
@@ -835,7 +850,7 @@ vector<DAG> brutePieces2(Image_ test_in, const vector<pair<Image,Image>>&train, 
       }
       exit(0);*/
       //dag[ti].freeAll();
-    } else total_time.stop();
+    } 
     //dag[ti].benchmark();
     //exit(0);
 

@@ -93,7 +93,7 @@ struct DAG {
   
   void buildBinary();
   void initial(Image_ test_in, const vector<pair<Image,Image>>&train, vector<point> sizes, int ti);
-  void benchmark();
+  // void benchmark();
   int applyFunc(int curi, int fi, const State&state);
   int applyFunc(int curi, int fi);
   void applyFunc(string name, bool vec);

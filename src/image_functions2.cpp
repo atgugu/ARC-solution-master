@@ -13,7 +13,7 @@ using namespace std;
 #include <functional>
 #include <tuple>
 #include <cmath>
-
+#include <array>
 
 vImage splitAll(Image_ img) {
   vector<Image> ret;
@@ -764,41 +764,75 @@ Image extend2(Image_ img, Image_ room) {
 
 
 Image connect(Image_ img, int id) {
-  assert(id >= 0 && id < 3);
+  assert(id >= 0 && id < 5); // Allow diagonal IDs
   Image ret = core::empty(img.p, img.sz);
 
-  //Horizontal
+  // Horizontal
   if (id == 0 || id == 2) {
     for (int i = 0; i < img.h; ++i) {
       int last = -1, lastc = -1;
       for (int j = 0; j < img.w; ++j) {
-	if (img(i,j)) {
-	  if (img(i,j) == lastc) {
-	    for (int k = last+1; k < j; ++k)
-	      ret(i,k) = lastc;
-	  }
-	  lastc = img(i,j);
-	  last = j;
-	}
+        if (img(i, j)) {
+          if (img(i, j) == lastc) {
+            for (int k = last + 1; k < j; ++k)
+              ret(i, k) = lastc;
+          }
+          lastc = img(i, j);
+          last = j;
+        }
       }
     }
   }
 
-  //Vertical
-
+  // Vertical
   if (id == 1 || id == 2) {
-
     for (int j = 0; j < img.w; ++j) {
       int last = -1, lastc = -1;
       for (int i = 0; i < img.h; ++i) {
-	if (img(i,j)) {
-	  if (img(i,j) == lastc) {
-	    for (int k = last+1; k < i; ++k)
-	      ret(k,j) = lastc;
-	  }
-	  lastc = img(i,j);
-	  last = i;
-	}
+        if (img(i, j)) {
+          if (img(i, j) == lastc) {
+            for (int k = last + 1; k < i; ++k)
+              ret(k, j) = lastc;
+          }
+          lastc = img(i, j);
+          last = i;
+        }
+      }
+    }
+  }
+
+  // Diagonal (top-left to bottom-right)
+  if (id == 3) {
+    for (int i = 0; i < img.h; ++i) {
+      int lastRow = -1, lastCol = -1, lastc = -1;
+      for (int j = 0; j < img.w; ++j) {
+        if (i + j < img.h && img(i + j, j)) {
+          if (img(i + j, j) == lastc) {
+            for (int k = 1; k < i + j - lastRow; ++k)
+              ret(lastRow + k, lastCol + k) = lastc;
+          }
+          lastc = img(i + j, j);
+          lastRow = i + j;
+          lastCol = j;
+        }
+      }
+    }
+  }
+
+  // Diagonal (top-right to bottom-left)
+  if (id == 4) {
+    for (int i = 0; i < img.h; ++i) {
+      int lastRow = -1, lastCol = img.w, lastc = -1;
+      for (int j = img.w - 1; j >= 0; --j) {
+        if (i + (img.w - 1 - j) < img.h && img(i + (img.w - 1 - j), j)) {
+          if (img(i + (img.w - 1 - j), j) == lastc) {
+            for (int k = 1; k < i + (img.w - 1 - j) - lastRow; ++k)
+              ret(lastRow + k, lastCol - k) = lastc;
+          }
+          lastc = img(i + (img.w - 1 - j), j);
+          lastRow = i + (img.w - 1 - j);
+          lastCol = j;
+        }
       }
     }
   }
@@ -1111,6 +1145,9 @@ Image detectTranslationPattern(Image_ img) {
     }
     return pattern;
 }
+
+
+
 Image enforceRotationalSymmetry90(Image_ img) {
     int h = img.h;
     int w = img.w;
@@ -1994,7 +2031,7 @@ Image upscaleImage(const Image& img, int scaleFactor) {
     int newHeight = img.h * scaleFactor;
 
     // Ensure the upscaled image fits within 30x30
-    if (newWidth > 30 || newHeight > 30) {
+    if (newWidth > MAXSIDE / 2 || newHeight > MAXSIDE / 2) {
         // Return original image if it cannot be upscaled within the 30x30 limit
         return img;
     }
@@ -2005,7 +2042,7 @@ Image upscaleImage(const Image& img, int scaleFactor) {
     // Duplicate each pixel according to the scale factor
     for (int i = 0; i < img.h; ++i) {
         for (int j = 0; j < img.w; ++j) {
-            char pixelValue = img(i, j);
+            const char pixelValue = img(i, j);
             for (int dy = 0; dy < scaleFactor; ++dy) {
                 for (int dx = 0; dx < scaleFactor; ++dx) {
                     upscaled(i * scaleFactor + dy, j * scaleFactor + dx) = pixelValue;
@@ -2040,7 +2077,7 @@ Image stretchImage(const Image& img, int stretchFactor, int direction) {
     // Populate the stretched image
     for (int i = 0; i < img.h; ++i) {
         for (int j = 0; j < img.w; ++j) {
-            char pixelValue = img(i, j);
+            const char pixelValue = img(i, j);
 
             // Fill the appropriate region in the stretched image
             if (direction == 0) {
@@ -2208,6 +2245,51 @@ vImage gravity(Image_ in, int d) {
   return ret;
 }
 
+// Optimized radix sort for integer keys
+#include <vector>
+#include <array>
+#include <algorithm>
+#include <omp.h>
+
+void radixSort(std::vector<std::pair<int, int>>& arr) {
+    if (arr.empty()) return;
+
+    // Find the maximum value to determine the number of digits
+    int maxVal = 0;
+    for (const auto& p : arr) {
+        maxVal = std::max(maxVal, p.first);
+    }
+
+    int exp = 1;
+    std::vector<std::pair<int, int>> output(arr.size());  // Output array for each pass
+    const int base = 10;
+
+    while (maxVal / exp > 0) {
+        std::array<int, base> count = {0};  // Bucket counters
+
+        // Count occurrences of each digit in the current place
+        for (const auto& p : arr) {
+            count[(p.first / exp) % base]++;
+        }
+
+        // Update count array to positions
+        for (int i = 1; i < base; ++i) {
+            count[i] += count[i - 1];
+        }
+
+        // Build the output array in stable order
+        for (int i = arr.size() - 1; i >= 0; --i) {
+            int digit = (arr[i].first / exp) % base;
+            output[--count[digit]] = arr[i];
+        }
+
+        // Copy output back to arr
+        std::copy(output.begin(), output.end(), arr.begin());
+
+        // Move to the next digit place
+        exp *= base;
+    }
+}
 
 
 Image myStack(vImage_ lens, int id) {
@@ -2217,8 +2299,8 @@ Image myStack(vImage_ lens, int id) {
   for (int i = 0; i < n; ++i) {
     order[i] = {lens[i].w*lens[i].h,i};
   }
-  sort(order.begin(), order.end());
-
+//   sort(order.begin(), order.end());
+    radixSort(order);
   Image out = lens[order[0].second];
   for (int i = 1; i < n; ++i)
     out = myStack(out,lens[order[i].second],id);
@@ -2248,8 +2330,8 @@ Image stackLine(vImage_ shapes) {
   for (int i = 0; i < shapes.size(); ++i) {
     order[i] = {shapes[i].x*dx+shapes[i].y*dy,i};
   }
-  sort(order.begin(), order.end());
-
+//   sort(order.begin(), order.end());
+    radixSort(order);
   Image out = shapes[order[0].second];
   
   for (int i = 1; i < n; ++i)
@@ -2274,30 +2356,7 @@ Image composeGrowingSlow(vImage_ imgs) {
   return ret;
 }
 
-// Optimized radix sort for integer keys
-void radixSort(std::vector<std::pair<int, int>>& arr) {
-    int maxVal = 0;
-    for (const auto& p : arr) {
-        maxVal = std::max(maxVal, p.first);
-    }
 
-    int exp = 1;
-    while (maxVal / exp > 0) {
-        std::vector<std::vector<std::pair<int, int>>> buckets(10);
-        for (const auto& p : arr) {
-            buckets[(p.first / exp) % 10].push_back(p);
-        }
-
-        int index = 0;
-        for (const auto& bucket : buckets) {
-            for (const auto& p : bucket) {
-                arr[index++] = p;
-            }
-        }
-
-        exp *= 10;
-    }
-}
 
 Image composeGrowing(vImage_ imgs) {
     const int n = imgs.size();
@@ -2330,7 +2389,7 @@ Image composeGrowing(vImage_ imgs) {
 
     int exp = 1;
     while (maxVal / exp > 0) {
-        std::vector<std::vector<std::pair<int, int>>> buckets(10);
+        std::array<std::vector<std::pair<int, int>>, 10> buckets;
         for (const auto& p : order) {
             buckets[(p.first / exp) % 10].push_back(p);
         }
