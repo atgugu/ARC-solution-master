@@ -157,25 +157,33 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
     funcs.add("colShape "+to_string(c), 7,
 	      [c](Image_ img) {return colShape(img, c);}, 0);
 
-  funcs.add("compress", 6, [](Image_ img) {return compress(img);});
+  funcs.add("compress", 8, [](Image_ img) {return compress(img);});
   funcs.add("getPos", 8, getPos);
-  funcs.add("getSize0", 6, getSize0);
-  funcs.add("getSize", 6, getSize);
+  funcs.add("getSize0", 8, getSize0);
+  funcs.add("getSize", 8, getSize);
   funcs.add("hull0", 10, hull0);
   funcs.add("hull", 8, hull);
   funcs.add("toOrigin", 10, toOrigin);
   funcs.add("Fill", 9, Fill);
-  funcs.add("interior", 6, interior);
-  funcs.add("interior2", 6, interior2);
+  funcs.add("interior", 8, interior);
+  funcs.add("interior2", 8, interior2);
   funcs.add("border", 9, border);
   funcs.add("center", 7, center);
   funcs.add("majCol", 8, majCol);
 
-  funcs.add("greedyFillBlack", 12, [](Image_ img) {return greedyFillBlack(img);});
-  funcs.add("greedyFillBlack2", 12, [](Image_ img) {return greedyFillBlack2(img);});
+  funcs.add("greedyFillBlack", 10, [](Image_ img) {return greedyFillBlack(img);});
+  funcs.add("greedyFillBlack2", 10, [](Image_ img) {return greedyFillBlack2(img);});
+  funcs.add("highlightEdges", 10, [colorMap](Image_ img) {return highlightEdges(img, colorMap);});
+  funcs.add("maskByColorMap", 10, [colorMap](Image_ img) {return maskByColorMap(img, colorMap);});
+  for (const auto &c : colorMap) {
+      int backgroundColor = c.first;
+      funcs.add("replaceBackground" + std::to_string(backgroundColor), 10, 
+                [colorMap, backgroundColor](Image_ img) {
+                    return replaceBackground(img, backgroundColor, colorMap);
+                });}
 
   for (int i = 1; i < 11; ++i)
-    funcs.add("rigid "+to_string(i), 6,
+    funcs.add("rigid "+to_string(i), 8,
 	      [i](Image_ img) {return rigid(img, i);});
   for (int a = 0; a < 3; ++a)
     for (int b = 0; b < 3; ++b){
@@ -191,25 +199,25 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
   for (int i = 0; i < 4; ++i)
   funcs.add("diagonalSmear "+to_string(i), 9,
     [i](Image_ img) {return diagonalSmear(img, i);});
+  // for (int i = 0; i < 8; ++i)
+  // for (int j = 0; j < 1; ++j)
+  // funcs.add("shiftImage "+to_string(i) + to_string(j), 5,
+  //   [i, j](Image_ img) {return shiftImage(img, i, j, false);});
 
-  funcs.add("dilate1", 5, dilate1);
-  funcs.add("erode1", 5, erode1);
-  funcs.add("dilate2", 6, dilate2);
-  funcs.add("erode2", 6, erode2);
-  funcs.add("dilate3", 7, dilate3);
-  funcs.add("erode3", 7, erode3);
+  funcs.add("dilate1", 8, dilate1);
+  funcs.add("erode1", 8, erode1);
+  funcs.add("dilate2", 8, dilate2);
+  funcs.add("erode2", 8, erode2);
+  funcs.add("dilate3", 9, dilate3);
+  funcs.add("erode3", 9, erode3);
 
-  funcs.add("detectPatterns2Image2", 10, detectPatterns2Image2);
-  funcs.add("detectPatterns2Image3", 10, detectPatterns2Image3);
-  funcs.add("detectPatterns2Image4", 10, detectPatterns2Image4);
-  funcs.add("detectPatterns2Image5", 10, detectPatterns2Image5);
-  funcs.add("detectPatterns2Image6", 10, detectPatterns2Image6);
-  funcs.add("detectPatterns2Image7", 10, detectPatterns2Image7);
-  funcs.add("detectPatterns2Image8", 10, detectPatterns2Image8);
-  funcs.add("detectPatterns2Image9", 10, detectPatterns2Image9);
+  // funcs.add("morphOpening", 8, morphOpening);
+  // funcs.add("morphClosing", 8, morphClosing);
+  // for (int i = 2; i < 10; ++i)
+  // funcs.add("detectPatterns "+to_string(i), 9,
+  //   [i](Image_ img) {return detectPatterns(img, i);});
+
   funcs.add("removeGrid", 10, removeGrid);
-
-
   funcs.add("detectVerticalStripes2", 10, [](Image_ img) { return detectVerticalStripes(img, 2); });
   funcs.add("detectVerticalStripes3", 10, [](Image_ img) { return detectVerticalStripes(img, 3); });
   funcs.add("detectVerticalStripes4", 10, [](Image_ img) { return detectVerticalStripes(img, 4); });
@@ -224,6 +232,8 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
   funcs.add("detectCheckerboardPattern2", 10, [](Image_ img) { return detectCheckerboardPattern(img, 2); });
   funcs.add("detectCheckerboardPattern3", 10, [](Image_ img) { return detectCheckerboardPattern(img, 3); });
   funcs.add("detectCheckerboardPattern5", 10, [](Image_ img) { return detectCheckerboardPattern(img, 5); });
+  // funcs.add("trainAndPredict", 10, [train](Image_ img ) { return trainAndPredict(img, train); });
+  // funcs.add("extractAndApplyConstantShapes", 10, [train](Image_ img ) { return extractAndApplyConstantShapes(img, train); });
 
   funcs.add("detectRepeatingPattern", 10, [](Image_ img) {
       Image pattern;
@@ -238,19 +248,15 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
       }
   });
 
-    funcs.add("applyColorMapping", 10, [colorMap](Image_ img) {
-        return applyColorMapping(img, colorMap);
-    });
+  funcs.add("applyColorMapping", 10, [colorMap](Image_ img) {
+      return applyColorMapping(img, colorMap);
+  });
 
   funcs.add("trimToContent", 10, trimToContent);
-  funcs.add("detectRepeatingPatternWithHole1", 15,
+  funcs.add("detectRepeatingPatternWithHole1", 10,
 	      [](Image_ img) {return detectRepeatingPatternWithHole(img, true);});
-  funcs.add("detectRepeatingPatternWithHole1", 15,
+  funcs.add("detectRepeatingPatternWithHole1", 10,
 	      [](Image_ img) {return detectRepeatingPatternWithHole(img, false);});
-
-  for (int id = -3; id < 3; ++id)
-    funcs.add("circularShiftRow "+to_string(id), 15,
-	      [id](Image_ img) {return circularShift(img, true, id);});
 
   // funcs.add("detectTranslation1DPattern", 10, detectTranslation1DPattern);
   // funcs.add("detectTranslationPattern", 10, detectTranslationPattern);
@@ -261,30 +267,47 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
   //   funcs.add("gridFilter "+to_string(id), 10,
 	//       [id](Image_ img) {return gridFilter(img, id, id);});
 
+  funcs.add("mostCommonShape", 10, mostCommonShape);
+  funcs.add("largestShape", 10, largestShape);
+  funcs.add("smallestShape", 10, smallestShape);
+  funcs.add("mostCommonColorShape", 10, mostCommonColorShape);
+  funcs.add("enclosedShapes", 10, enclosedShapes);
+  funcs.add("symmetricShape", 10, symmetricShape);
 
-  for (int id = -3; id < 3; ++id)
-    funcs.add("circularShiftColumn "+to_string(id), 10,
-	      [id](Image_ img) {return circularShift(img, false, id);});
-
-  for (int id = 0; id < 4; ++id)
-    funcs.add("diagonalGravity "+to_string(id), 10,
-	      [id](Image_ img) {return diagonalGravity(img,id);});
-
-  funcs.add("mostCommonShape", 15, mostCommonShape);
   // funcs.add("repairRotationalSymmetry", 10, repairRotationalSymmetry);
 
-  funcs.add("makeBorder", 8,
-	    [](Image_ img) {return makeBorder(img, 1);});
+  // crashes
+  // for (int id = 2; id <3; ++id)
+  //   funcs.add("compressPatches "+to_string(id), 10,
+	//       [id](Image_ img) {return compressPatches(img,id);});
 
-  for (int id : {0,1})
-    funcs.add("makeBorder2 "+to_string(id), 8,
-	      [id](Image_ img) {return makeBorder2(img, id);});
-  funcs.add("compress2", 8, compress2);
+  funcs.add("compress2", 10, compress2);
   funcs.add("compress3", 10, compress3);
+  funcs.add("compressH", 10, [](Image_ img) { return compressHV(img, true); });
+  funcs.add("compressV", 10, [](Image_ img) { return compressHV(img, false); });
+  funcs.add("outlineShapes", 10, outlineShapes);
+  funcs.add("diagonalBridge", 10, diagonalBridge);
+  funcs.add("fillIslands", 10, fillIslands);
+  funcs.add("reverseSizes", 10, reverseSizes);
+  funcs.add("compressSymmetry", 10, compressSymmetry);
+  funcs.add("bridgeGaps", 10, bridgeGaps);
+  funcs.add("connectNearestShapes", 10, connectNearestShapes);
+  funcs.add("connectFarthestShapes", 10, connectFarthestShapes);
+
+  for (int id = 3; id < 5; ++id)
+    funcs.add("denseRegionShape "+to_string(id), 10,
+	      [id](Image_ img) {return denseRegionShape(img,id);});
 
   for (int id = 0; id < 5; ++id)
-    funcs.add("connect "+to_string(id), 8,
+    funcs.add("connect "+to_string(id), 10,
 	      [id](Image_ img) {return connect(img,id);});
+  for (int id = 1; id < 4; ++id)
+    funcs.add("removeNoise "+to_string(id), 10,
+	      [id](Image_ img) {return removeNoise(img,id);});
+
+  for (int id = 0; id < 6; ++id)
+    funcs.add("rearrangeShapes "+to_string(id), 8,
+	      [id](Image_ img) {return rearrangeShapes(img,id);});
 
   for (int id : {0,1})
     funcs.add("spreadCols "+to_string(id), 10,
@@ -306,16 +329,40 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
     funcs.add("downscaleImage "+to_string(id), 10,
 	      [id](Image_ img) {return downscaleImage(img, id);});
 
-  // strech horizontally
   for (int id = 2; id <= 4; ++id)
     funcs.add("stretchImageH "+to_string(id), 8,
 	      [id](Image_ img) {return stretchImage(img, id, 0);});
 
-  // strech vert
   for (int id = 2; id <= 4; ++id)
     funcs.add("stretchImageV "+to_string(id), 8,
 	      [id](Image_ img) {return stretchImage(img, id, 1);});
 
+  // for (int id = 0; id <= 4; ++id)
+  //   funcs.add("shuffleRows "+to_string(id), 8,
+	//       [id](Image_ img) {return shuffleRowsOrColumns(img,true, id);});
+
+  // for (int id = 0; id <= 4; ++id)
+  //   funcs.add("shuffleColumns "+to_string(id), 8,
+	//       [id](Image_ img) {return shuffleRowsOrColumns(img,false, id);});
+
+    funcs.add("makeBorder", 8,
+	    [](Image_ img) {return makeBorder(img, 1);});
+
+  for (int id : {0,1})
+    funcs.add("makeBorder2 "+to_string(id), 8,
+	      [id](Image_ img) {return makeBorder2(img, id);});
+
+  for (int id = -3; id < 3; ++id)
+    funcs.add("circularShiftColumn "+to_string(id), 10,
+	      [id](Image_ img) {return circularShift(img, false, id);});
+
+    for (int id = -3; id < 3; ++id)
+    funcs.add("circularShiftRow "+to_string(id), 10,
+	      [id](Image_ img) {return circularShift(img, true, id);});
+
+  // for (int id = 0; id < 4; ++id)
+  //   funcs.add("diagonalGravity "+to_string(id), 10,
+	//       [id](Image_ img) {return diagonalGravity(img,id);});
   // for (int ammount = 0; ammount < 3; ++ammount)
   // for (int id = 0; id < 8; ++id)
   //   funcs.add("shiftImageCrop "+to_string(id), 5,
@@ -327,9 +374,9 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
   // //       [id, ammount](Image_ img) {return shiftImageExpand(img, id, ammount);});
 
 
-  for (int dy = -6; dy <= 6; ++dy) {
-    for (int dx = -6; dx <= 6; ++dx) {
-      funcs.add("Move "+to_string(dx)+" "+to_string(dy), 7,
+  for (int dy = -3; dy <= 3; ++dy) {
+    for (int dx = -3; dx <= 3; ++dx) {
+      funcs.add("Move "+to_string(dx)+" "+to_string(dy), 8,
 		[dx,dy](Image_ img) {return Move(img, Pos(dx,dy));}, 0);
     }
   }
@@ -343,7 +390,7 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
   funcs.add(sizes, "repeat 2",  10, [](Image_ a, Image_ b) {return repeat(a,b,2);});
   funcs.add(sizes, "repeat 3",  10, [](Image_ a, Image_ b) {return repeat(a,b,3);});
   funcs.add(sizes, "repeat 4",  10, [](Image_ a, Image_ b) {return repeat(a,b,4);});
-  funcs.add(sizes, "extend2",  15, [](Image_ a, Image_ b) {return extend2(a,b);});
+  funcs.add(sizes, "extend2",  10, [](Image_ a, Image_ b) {return extend2(a,b);});
 
   // funcs.add(sizes, "repeat 5",  10, [](Image_ a, Image_ b) {return repeat(a,b,5);});
   // funcs.add(sizes, "repeat 6",  10, [](Image_ a, Image_ b) {return repeat(a,b,6);});
@@ -374,12 +421,11 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
   funcs.add("splitCols", 7, [](Image_ img) {return splitCols(img);});
   funcs.add("splitAll",     8, splitAll);
   funcs.add("splitColumns", 8, splitColumns);
-  funcs.add("splitRows",    7, splitRows);
-  funcs.add("insideMarked", 20, insideMarked);
+  funcs.add("splitRows",    8, splitRows);
+  funcs.add("insideMarked", 10, insideMarked);
   for (int id = 0; id < 4; ++id)
     funcs.add("gravity "+to_string(id), 10,
 	      [id](Image_ img) {return gravity(img,id);});
-
 
   //Join
   for (int id = 0; id < 14; ++id)
@@ -403,14 +449,6 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
   for (int id = 0; id < 14; ++id)
     funcs.add("pickNotMaxes "+to_string(id), 8,
 	      [id](vImage_ v) {return pickNotMaxes(v,id);});
-
-
-  static int said = 0;
-  if (!said) {
-    //cout << "Function count: " << funcs.listed.size() << endl;
-    said = 1;
-  }
-
 
   //funcs.add("smear",    [](Image_ a, Image_ b) {return smear(a,b,6);});
 
@@ -499,6 +537,7 @@ void DAG::build() {
     State cur_state = tiny_node.getState(curi);
     // state_time.stop();
     for (int fi : funcs.listed) {
+      // here modify the cost based on depth
       nxt.depth = depth+funcs.cost[fi];
       if (nxt.depth > MAXDEPTH) continue;
       if (funcs.f_list[fi](cur_state, nxt)) {
@@ -573,15 +612,14 @@ int DAG::applyFunc(int curi, int fi, const State&state) {
   }
   //assert(it2 == -2);
 
-
   State nxt;
   nxt.depth = tiny_node[curi].depth+funcs.cost[fi];
   //nxt.par = curi;
 
   int newi = -1;
-
+  bool ok = false;
   // apply_f_time.start();
-  bool ok = funcs.f_list[fi](state, nxt);
+  ok = funcs.f_list[fi](state, nxt);
   // apply_f_time.stop();
 
   if (ok) {
@@ -601,6 +639,7 @@ int DAG::applyFunc(int curi, int fi) {
   // state_time.start();
   State state = tiny_node.getState(curi);
   // state_time.stop();
+
   return applyFunc(curi, fi, state);
 }
 
@@ -632,18 +671,13 @@ void DAG::applyFuncs(vector<pair<string,int>> names, bool vec) {
     for (int i = 0; i < fissize; ++i) {
       auto [fi,id] = fis[i];
       if (id <= parid[curi]) continue;
-
       if (applyFunc(curi, fi, state) == parid.size()) {
-	parid.push_back(id);
-	assert(parid.size() == tiny_node.size());
+        parid.push_back(id);
+        assert(parid.size() == tiny_node.size());
       }
     }
   }
 }
-
-
-
-
 
 void DAG::buildBinary() {
   int fis = *max_element(funcs.listed.begin(), funcs.listed.end())+1;
@@ -678,10 +712,6 @@ void DAG::buildBinary() {
     }
   }
 }
-
-#include <unordered_set>
-#include <vector>
-#include <algorithm>
 
 std::vector<int> getAllColors(const Image_ &test_in, const std::vector<std::pair<Image, Image>> &train) {
     std::unordered_set<int> colorSet;
@@ -777,13 +807,13 @@ vector<DAG> brutePieces2(Image_ test_in, const vector<pair<Image,Image>>&train, 
 
     // total_time.start();
 
-    double start_time = now();
+    // double start_time = now();
     dag[ti].build();
-    if (print) cout << now()-start_time << endl;
+    // if (print) cout << now()-start_time << endl;
     //dag[ti].buildBinary();
     //if (print) cout << now()-start_time << endl;
     dag[ti].applyFunc("composeGrowing", 1);
-    if (print) cout << now()-start_time << endl;
+    // if (print) cout << now()-start_time << endl;
 
     if (sizes.size() > 1) {
       vector<pair<string,int>> toapply;
@@ -816,41 +846,41 @@ vector<DAG> brutePieces2(Image_ test_in, const vector<pair<Image,Image>>&train, 
 
       dag[ti].applyFunc("embed 1", 0);
       */
-      if (print) cout << now()-start_time << endl;
+      // if (print) cout << now()-start_time << endl;
 
       /*if (ti < train.size())
 	deducePositions(dag[ti], train[ti].second);
 
 	if (print) cout << now()-start_time << endl;*/
 
-      // total_time.stop();
-      if(print){
-        // total_time.print("Total time");
-        // build_f_time.print("Build f time");
-        // apply_f_time.print("Apply f time");
-        // real_f_time .print("Real f time ");
+  //     // total_time.stop();
+  //     if(print){
+  //       // total_time.print("Total time");
+  //       // build_f_time.print("Build f time");
+  //       // apply_f_time.print("Apply f time");
+  //       // real_f_time .print("Real f time ");
 
-        // add_time.print("Add time");
-        // find_child_time.print("Find child");
-        // add_child_time.print("Add child");
-        // hash_time.print("Hash");
-        // map_time.print("Map");
+  //       // add_time.print("Add time");
+  //       // find_child_time.print("Find child");
+  //       // add_child_time.print("Add child");
+  //       // hash_time.print("Hash");
+  //       // map_time.print("Map");
 
-        // state_time.print("getState");
-      }
-      //exit(0);
-      /*FILE*fp = fopen("images.txt", "w");
-      for (Node&n : dag[ti].node) {
-	for (Image_ img : n.vimg) {
-	  fprintf(fp, "%d %d %d %d\n", img.x, img.y, img.w, img.h);
-	  for (char c : img.mask)
-	    fprintf(fp, "%c", '0'+c);
-	  fprintf(fp, "\n");
-	}
-      }
-      exit(0);*/
-      //dag[ti].freeAll();
-    } 
+  //       // state_time.print("getState");
+  //     }
+  //     //exit(0);
+  //     /*FILE*fp = fopen("images.txt", "w");
+  //     for (Node&n : dag[ti].node) {
+	// for (Image_ img : n.vimg) {
+	//   fprintf(fp, "%d %d %d %d\n", img.x, img.y, img.w, img.h);
+	//   for (char c : img.mask)
+	//     fprintf(fp, "%c", '0'+c);
+	//   fprintf(fp, "\n");
+	// }
+  //     }
+  //     exit(0);*/
+  //     //dag[ti].freeAll();
+  } 
     //dag[ti].benchmark();
     //exit(0);
 
@@ -875,12 +905,12 @@ vector<DAG> brutePieces2(Image_ test_in, const vector<pair<Image,Image>>&train, 
   }
 
 
-  if (out_sizes.size() && print_nodes) {
-    cout << "Dag sizes: ";
-    for (int i = 0; i < dag.size(); ++i)
-      cout << dag[i].tiny_node.size() << " ";
-    cout << endl;
-  }
+  // if (out_sizes.size() && print_nodes) {
+  //   cout << "Dag sizes: ";
+  //   for (int i = 0; i < dag.size(); ++i)
+  //     cout << dag[i].tiny_node.size() << " ";
+  //   cout << endl;
+  // }
 
   return dag;
 }
