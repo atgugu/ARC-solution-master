@@ -51,11 +51,10 @@ void writeVerdict(int si, string sid, int verdict) {
   
 }
 
-
 int MAXDEPTH = -1; //Argument
-
+int NUMFUNCS = 200;
 int MAXSIDE = 100, MAXAREA = 40*40, MAXPIXELS = 40*40*5; //Just default values
-
+unsigned int SEED = 4;
 int print_times = 0, print_mem = 0, print_nodes = 0;
 
 void run(int only_sid = -1, int arg = -1) {
@@ -66,6 +65,7 @@ void run(int only_sid = -1, int arg = -1) {
     
     if (arg == -1) arg = 2;
     MAXDEPTH = (arg % 10) * 10;
+    NUMFUNCS -= MAXDEPTH;
     int eval = 0;
     
     // Directory and sample selection
@@ -141,7 +141,7 @@ void run(int only_sid = -1, int arg = -1) {
 
             double w[4] = {1.2772523019346949, 0.00655104, 0.70820414, 0.00194519};
             double expect_time3 = w[0] + w[1] * sumsz + w[2] * macols + w[1] * w[2] * sumsz * macols;
-            MAXSIDE = 100;
+            MAXSIDE = maxside * 2;
             MAXAREA = maxarea * 2;
             MAXPIXELS = MAXAREA * 5;
         }

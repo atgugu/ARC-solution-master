@@ -3,6 +3,9 @@
 
 double now();
 
+#include <random>
+#include <chrono>
+
 struct State {
   vImage vimg;
   int depth;
@@ -60,18 +63,18 @@ struct Node {
   }
 };
 
-
 struct Functions3 {
   vector<int> listed, cost;
   vector<string> names;
   vector<function<bool(const State&,State&)>> f_list;
 
-  void add(const string& name, int cost, const function<bool(const State&,State&)>&func, int list);
-  void add(string name, int cost, const function<Image(Image_)>&f, int list = 1);
-  void add(string name, int cost, const function<vImage(Image_)>&f, int list = 1);
-  void add(string name, int cost, const function<Image(vImage_)>&f, int list = 1);
-  void add(string name, int cost, const function<vImage(vImage_)>&f, int list = 1);
-  void add(const vector<point>&sizes, string name, int cost, const function<Image(Image_,Image_)>&f, int list = 1);
+
+  void add(const string& name, int cost, const function<bool(const State&,State&)>&func, int list, double prob = 1.0f);
+  void add(string name, int cost, const function<Image(Image_)>&f, int list = 1, double prob = 1.0f);
+  void add(string name, int cost, const function<vImage(Image_)>&f, int list = 1, double prob = 1.0f);
+  void add(string name, int cost, const function<Image(vImage_)>&f, int list = 1, double prob = 1.0f);
+  void add(string name, int cost, const function<vImage(vImage_)>&f, int list = 1, double prob = 1.0f);
+  void add(const vector<point>&sizes, string name, int cost, const function<Image(Image_,Image_)>&f, int list = 1, double prob = 1.0f);
   string getName(int fi);
   int findfi(string name);
 };

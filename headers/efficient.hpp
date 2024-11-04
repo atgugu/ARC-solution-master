@@ -102,6 +102,7 @@ struct TinyNode {
   TinyChildren child;
   TinyNode() {}
   TinyNode(TinyNode&&o) = default;
+  
 };
 
 struct TinyNodeBank {

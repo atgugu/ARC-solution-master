@@ -452,25 +452,32 @@ bool detectRepeatingPattern(Image_ img, Image& pattern, int& offsetX, int& offse
 }
 
 Image gridFilter(Image_ img, int cellHeight, int cellWidth) {
-    int numRows = img.h / cellHeight;
-    int numCols = img.w / cellWidth;
-    Image result = {{0, 0}, {numCols, numRows}, vector<char>(numRows * numCols)};
+    // Calculate the number of full cells in each direction
+    int numRows = (img.h + cellHeight - 1) / cellHeight;  // Round up to cover entire height
+    int numCols = (img.w + cellWidth - 1) / cellWidth;    // Round up to cover entire width
 
+    // Initialize the result image with each cell representing the mode color of that grid
+    Image result = {{0, 0}, {numCols, numRows}, std::vector<char>(numRows * numCols, 0)};
+
+    // Process each cell to determine the mode color
     for (int row = 0; row < numRows; ++row) {
         for (int col = 0; col < numCols; ++col) {
-            // Extract cell
+            // Count colors in the current cell
             std::unordered_map<char, int> colorCount;
             for (int i = 0; i < cellHeight; ++i) {
                 for (int j = 0; j < cellWidth; ++j) {
                     int x = row * cellHeight + i;
                     int y = col * cellWidth + j;
+                    
+                    // Check if we're within the image bounds
                     if (x < img.h && y < img.w) {
                         char color = img(x, y);
                         colorCount[color]++;
                     }
                 }
             }
-            // Determine the mode color in the cell
+
+            // Determine the mode color in this cell
             char modeColor = 0;
             int maxCount = 0;
             for (const auto& [color, count] : colorCount) {
@@ -479,9 +486,12 @@ Image gridFilter(Image_ img, int cellHeight, int cellWidth) {
                     modeColor = color;
                 }
             }
+            
+            // Assign the mode color to the corresponding cell in the result image
             result(row, col) = modeColor;
         }
     }
+
     return result;
 }
 
@@ -2930,6 +2940,88 @@ Image resizeShape(const Image& shape, int targetSize) {
     return resizedShape;
 }
 
+void rotateSquare(Image& img, int startX, int startY, int squareSize, int times) {
+    // Ensure the square region is within the bounds of the image
+    if (startX + squareSize > img.h || startY + squareSize > img.w) {
+        std::cerr << "Square region goes out of image bounds." << std::endl;
+        return;
+    }
+
+    for (int time = 0; time < times; ++time)
+    for (int i = 0; i < squareSize / 2; ++i) {
+        for (int j = i; j < squareSize - i - 1; ++j) {
+            // Save the top element
+            int temp = img(startX + i, startY + j);
+
+            // Move left to top
+            img(startX + i, startY + j) = img(startX + squareSize - 1 - j, startY + i);
+
+            // Move bottom to left
+            img(startX + squareSize - 1 - j, startY + i) = img(startX + squareSize - 1 - i, startY + squareSize - 1 - j);
+
+            // Move right to bottom
+            img(startX + squareSize - 1 - i, startY + squareSize - 1 - j) = img(startX + j, startY + squareSize - 1 - i);
+
+            // Move top (temp) to right
+            img(startX + j, startY + squareSize - 1 - i) = temp;
+        }
+    }
+}
+
+
+Image rotateSquareFromCenter(const Image& img, int squareSize, int times) {
+    // Ensure the square size is valid
+    if (squareSize <= 1 || squareSize > img.h || squareSize > img.w) {
+        std::cerr << "Invalid square size. It must be greater than 1 and fit within the image dimensions." << std::endl;
+        return img;  // Return the original image if the square size is invalid
+    }
+
+    // Calculate the starting coordinates to center the square
+    int centerX = img.h / 2;
+    int centerY = img.w / 2;
+    int startX = centerX - squareSize / 2;
+    int startY = centerY - squareSize / 2;
+
+    // Ensure the square region does not exceed image bounds
+    if (startX < 0 || startY < 0 || startX + squareSize > img.h || startY + squareSize > img.w) {
+        return img;
+    }
+
+    // Create a copy of the original image to modify
+    Image result = img;
+
+    // Rotate the centered square using the rotateSquare utility function
+    rotateSquare(result, startX, startY, squareSize, times);
+
+    return result;
+}
+
+
+Image rotateSquareCorners(const Image& img, int squareSize, int times) {
+    // Ensure the square size is valid
+    if (squareSize <= 1 || squareSize > img.h || squareSize > img.w) {
+        return img;  // Return the original image if the square size is invalid
+    }
+
+    // Create a copy of the original image to modify
+    Image result = img;
+
+    // Rotate each corner of the image using rotateSquare
+    // 1. Top-left corner
+    rotateSquare(result, 0, 0, squareSize, times);
+
+    // 2. Top-right corner
+    rotateSquare(result, 0, result.w - squareSize, squareSize, times);
+
+    // 3. Bottom-left corner
+    rotateSquare(result, result.h - squareSize, 0, squareSize, times);
+
+    // 4. Bottom-right corner
+    rotateSquare(result, result.h - squareSize, result.w - squareSize, squareSize, times);
+
+    return result;
+}
+
 
 Image reverseSizes(Image_ img) {
     // Extract all shapes from the image
@@ -3608,12 +3700,17 @@ Image composeGrowing(vImage_ imgs) {
         const int dx = img.x - ret.x;
         const int dy = img.y - ret.y;
 
-        // Direct pixel access
+        // Direct pixel access with boundary check
         for (int i = 0; i < img.h; ++i) {
-          const int idy = i + dy;
+            const int idy = i + dy;
+            if (idy < 0 || idy >= ret.h) continue; // Check row bounds
+
             for (int j = 0; j < img.w; ++j) {
+                const int idx = j + dx;
+                if (idx < 0 || idx >= ret.w) continue; // Check column bounds
+
                 if (img(i, j)) {
-                    ret(idy, j + dx) = img(i, j);
+                    ret(idy, idx) = img(i, j);
                 }
             }
         }
@@ -3621,8 +3718,6 @@ Image composeGrowing(vImage_ imgs) {
 
     return ret;
 }
-
-
 Image pickUnique(vImage_ imgs, int id) {
   assert(id == 0);
 
@@ -3652,3 +3747,103 @@ Image pickUnique(vImage_ imgs, int id) {
   if (reti == -1) return badImg;
   return imgs[reti];
 }
+
+Image cutUnion(Image_ img) {
+    Image cutRegion = heuristicCut(img);
+    vImage components = cut(img, cutRegion);
+
+    Image unionImage = core::empty(img.p, img.sz);
+
+    for (const auto& component : components) {
+        for (int i = 0; i < component.h; ++i) {
+            for (int j = 0; j < component.w; ++j) {
+                if (component(i, j) != 0 && i < img.h && j < img.w) {
+                    unionImage(i, j) = component(i, j);
+                }
+            }
+        }
+    }
+
+    return unionImage;
+}
+
+Image cutIntersection(Image_ img) {
+    // Apply heuristic cut to get components
+    Image cutRegion = heuristicCut(img);
+    vImage components = cut(img, cutRegion);
+
+    // If there are no components, return an empty image
+    if (components.empty()) {
+        return img;
+    }
+
+    // Initialize the intersection image with the first component's mask
+    Image intersectionImage = core::empty(img.p, img.sz);
+    for (int i = 0; i < components[0].h; ++i) {
+        for (int j = 0; j < components[0].w; ++j) {
+            intersectionImage(i, j) = components[0](i, j);
+        }
+    }
+
+    // Iterate over each component to compute the intersection
+    for (size_t k = 1; k < components.size(); ++k) {
+        for (int i = 0; i < img.h; ++i) {
+            for (int j = 0; j < img.w; ++j) {
+                // Only retain pixels that are present in all components
+                if (i < components[k].h && j < components[k].w && components[k](i, j) == 0) {
+                    intersectionImage(i, j) = 0;
+                }
+            }
+        }
+    }
+
+    return intersectionImage;
+}
+
+Image cutDifference(Image_ img) {
+    Image cutRegion = heuristicCut(img);
+    vImage components = cut(img, cutRegion);
+
+    Image differenceImage = img;
+
+    for (const auto& component : components) {
+        for (int i = 0; i < component.h; ++i) {
+            for (int j = 0; j < component.w; ++j) {
+                if (component(i, j) != 0 && i < img.h && j < img.w) {
+                    differenceImage(i, j) = 0;
+                }
+            }
+        }
+    }
+
+    return differenceImage;
+}
+
+Image cutComposeMultiple(Image_ img, int id) {
+    Image cutRegion = heuristicCut(img);
+    vImage components = cut(img, cutRegion);
+
+    // Align each component to origin and compose into a single image
+    for (auto& component : components) {
+        component = toOrigin(component);
+    }
+
+    return !components.empty() ? compose(components, id) : img;
+}
+
+Image cutFilterByColor(Image_ img, int targetColor) {
+    Image cutRegion = heuristicCut(img);
+    vImage components = cut(img, cutRegion);
+
+    // Filter components based on the target color
+    vImage colorFilteredComponents;
+    for (const auto& component : components) {
+        if (core::majorityCol(component) == targetColor) {
+            colorFilteredComponents.push_back(component);
+        }
+    }
+
+    // Compose the filtered components back into a single image
+    return !colorFilteredComponents.empty() ? compose(colorFilteredComponents, 0) : core::empty(img.p, img.sz);
+}
+

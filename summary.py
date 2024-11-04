@@ -58,22 +58,26 @@ def read(fn):
         return ''
 
 score = [0,0,0,0]
+fails = 0
 for i in inds:
-    t = read('store/%d_out.txt'%i)
-    line = t[t.index('Task #'):].split('\n')[0]
-    #print(line)
-    if line.count('Correct'): s = 3
-    elif line.count('Candidate'): s = 2
-    elif line.count('Dimensions'): s = 1
-    else: s = 0
-    score[s] += 1
-    compressed += str(s)
+    try:
+        t = read('store/%d_out.txt'%i)
+        line = t[t.index('Task #'):].split('\n')[0]
+        #print(line)
+        if line.count('Correct'): s = 3
+        elif line.count('Candidate'): s = 2
+        elif line.count('Dimensions'): s = 1
+        else: s = 0
+        score[s] += 1
+        compressed += str(s)
 
-    t = read('store/tmp/%d_err.txt'%i)
-    if t:
-        memories.append([int(t.split('maxresident')[0].split(' ')[-1]), i])
-        m,s = t.split('elapsed')[0].split(' ')[-1].split(':')
-        times.append([float(m)*60+float(s), i])
+        t = read('store/tmp/%d_err.txt'%i)
+        if t:
+            memories.append([int(t.split('maxresident')[0].split(' ')[-1]), i])
+            m,s = t.split('elapsed')[0].split(' ')[-1].split(':')
+            times.append([float(m)*60+float(s), i])
+    except:
+        fails+=1
 
 for i in range(3,0,-1):
     score[i-1] += score[i]
@@ -84,7 +88,7 @@ print("Total: % 4d" % score[0])
 print("Size : % 4d" % score[1])
 print("Cands: % 4d" % score[2])
 print("Correct:% 3d"% score[3])
-
+print("Crashed:", fails)
 memories.sort(reverse=True)
 it = 0
 for mem,i in memories:

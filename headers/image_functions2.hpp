@@ -104,3 +104,11 @@ Image highlightEdges(const Image& img, const std::unordered_map<int, int>& color
 Image maskByColorMap(const Image& img, const std::unordered_map<int, int>& colorMap);
 Image replaceBackground(const Image& img, const int backgroundColor, const std::unordered_map<int, int>& colorMap);
 Image shuffleRowsOrColumns(Image_ img, bool shuffleRows, int seed);
+void rotateSquare(Image& img, int startX, int startY, int squareSize, int times);
+Image rotateSquareCorners(const Image& img, int squareSize, int times);
+Image rotateSquareFromCenter(const Image& img, int squareSize, int times);
+Image cutIntersection(Image_ img);
+Image cutUnion(Image_ img);
+Image cutDifference(Image_ img);
+Image cutComposeMultiple(Image_ img, int id);
+Image cutFilterByColor(Image_ img, int targetColor);
