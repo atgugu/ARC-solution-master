@@ -20,10 +20,13 @@ using namespace std;
 #include <random>
 #include <algorithm>
 #include <cmath>
+#include <fstream>
 
 extern int MAXDEPTH, print_nodes, NUMFUNCS;
 extern unsigned int SEED;
-
+static std::random_device rd;
+static std::mt19937 rng(rd());
+static std::uniform_real_distribution<> uni_dist(0.0f, 1.0f);
 //double build_f_time = 0, apply_f_time = 0;
 //double real_f_time = 0;
 
@@ -38,21 +41,16 @@ double now() {
 // Timer build_f_time, apply_f_time, real_f_time, add_time, find_child_time, add_child_time, hash_time, map_time, total_time;
 // Timer state_time;
 
-void Functions3::add(const string& name, int cost_, const function<bool(const State&, State&)>& func, int list, double prob) {
-    static std::random_device rd;
-    static std::mt19937 rng(rd()); // Static local variables to persist across calls
-    std::uniform_real_distribution<> uni_dist(0.0, 1.0);
+void Functions3::add(const string& name, int cost_, const function<bool(const State&, State&)>& func, int list) {
 
-    double r = uni_dist(rng);
-    if (r < prob) {
-        if (list) listed.push_back(names.size());
-        names.push_back(name);
-        f_list.push_back(func);
-        cost.push_back(cost_);
-    }
+
+    if (list) listed.push_back(names.size());
+    names.push_back(name);
+    f_list.push_back(func);
+    cost.push_back(cost_);
 }
 
-void Functions3::add(string name, int cost, const function<Image(Image_)>&f, int list, double prob) { 
+void Functions3::add(string name, int cost, const function<Image(Image_)>&f, int list) { 
 
   auto func = [f](const State& cur, State& nxt) {
 
@@ -72,11 +70,11 @@ void Functions3::add(string name, int cost, const function<Image(Image_)>&f, int
     }
     return true;
   };
-  add(name, cost, func, list, prob);
+  add(name, cost, func, list);
 }
 
 
-void Functions3::add(string name, int cost, const function<vImage(Image_)>&f, int list, double prob) { //list = 1
+void Functions3::add(string name, int cost, const function<vImage(Image_)>&f, int list) { //list = 1
   const int buffer = 3 + (MAXDEPTH % 10) * 2;
   auto func = [f,cost, buffer](const State& cur, State& nxt) {
     if (cur.isvec || cur.depth+cost+buffer > MAXDEPTH) return false;
@@ -86,10 +84,10 @@ void Functions3::add(string name, int cost, const function<vImage(Image_)>&f, in
     nxt.isvec = true;
     return true;
   };
-  add(name, cost, func, list, prob);
+  add(name, cost, func, list);
 }
 
-void Functions3::add(string name, int cost, const function<Image(vImage_)>&f, int list, double prob) { //list = 1
+void Functions3::add(string name, int cost, const function<Image(vImage_)>&f, int list) { //list = 1
   auto func = [f](const State& cur, State& nxt) {
     if (!cur.isvec) return false;
     nxt.vimg.resize(1);
@@ -99,10 +97,10 @@ void Functions3::add(string name, int cost, const function<Image(vImage_)>&f, in
     nxt.isvec = false;
     return true;
   };
-  add(name, cost, func, list, prob);
+  add(name, cost, func, list);
 }
 
-void Functions3::add(string name, int cost, const function<vImage(vImage_)>&f, int list, double prob) { //list = 1
+void Functions3::add(string name, int cost, const function<vImage(vImage_)>&f, int list) { //list = 1
   auto func = [f](const State& cur, State& nxt) {
     if (!cur.isvec) return false;
     // real_f_time.start();
@@ -111,10 +109,10 @@ void Functions3::add(string name, int cost, const function<vImage(vImage_)>&f, i
     nxt.isvec = true;
     return true;
   };
-  add(name, cost, func, list, prob);
+  add(name, cost, func, list);
 }
 
-void Functions3::add(const vector<point>&sizes, string name, int cost, const function<Image(Image_,Image_)>&f, int list, double prob) { //list = 1
+void Functions3::add(const vector<point>&sizes, string name, int cost, const function<Image(Image_,Image_)>&f, int list) { //list = 1
   int szi = 0;
   for (point sz : sizes) {
     Image arg2 = core::empty(sz);
@@ -136,7 +134,7 @@ void Functions3::add(const vector<point>&sizes, string name, int cost, const fun
       nxt.isvec = cur.isvec;
       return true;
     };
-    add(name+" "+to_string(szi++), cost, func, list, prob);
+    add(name+" "+to_string(szi++), cost, func, list);
   }
 }
 
@@ -155,161 +153,163 @@ int Functions3::findfi(string name) {
 
 
 Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, int> &colorMap) {
-  Functions3 funcs;
+  Functions3 funcs;    
 
+  double prob = 1.0f;
   // Unary
-  funcs.add("composeGrowing", 10, composeGrowing);
-  funcs.add("getPos", 8, getPos);
-  funcs.add("getSize0", 8, getSize0);
-  funcs.add("getSize", 8, getSize);
-  funcs.add("hull0", 10, hull0);
-  funcs.add("hull", 8, hull);
-  funcs.add("toOrigin", 10, toOrigin);
-  funcs.add("Fill", 9, Fill);
-  funcs.add("interior", 8, interior);
-  funcs.add("interior2", 8, interior2);
+  if(uni_dist(rng) <= prob) funcs.add("composeGrowing", 10, composeGrowing);
+  if(uni_dist(rng) <= prob) funcs.add("getPos", 8, getPos);
+  if(uni_dist(rng) <= prob) funcs.add("getSize0", 8, getSize0);
+  if(uni_dist(rng) <= prob) funcs.add("getSize", 8, getSize);
+  if(uni_dist(rng) <= prob) funcs.add("hull0", 10, hull0);
+  if(uni_dist(rng) <= prob) funcs.add("hull", 8, hull);
+  if(uni_dist(rng) <= prob) funcs.add("toOrigin", 10, toOrigin);
+  if(uni_dist(rng) <= prob) funcs.add("Fill", 9, Fill);
+  if(uni_dist(rng) <= prob) funcs.add("interior", 8, interior);
+  if(uni_dist(rng) <= prob) funcs.add("interior2", 8, interior2);
 
   for (int a = 0; a < 3; ++a)
   for (int b = 0; b < 3; ++b){
     int comp = 10;
     if (b==0) comp = 2;
-    funcs.add("count "+to_string(a)+" "+to_string(b), 10,
+    if(uni_dist(rng) <= prob) funcs.add("count "+to_string(a)+" "+to_string(b), 10,
   [a,b](Image_ img) {return count(img, a, b);});
   }
   
   //invert is filterCol(img, 0)
 
   for (int c = 1; c < 10;++c)
-    funcs.add("colShape "+to_string(c), 7,
+    if(uni_dist(rng) <= prob) funcs.add("colShape "+to_string(c), 7,
 	      [c](Image_ img) {return colShape(img, c);}, 0);
-  funcs.add(sizes, "embed", 10, embed);
-  funcs.add(sizes, "wrap", 10, wrap);
-  funcs.add(sizes, "broadcast", 10, [](Image_ a, Image_ b) {return broadcast(a,b);});
-  funcs.add(sizes, "repeat 0",  10, [](Image_ a, Image_ b) {return repeat(a,b);});
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "embed", 10, embed);
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "wrap", 10, wrap);
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "broadcast", 10, [](Image_ a, Image_ b) {return broadcast(a,b);});
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 0",  10, [](Image_ a, Image_ b) {return repeat(a,b);});
 
   //Split
-  funcs.add("cut",       8, [](Image_ img) {return cut(img);});
+  if(uni_dist(rng) <= prob) funcs.add("cut",       8, [](Image_ img) {return cut(img);});
 
   //Vector
   for (int id = 0; id < 14; ++id)
-    funcs.add("pickMaxes "+to_string(id), 8,
+    if(uni_dist(rng) <= prob) funcs.add("pickMaxes "+to_string(id), 8,
 	      [id](vImage_ v) {return pickMaxes(v,id);});
   for (int id = 0; id < 14; ++id)
-    funcs.add("pickNotMaxes "+to_string(id), 8,
+    if(uni_dist(rng) <= prob) funcs.add("pickNotMaxes "+to_string(id), 8,
 	      [id](vImage_ v) {return pickNotMaxes(v,id);});
 
-
-  for (int id = 2; id <= 5; ++id)
-    funcs.add("upscaleImage "+to_string(id), 8,
+  prob = 0.8f;
+  for (int id = 2; id <= 3; ++id)
+    if(uni_dist(rng) <= prob) funcs.add("upscaleImage "+to_string(id), 8,
 	      [id](Image_ img) {return upscaleImage(img, id);});
   
   // TODO: study how can we sample based on heuristics
-  double prob = 1.0f;
-  if(MAXDEPTH > 20) prob = 0.3;
-  funcs.add("insideMarked", 10, insideMarked, prob);
-
-  funcs.add("border", 9, border, prob);
-  funcs.add("center", 7, center, prob);
-  funcs.add("majCol", 8, majCol, prob);
-  for (int i = 1; i < 11; ++i)
-    funcs.add("rigid "+to_string(i), 8,
-	      [i](Image_ img) {return rigid(img, i);}, prob);
-
-  funcs.add("compress", 8, [](Image_ img) {return compress(img);}, prob);
-  funcs.add("splitCols", 7, [](Image_ img) {return splitCols(img);}, prob);
-
-  funcs.add("splitAll",     8, splitAll, prob);
-  funcs.add("splitColumns", 8, splitColumns, prob);
-  funcs.add("splitRows",    8, splitRows, prob);
+  prob = 0.2;
+  if(MAXDEPTH > 20) prob = 0.01;
   
-  prob /= 1.5;
+  if(uni_dist(rng) <= prob) funcs.add("insideMarked", 10, insideMarked);
+
+  if(uni_dist(rng) <= prob) funcs.add("border", 9, border);
+  if(uni_dist(rng) <= prob) funcs.add("center", 7, center);
+  if(uni_dist(rng) <= prob) funcs.add("majCol", 8, majCol);
+  for (int i = 1; i < 11; ++i)
+    if(uni_dist(rng) <= prob) funcs.add("rigid "+to_string(i), 8,
+	      [i](Image_ img) {return rigid(img, i);});
+
+  if(uni_dist(rng) <= prob) funcs.add("compress", 8, [](Image_ img) {return compress(img);});
+  if(uni_dist(rng) <= prob) funcs.add("splitCols", 7, [](Image_ img) {return splitCols(img);});
+
+  if(uni_dist(rng) <= prob) funcs.add("splitAll",     8, splitAll);
+  if(uni_dist(rng) <= prob) funcs.add("splitColumns", 8, splitColumns);
+  if(uni_dist(rng) <= prob) funcs.add("splitRows",    8, splitRows);
+  
+  // prob /= 2;
 
   for (int c = 0; c < 10;++c)
-    funcs.add("filterCol "+to_string(c), 6, [c](Image_ img) {return filterCol(img, c);}, prob);
+    if(uni_dist(rng) <= prob) funcs.add("filterCol "+to_string(c), 6, [c](Image_ img) {return filterCol(img, c);});
   for (int c = 1; c < 10;++c)
-    funcs.add("eraseCol "+to_string(c), 6,
+    if(uni_dist(rng) <= prob) funcs.add("eraseCol "+to_string(c), 6,
 	      [c](Image_ img) {return eraseCol(img, c);}, PTHREAD_MUTEX_ROBUST);
 
-  funcs.add("greedyFillBlack", 10, [](Image_ img) {return greedyFillBlack(img);}, prob);
-  funcs.add("greedyFillBlack2", 10, [](Image_ img) {return greedyFillBlack2(img);}, prob);
+  if(uni_dist(rng) <= prob) funcs.add("greedyFillBlack", 10, [](Image_ img) {return greedyFillBlack(img);});
+  if(uni_dist(rng) <= prob) funcs.add("greedyFillBlack2", 10, [](Image_ img) {return greedyFillBlack2(img);});
 
-  funcs.add("highlightEdges", 10, [colorMap](Image_ img) {return highlightEdges(img, colorMap);}, prob);
-  funcs.add("maskByColorMap", 10, [colorMap](Image_ img) {return maskByColorMap(img, colorMap);}, prob);
+  if(uni_dist(rng) <= prob) funcs.add("highlightEdges", 10, [colorMap](Image_ img) {return highlightEdges(img, colorMap);});
+  if(uni_dist(rng) <= prob) funcs.add("maskByColorMap", 10, [colorMap](Image_ img) {return maskByColorMap(img, colorMap);});
   for (const auto &c : colorMap) {
       int backgroundColor = c.first;
-      funcs.add("replaceBackground" + std::to_string(backgroundColor), 10, 
+      if(uni_dist(rng) <= prob) funcs.add("replaceBackground" + std::to_string(backgroundColor), 10, 
                 [colorMap, backgroundColor](Image_ img) {
                     return replaceBackground(img, backgroundColor, colorMap);
-                }, prob);}
+                });}
 
-  funcs.add("compress2", 10, compress2, prob);
-  funcs.add("compress3", 10, compress3, prob);
+  if(uni_dist(rng) <= prob) funcs.add("compress2", 10, compress2);
+  if(uni_dist(rng) <= prob) funcs.add("compress3", 10, compress3);
 
 
   for (int dy = -3; dy <= 3; ++dy) {
     for (int dx = -3; dx <= 3; ++dx) {
-      funcs.add("Move "+to_string(dx)+" "+to_string(dy), 8,
-		[dx,dy](Image_ img) {return Move(img, Pos(dx,dy));}, 0, prob);
+      if(uni_dist(rng) <= prob) funcs.add("Move "+to_string(dx)+" "+to_string(dy), 8,
+		[dx,dy](Image_ img) {return Move(img, Pos(dx,dy));}, 0);
     }
   }
-  funcs.add("stackLine", 7, stackLine, prob);
+  if(uni_dist(rng) <= prob) funcs.add("stackLine", 7, stackLine);
   for (int id = 0; id < 3; ++id) //consider going to 4
-    funcs.add("myStack "+to_string(id), 10,
-	      [id](vImage_ v) {return myStack(v,id);}, prob); //
+    if(uni_dist(rng) <= prob) funcs.add("myStack "+to_string(id), 10,
+	      [id](vImage_ v) {return myStack(v,id);}); //
 
   //Join
   for (int id = 0; id < 14; ++id)
-    funcs.add("pickMax "+to_string(id), 8,
-	      [id](vImage_ v) {return pickMax(v,id);}, prob);
+    if(uni_dist(rng) <= prob) funcs.add("pickMax "+to_string(id), 8,
+	      [id](vImage_ v) {return pickMax(v,id);});
   for (int id = 0; id < 1; ++id)
-    funcs.add("pickUnique "+to_string(id), 8,
-	      [id](vImage_ v) {return pickUnique(v,id);}, prob);
+    if(uni_dist(rng) <= prob) funcs.add("pickUnique "+to_string(id), 8,
+	      [id](vImage_ v) {return pickUnique(v,id);});
 
   for (int i = 0; i < 15; ++i)
-    funcs.add("smear "+to_string(i), 9,
-	      [i](Image_ img) {return smear(img, i);}, prob);
+    if(uni_dist(rng) <= prob) funcs.add("smear "+to_string(i), 9,
+	      [i](Image_ img) {return smear(img, i);});
 
   for (int i = 0; i < 4; ++i)
-  funcs.add("diagonalSmear "+to_string(i), 9,
-    [i](Image_ img) {return diagonalSmear(img, i);}, prob);
+  if(uni_dist(rng) <= prob) funcs.add("diagonalSmear "+to_string(i), 9,
+    [i](Image_ img) {return diagonalSmear(img, i);});
   // for (int i = 0; i < 8; ++i)
   // for (int j = 0; j < 1; ++j)
-  // funcs.add("shiftImage "+to_string(i) + to_string(j), 5,
+  // if(uni_dist(rng) <= prob) funcs.add("shiftImage "+to_string(i) + to_string(j), 5,
   //   [i, j](Image_ img) {return shiftImage(img, i, j, false);});
-  prob /= 1.5;
+  // prob /= 2;
 
-  funcs.add("dilate1", 8, dilate1, prob*2);
-  funcs.add("erode1", 8, erode1, prob*2);
-  funcs.add("dilate2", 8, dilate2, prob);
-  funcs.add("erode2", 8, erode2, prob);
-  funcs.add("dilate3", 9, dilate3, prob);
-  funcs.add("erode3", 9, erode3, prob);
+  if(uni_dist(rng) <= prob) funcs.add("dilate1", 8, dilate1, prob*2);
+  if(uni_dist(rng) <= prob) funcs.add("erode1", 8, erode1, prob*2);
+  if(uni_dist(rng) <= prob) funcs.add("dilate2", 8, dilate2);
+  if(uni_dist(rng) <= prob) funcs.add("erode2", 8, erode2);
+  if(uni_dist(rng) <= prob) funcs.add("dilate3", 9, dilate3);
+  if(uni_dist(rng) <= prob) funcs.add("erode3", 9, erode3);
 
-  funcs.add("morphOpening", 8, morphOpening, prob);
-  funcs.add("morphClosing", 8, morphClosing, prob);
+  if(uni_dist(rng) <= prob) funcs.add("morphOpening", 8, morphOpening);
+  if(uni_dist(rng) <= prob) funcs.add("morphClosing", 8, morphClosing);
   for (int i = 2; i < 10; ++i)
-  funcs.add("detectPatterns "+to_string(i), 9,
-    [i](Image_ img) {return detectPatterns(img, i);}, prob);
+  if(uni_dist(rng) <= prob) funcs.add("detectPatterns "+to_string(i), 9,
+    [i](Image_ img) {return detectPatterns(img, i);});
 
-  funcs.add("removeGrid", 10, removeGrid, prob);
-  funcs.add("detectVerticalStripes2", 10, [](Image_ img) { return detectVerticalStripes(img, 2); }, prob);
-  funcs.add("detectVerticalStripes3", 10, [](Image_ img) { return detectVerticalStripes(img, 3); }, prob);
-  funcs.add("detectVerticalStripes4", 10, [](Image_ img) { return detectVerticalStripes(img, 4); }, prob);
-  funcs.add("detectVerticalStripes5", 10, [](Image_ img) { return detectVerticalStripes(img, 5); }, prob);
-  funcs.add("detectDiagonalPattern2", 10, [](Image_ img) { return detectDiagonalPattern(img, 2); }, prob);
-  funcs.add("detectDiagonalPattern3", 10, [](Image_ img) { return detectDiagonalPattern(img, 3); }, prob);
-  funcs.add("detectHorizontalStripes2", 10, [](Image_ img) { return detectHorizontalStripes(img, 2); }, prob);
-  funcs.add("detectHorizontalStripes3", 10, [](Image_ img) { return detectHorizontalStripes(img, 3); }, prob);
-  funcs.add("detectCrossPattern3", 10, [](Image_ img) { return detectCrossPattern(img, 3); }, prob);
-  funcs.add("detectCrossPattern5", 10, [](Image_ img) { return detectCrossPattern(img, 5); }, prob);
+  if(uni_dist(rng) <= prob) funcs.add("removeGrid", 10, removeGrid);
+  if(uni_dist(rng) <= prob) funcs.add("detectVerticalStripes2", 10, [](Image_ img) { return detectVerticalStripes(img, 2); });
+  if(uni_dist(rng) <= prob) funcs.add("detectVerticalStripes3", 10, [](Image_ img) { return detectVerticalStripes(img, 3); });
+  if(uni_dist(rng) <= prob) funcs.add("detectVerticalStripes4", 10, [](Image_ img) { return detectVerticalStripes(img, 4); });
+  if(uni_dist(rng) <= prob) funcs.add("detectVerticalStripes5", 10, [](Image_ img) { return detectVerticalStripes(img, 5); });
+  if(uni_dist(rng) <= prob) funcs.add("detectDiagonalPattern2", 10, [](Image_ img) { return detectDiagonalPattern(img, 2); });
+  if(uni_dist(rng) <= prob) funcs.add("detectDiagonalPattern3", 10, [](Image_ img) { return detectDiagonalPattern(img, 3); });
+  if(uni_dist(rng) <= prob) funcs.add("detectHorizontalStripes2", 10, [](Image_ img) { return detectHorizontalStripes(img, 2); });
+  if(uni_dist(rng) <= prob) funcs.add("detectHorizontalStripes3", 10, [](Image_ img) { return detectHorizontalStripes(img, 3); });
+  if(uni_dist(rng) <= prob) funcs.add("detectCrossPattern3", 10, [](Image_ img) { return detectCrossPattern(img, 3); });
+  if(uni_dist(rng) <= prob) funcs.add("detectCrossPattern5", 10, [](Image_ img) { return detectCrossPattern(img, 5); });
 
-  funcs.add("detectCheckerboardPattern2", 10, [](Image_ img) { return detectCheckerboardPattern(img, 2); }, prob);
-  funcs.add("detectCheckerboardPattern3", 10, [](Image_ img) { return detectCheckerboardPattern(img, 3); }, prob);
-  funcs.add("detectCheckerboardPattern5", 10, [](Image_ img) { return detectCheckerboardPattern(img, 5); }, prob);
-  // funcs.add("trainAndPredict", 10, [train](Image_ img ) { return trainAndPredict(img, train); });
-  // funcs.add("extractAndApplyConstantShapes", 10, [train](Image_ img ) { return extractAndApplyConstantShapes(img, train); });
+  if(uni_dist(rng) <= prob) funcs.add("detectCheckerboardPattern2", 10, [](Image_ img) { return detectCheckerboardPattern(img, 2); });
+  if(uni_dist(rng) <= prob) funcs.add("detectCheckerboardPattern3", 10, [](Image_ img) { return detectCheckerboardPattern(img, 3); });
+  if(uni_dist(rng) <= prob) funcs.add("detectCheckerboardPattern5", 10, [](Image_ img) { return detectCheckerboardPattern(img, 5); });
+  // if(uni_dist(rng) <= prob) funcs.add("trainAndPredict", 10, [train](Image_ img ) { return trainAndPredict(img, train); });
+  // if(uni_dist(rng) <= prob) funcs.add("extractAndApplyConstantShapes", 10, [train](Image_ img ) { return extractAndApplyConstantShapes(img, train); });
 
-  funcs.add("detectRepeatingPattern", 10, [](Image_ img) {
+  if(uni_dist(rng) <= prob) funcs.add("detectRepeatingPattern", 10, [](Image_ img) {
       Image pattern;
       int offsetX, offsetY;
       bool hasPattern = detectRepeatingPattern(img, pattern, offsetX, offsetY);
@@ -320,203 +320,203 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
           // Return an empty image
           return Image{{0, 0}, {0, 0}, {}};
       }
-  }, prob);
+  });
 
-  funcs.add("applyColorMapping", 10, [colorMap](Image_ img) {
+  if(uni_dist(rng) <= prob) funcs.add("applyColorMapping", 10, [colorMap](Image_ img) {
       return applyColorMapping(img, colorMap);
-  }, prob);
+  });
 
-  funcs.add("trimToContent", 10, trimToContent, prob);
-  funcs.add("detectRepeatingPatternWithHole1", 10,
-	      [](Image_ img) {return detectRepeatingPatternWithHole(img, true);}, prob);
-  funcs.add("detectRepeatingPatternWithHole1", 10,
-	      [](Image_ img) {return detectRepeatingPatternWithHole(img, false);}, prob);
+  if(uni_dist(rng) <= prob) funcs.add("trimToContent", 10, trimToContent);
+  if(uni_dist(rng) <= prob) funcs.add("detectRepeatingPatternWithHole1", 10,
+	      [](Image_ img) {return detectRepeatingPatternWithHole(img, true);});
+  if(uni_dist(rng) <= prob) funcs.add("detectRepeatingPatternWithHole1", 10,
+	      [](Image_ img) {return detectRepeatingPatternWithHole(img, false);});
 
-  // funcs.add("detectTranslation1DPattern", 10, detectTranslation1DPattern);
-  // funcs.add("detectTranslationPattern", 10, detectTranslationPattern);
-  funcs.add("enforceRotationalSymmetry90", 10, enforceRotationalSymmetry90, prob);
-  funcs.add("enforceRotationalSymmetry180", 10, enforceRotationalSymmetry180, prob);
+  // if(uni_dist(rng) <= prob) funcs.add("detectTranslation1DPattern", 10, detectTranslation1DPattern);
+  // if(uni_dist(rng) <= prob) funcs.add("detectTranslationPattern", 10, detectTranslationPattern);
+  if(uni_dist(rng) <= prob) funcs.add("enforceRotationalSymmetry90", 10, enforceRotationalSymmetry90);
+  if(uni_dist(rng) <= prob) funcs.add("enforceRotationalSymmetry180", 10, enforceRotationalSymmetry180);
 
-  prob /= 2;
+  // prob /= 2;
   // crashes
   // for (int id = 0; id < 4; ++id)
-  //   funcs.add("gridFilter "+to_string(id), 10,
+  //   if(uni_dist(rng) <= prob) funcs.add("gridFilter "+to_string(id), 10,
 	//       [id](Image_ img) {return gridFilter(img, id, id);});
-  funcs.add("cutIntersection", 10, cutIntersection,  prob);
-  funcs.add("cutUnion", 10, cutUnion,  prob);
-  funcs.add("cutDifference", 10, cutDifference,  prob);
-  prob /= 1.5;
+  if(uni_dist(rng) <= prob) funcs.add("cutIntersection", 10, cutIntersection,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("cutUnion", 10, cutUnion,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("cutDifference", 10, cutDifference,  prob);
+  // prob /= 1.5;
 
   for (int id = 0; id <= 4; ++id)
-    funcs.add("cutComposeMultiple "+to_string(id), 10,
+    if(uni_dist(rng) <= prob) funcs.add("cutComposeMultiple "+to_string(id), 10,
 	      [id](Image_ img) {return cutComposeMultiple(img,id);},  prob);
 
   for (const auto& color : colorMap){
     int id = color.first;
-    funcs.add("cutFilterByColor "+to_string(id), 10,
+    if(uni_dist(rng) <= prob) funcs.add("cutFilterByColor "+to_string(id), 10,
 	      [id](Image_ img) {return cutFilterByColor(img,id);},  prob);
   }
 
-  funcs.add("mostCommonShape", 10, mostCommonShape,  prob);
-  funcs.add("largestShape", 10, largestShape,  prob);
-  funcs.add("smallestShape", 10, smallestShape,  prob);
-  funcs.add("mostCommonColorShape", 10, mostCommonColorShape,  prob);
-  funcs.add("enclosedShapes", 10, enclosedShapes,  prob);
-  funcs.add("symmetricShape", 10, symmetricShape,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("mostCommonShape", 10, mostCommonShape,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("largestShape", 10, largestShape,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("smallestShape", 10, smallestShape,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("mostCommonColorShape", 10, mostCommonColorShape,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("enclosedShapes", 10, enclosedShapes,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("symmetricShape", 10, symmetricShape,  prob);
 
-  // funcs.add("repairRotationalSymmetry", 10, repairRotationalSymmetry);
+  // if(uni_dist(rng) <= prob) funcs.add("repairRotationalSymmetry", 10, repairRotationalSymmetry);
 
   // crashes
   // for (int id = 2; id <3; ++id)
-  //   funcs.add("compressPatches "+to_string(id), 10,
+  //   if(uni_dist(rng) <= prob) funcs.add("compressPatches "+to_string(id), 10,
 	//       [id](Image_ img) {return compressPatches(img,id);});
 
-  funcs.add("compress2", 10, compress2,  prob);
-  funcs.add("compress3", 10, compress3,  prob);
-  funcs.add("compressH", 10, [](Image_ img) { return compressHV(img, true); },  prob);
-  funcs.add("compressV", 10, [](Image_ img) { return compressHV(img, false); },  prob);
-  funcs.add("outlineShapes", 10, outlineShapes,  prob);
-  funcs.add("diagonalBridge", 10, diagonalBridge,  prob);
-  funcs.add("fillIslands", 10, fillIslands,  prob);
-  funcs.add("reverseSizes", 10, reverseSizes,  prob);
-  funcs.add("compressSymmetry", 10, compressSymmetry,  prob);
-  funcs.add("bridgeGaps", 10, bridgeGaps,  prob);
-  funcs.add("connectNearestShapes", 10, connectNearestShapes,  prob);
-  funcs.add("connectFarthestShapes", 10, connectFarthestShapes,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("compress2", 10, compress2,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("compress3", 10, compress3,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("compressH", 10, [](Image_ img) { return compressHV(img, true); },  prob);
+  if(uni_dist(rng) <= prob) funcs.add("compressV", 10, [](Image_ img) { return compressHV(img, false); },  prob);
+  if(uni_dist(rng) <= prob) funcs.add("outlineShapes", 10, outlineShapes,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("diagonalBridge", 10, diagonalBridge,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("fillIslands", 10, fillIslands,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("reverseSizes", 10, reverseSizes,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("compressSymmetry", 10, compressSymmetry,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("bridgeGaps", 10, bridgeGaps,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("connectNearestShapes", 10, connectNearestShapes,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("connectFarthestShapes", 10, connectFarthestShapes,  prob);
 
   for (int times = 1; times < 4; ++times)
   for (int id = 2; id < 6; ++id)
-    funcs.add("rotateSquareCorners "+to_string(id) + to_string(times), 10,
+    if(uni_dist(rng) <= prob) funcs.add("rotateSquareCorners "+to_string(id) + to_string(times), 10,
 	      [id, times](Image_ img) {return rotateSquareCorners(img,id, times);},  prob);
 
   for (int times = 1; times < 4; ++times)
   for (int id = 2; id < 6; ++id)
-    funcs.add("rotateSquareFromCenter "+to_string(id) + to_string(times), 10,
+    if(uni_dist(rng) <= prob) funcs.add("rotateSquareFromCenter "+to_string(id) + to_string(times), 10,
 	      [id, times](Image_ img) {return rotateSquareFromCenter(img,id, times);},  prob);
 
   for (int id = 3; id < 5; ++id)
-    funcs.add("denseRegionShape "+to_string(id), 10,
+    if(uni_dist(rng) <= prob) funcs.add("denseRegionShape "+to_string(id), 10,
 	      [id](Image_ img) {return denseRegionShape(img,id);},  prob);
 
   for (int id = 0; id < 5; ++id)
-    funcs.add("connect "+to_string(id), 10,
+    if(uni_dist(rng) <= prob) funcs.add("connect "+to_string(id), 10,
 	      [id](Image_ img) {return connect(img,id);},  prob);
 
   for (int id = 1; id < 4; ++id)
-    funcs.add("removeNoise "+to_string(id), 10,
+    if(uni_dist(rng) <= prob) funcs.add("removeNoise "+to_string(id), 10,
 	      [id](Image_ img) {return removeNoise(img,id);},  prob);
 
   for (int id = 0; id < 6; ++id)
-    funcs.add("rearrangeShapes "+to_string(id), 8,
+    if(uni_dist(rng) <= prob) funcs.add("rearrangeShapes "+to_string(id), 8,
 	      [id](Image_ img) {return rearrangeShapes(img,id);},  prob);
 
   for (int id : {0,1})
-    funcs.add("spreadCols "+to_string(id), 10,
+    if(uni_dist(rng) <= prob) funcs.add("spreadCols "+to_string(id), 10,
 	      [id](Image_ img) {return spreadCols(img, id);},  prob);
 
   for (int id = 0; id < 4; ++id)
-    funcs.add("half "+to_string(id), 8,
+    if(uni_dist(rng) <= prob) funcs.add("half "+to_string(id), 8,
 	      [id](Image_ img) {return half(img, id);},  prob);
 
   for (int id = 1; id < 5; ++id)
-    funcs.add("zoomIn "+to_string(id), 8,
+    if(uni_dist(rng) <= prob) funcs.add("zoomIn "+to_string(id), 8,
 	      [id](Image_ img) {return zoomIn(img, id);},  prob);
 
   for (int id = 2; id <= 3; ++id)
-    funcs.add("downscaleImage "+to_string(id), 10,
+    if(uni_dist(rng) <= prob) funcs.add("downscaleImage "+to_string(id), 10,
 	      [id](Image_ img) {return downscaleImage(img, id);},  prob);
 
   for (int id = 2; id <= 4; ++id)
-    funcs.add("stretchImageH "+to_string(id), 8,
+    if(uni_dist(rng) <= prob) funcs.add("stretchImageH "+to_string(id), 8,
 	      [id](Image_ img) {return stretchImage(img, id, 0);},  prob);
 
   for (int id = 2; id <= 4; ++id)
-    funcs.add("stretchImageV "+to_string(id), 8,
+    if(uni_dist(rng) <= prob) funcs.add("stretchImageV "+to_string(id), 8,
 	      [id](Image_ img) {return stretchImage(img, id, 1);},  prob);
 
   for (int id = 0; id <= 4; ++id)
-    funcs.add("shuffleRows "+to_string(id), 8,
+    if(uni_dist(rng) <= prob) funcs.add("shuffleRows "+to_string(id), 8,
 	      [id](Image_ img) {return shuffleRowsOrColumns(img,true, id);},  prob);
 
   for (int id = 0; id <= 4; ++id)
-    funcs.add("shuffleColumns "+to_string(id), 8,
+    if(uni_dist(rng) <= prob) funcs.add("shuffleColumns "+to_string(id), 8,
 	      [id](Image_ img) {return shuffleRowsOrColumns(img,false, id);},  prob);
 
-    funcs.add("makeBorder", 8,
+    if(uni_dist(rng) <= prob) funcs.add("makeBorder", 8,
 	    [](Image_ img) {return makeBorder(img, 1);},  prob);
 
   for (int id : {0,1})
-    funcs.add("makeBorder2 "+to_string(id), 8,
+    if(uni_dist(rng) <= prob) funcs.add("makeBorder2 "+to_string(id), 8,
 	      [id](Image_ img) {return makeBorder2(img, id);},  prob);
 
   for (int id = -3; id < 3; ++id)
-    funcs.add("circularShiftColumn "+to_string(id), 10,
+    if(uni_dist(rng) <= prob) funcs.add("circularShiftColumn "+to_string(id), 10,
 	      [id](Image_ img) {return circularShift(img, false, id);},  prob);
 
     for (int id = -3; id < 3; ++id)
-    funcs.add("circularShiftRow "+to_string(id), 10,
+    if(uni_dist(rng) <= prob) funcs.add("circularShiftRow "+to_string(id), 10,
 	      [id](Image_ img) {return circularShift(img, true, id);},  prob);
 
   for (int id = 0; id < 4; ++id)
-    funcs.add("diagonalGravity "+to_string(id), 10,
-	      [id](Image_ img) {return diagonalGravity(img,id);}, prob);
+    if(uni_dist(rng) <= prob) funcs.add("diagonalGravity "+to_string(id), 10,
+	      [id](Image_ img) {return diagonalGravity(img,id);});
   // for (int ammount = 0; ammount < 3; ++ammount)
   // for (int id = 0; id < 8; ++id)
-  //   funcs.add("shiftImageCrop "+to_string(id), 5,
+  //   if(uni_dist(rng) <= prob) funcs.add("shiftImageCrop "+to_string(id), 5,
 	//       [id, ammount](Image_ img) {return shiftImageCrop(img, id, ammount);});
 
   // // for (int ammount = 0; ammount < 3; ++ammount)
   // // for (int id = 0; id < 8; ++id)
-  // //   funcs.add("shiftImageExpand "+to_string(id), 5,
+  // //   if(uni_dist(rng) <= prob) funcs.add("shiftImageExpand "+to_string(id), 5,
   // //       [id, ammount](Image_ img) {return shiftImageExpand(img, id, ammount);});
 
   // Binary
 
-  funcs.add(sizes, "repeat 1",  10, [](Image_ a, Image_ b) {return repeat(a,b,1);},  prob);
-  funcs.add(sizes, "repeat 2",  10, [](Image_ a, Image_ b) {return repeat(a,b,2);},  prob);
-  funcs.add(sizes, "repeat 3",  10, [](Image_ a, Image_ b) {return repeat(a,b,3);},  prob);
-  funcs.add(sizes, "repeat 4",  10, [](Image_ a, Image_ b) {return repeat(a,b,4);},  prob);
-  funcs.add(sizes, "extend2",  10, [](Image_ a, Image_ b) {return extend2(a,b);},  prob);
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 1",  10, [](Image_ a, Image_ b) {return repeat(a,b,1);},  prob);
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 2",  10, [](Image_ a, Image_ b) {return repeat(a,b,2);},  prob);
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 3",  10, [](Image_ a, Image_ b) {return repeat(a,b,3);},  prob);
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 4",  10, [](Image_ a, Image_ b) {return repeat(a,b,4);},  prob);
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "extend2",  10, [](Image_ a, Image_ b) {return extend2(a,b);},  prob);
 
-  // funcs.add(sizes, "repeat 5",  10, [](Image_ a, Image_ b) {return repeat(a,b,5);});
-  // funcs.add(sizes, "repeat 6",  10, [](Image_ a, Image_ b) {return repeat(a,b,6);});
-  // funcs.add(sizes, "repeat 7",  10, [](Image_ a, Image_ b) {return repeat(a,b,7);});
-  // funcs.add(sizes, "repeat 8",  10, [](Image_ a, Image_ b) {return repeat(a,b,8);});
-  // funcs.add(sizes, "repeat 9",  10, [](Image_ a, Image_ b) {return repeat(a,b,9);});
+  // if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 5",  10, [](Image_ a, Image_ b) {return repeat(a,b,5);});
+  // if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 6",  10, [](Image_ a, Image_ b) {return repeat(a,b,6);});
+  // if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 7",  10, [](Image_ a, Image_ b) {return repeat(a,b,7);});
+  // if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 8",  10, [](Image_ a, Image_ b) {return repeat(a,b,8);});
+  // if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 9",  10, [](Image_ a, Image_ b) {return repeat(a,b,9);});
 
-  funcs.add(sizes, "mirror 0",  10, [](Image_ a, Image_ b) {return mirror(a,b);},  prob);
-  funcs.add(sizes, "mirror 1",  10, [](Image_ a, Image_ b) {return mirror(a,b,1);},  prob);
-  funcs.add(sizes, "mirror 2",  10, [](Image_ a, Image_ b) {return mirror(a,b,2);},  prob);
-  funcs.add(sizes, "mirror 3",  10, [](Image_ a, Image_ b) {return mirror(a,b,3);},  prob);
-  funcs.add(sizes, "mirror 4",  10, [](Image_ a, Image_ b) {return mirror(a,b,4);},  prob);
-  // funcs.add(sizes, "mirror 5",  10, [](Image_ a, Image_ b) {return mirror(a,b,5);});
-  // funcs.add(sizes, "mirror 6",  10, [](Image_ a, Image_ b) {return mirror(a,b,6);});
-  // funcs.add(sizes, "mirror 7",  10, [](Image_ a, Image_ b) {return mirror(a,b,7);});
-  // funcs.add(sizes, "mirror 8",  10, [](Image_ a, Image_ b) {return mirror(a,b,8);});
-  // funcs.add(sizes, "mirror 9",  10, [](Image_ a, Image_ b) {return mirror(a,b,9);});
-  funcs.add(sizes, "ringSmear",  10, [](Image_ a, Image_ b) {return ringSmear(a,b);},  prob);
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 0",  10, [](Image_ a, Image_ b) {return mirror(a,b);},  prob);
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 1",  10, [](Image_ a, Image_ b) {return mirror(a,b,1);},  prob);
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 2",  10, [](Image_ a, Image_ b) {return mirror(a,b,2);},  prob);
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 3",  10, [](Image_ a, Image_ b) {return mirror(a,b,3);},  prob);
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 4",  10, [](Image_ a, Image_ b) {return mirror(a,b,4);},  prob);
+  // if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 5",  10, [](Image_ a, Image_ b) {return mirror(a,b,5);});
+  // if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 6",  10, [](Image_ a, Image_ b) {return mirror(a,b,6);});
+  // if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 7",  10, [](Image_ a, Image_ b) {return mirror(a,b,7);});
+  // if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 8",  10, [](Image_ a, Image_ b) {return mirror(a,b,8);});
+  // if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 9",  10, [](Image_ a, Image_ b) {return mirror(a,b,9);});
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "ringSmear",  10, [](Image_ a, Image_ b) {return ringSmear(a,b);},  prob);
   // crash
-  // funcs.add(sizes, "diagonalSmear1",  10, [](Image_ a, Image_ b) {return diagonalSmear(a,b,1);});
-  // funcs.add(sizes, "diagonalSmear2",  10, [](Image_ a, Image_ b) {return diagonalSmear(a,b,2);});
-  // funcs.add(sizes, "diagonalSmear3",  10, [](Image_ a, Image_ b) {return diagonalSmear(a,b,3);});
-  // funcs.add(sizes, "diagonalSmear4",  10, [](Image_ a, Image_ b) {return diagonalSmear(a,b,4);});
+  // if(uni_dist(rng) <= prob) funcs.add(sizes, "diagonalSmear1",  10, [](Image_ a, Image_ b) {return diagonalSmear(a,b,1);});
+  // if(uni_dist(rng) <= prob) funcs.add(sizes, "diagonalSmear2",  10, [](Image_ a, Image_ b) {return diagonalSmear(a,b,2);});
+  // if(uni_dist(rng) <= prob) funcs.add(sizes, "diagonalSmear3",  10, [](Image_ a, Image_ b) {return diagonalSmear(a,b,3);});
+  // if(uni_dist(rng) <= prob) funcs.add(sizes, "diagonalSmear4",  10, [](Image_ a, Image_ b) {return diagonalSmear(a,b,4);});
 
 
 
   for (int id = 0; id < 4; ++id)
-    funcs.add("gravity "+to_string(id), 10,
+    if(uni_dist(rng) <= prob) funcs.add("gravity "+to_string(id), 10,
 	      [id](Image_ img) {return gravity(img,id);},  prob);
 
-  //funcs.add("smear",    [](Image_ a, Image_ b) {return smear(a,b,6);});
+  //if(uni_dist(rng) <= prob) funcs.add("smear",    [](Image_ a, Image_ b) {return smear(a,b,6);});
 
-  //funcs.add(insideMarked); //only do once at depth 0
+  //if(uni_dist(rng) <= prob) funcs.add(insideMarked); //only do once at depth 0
 
   // Smear diagonals?
 
   // outerProducts
 
   //for (int id = 0; id < 4; id++)
-  //  funcs.add([id](Image_ img) {return gravity(img, id);});
+  //  if(uni_dist(rng) <= prob) funcs.add([id](Image_ img) {return gravity(img, id);});
 
   // Image makeBorder(Image_ img, int bcol = 1);
   // Image makeBorder2(Image_ img, Image_ bord);
@@ -524,7 +524,14 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
   // Image extend2(Image_ img, Image_ room);
   // Image replaceTemplate(Image_ in, Image_ need_, Image_ marked_, int overlapping = 0, int rigids = 0);
   // Image swapTemplate(Image_ in, Image_ a, Image_ b, int rigids = 0);
+    // std::ofstream file("/home/atgu/Desktop/ARC-solution-master/funcs.txt", std::ios::app);
 
+    // // Check if the file opened successfully
+    // if (file.is_open()) {
+    //     // Write each double value on a new line
+    //         file << funcs.f_list.size() << "\n";
+    //     file.close();
+    // }
   return funcs;
 }
 

@@ -63,7 +63,6 @@ for i in inds:
     try:
         t = read('store/%d_out.txt'%i)
         line = t[t.index('Task #'):].split('\n')[0]
-        #print(line)
         if line.count('Correct'): s = 3
         elif line.count('Candidate'): s = 2
         elif line.count('Dimensions'): s = 1
