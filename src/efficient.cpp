@@ -175,12 +175,7 @@ TinyImage::TinyImage(Image_ img, TinyBank&bank) {
 	pathlen[child] = pathlen[p]+1;
       }
     }
-    //cout << p << ": " << (int)tree[p][0] << ' ' << (int)tree[p][1] << endl;
   }
-  /*for (int d = 0; d < 10; ++d) {
-    cout << d << ": " << bitset<4>(code[d]) << ' ' << codelen[d] << endl;
-    }*/
-
   assert((bank.curi+align-1)/align < 1ll<<32);
   memi = (bank.curi+align-1)/align;
   sz = 0;
@@ -192,12 +187,7 @@ TinyImage::TinyImage(Image_ img, TinyBank&bank) {
     //for (int i = 0; i < codelen[c]; ++i)
     //bank.set(memstart+ sz++, code[c]>>i&1);
   }
-  /*for (int it = 0; it < 10;  ++it)
-    cout << (int)img.mask[it] << ' ';
-    cout << endl;
-    for (int it = 0; it < 20;  ++it)
-    cout << bank.get(memi+it);
-    cout << endl;*/
+
   bank.curi = memstart+sz;
 }
 

@@ -107,7 +107,7 @@ Image eraseCol(Image img, int col) {
 
 Image removeGrid(const Image& img) {
     if (img.w <= 1 || img.h <= 1) {
-        return img;  // Return original if too small for a grid
+        return badImg; 
     }
 
     std::vector<int> rowGridLines, colGridLines;
@@ -145,7 +145,7 @@ Image removeGrid(const Image& img) {
         int rowSpacing = rowGridLines[1] - rowGridLines[0];
         for (size_t i = 1; i < rowGridLines.size(); ++i) {
             if (rowGridLines[i] - rowGridLines[i - 1] != rowSpacing) {
-                return img;  // Irregular spacing indicates no grid
+                return badImg;  // Irregular spacing indicates no grid
             }
         }
     } else {
@@ -156,7 +156,7 @@ Image removeGrid(const Image& img) {
         int colSpacing = colGridLines[1] - colGridLines[0];
         for (size_t j = 1; j < colGridLines.size(); ++j) {
             if (colGridLines[j] - colGridLines[j - 1] != colSpacing) {
-                return img;  // Irregular spacing indicates no grid
+                return badImg;  // Irregular spacing indicates no grid
             }
         }
     } else {
@@ -165,7 +165,7 @@ Image removeGrid(const Image& img) {
 
     // If no regular grid was found, return the original image
     if (rowGridLines.empty() && colGridLines.empty()) {
-        return img;
+        return badImg;
     }
 
     // Create a new image by excluding detected grid lines
@@ -211,7 +211,7 @@ Image detectRepeatingPatternWithHole(
 
     if (holePixels.empty()) {
         // No hole found, return the original image as-is
-        return img;
+        return badImg;
     }
 
     // Try different tile sizes starting from 1x1 up to half the image size
@@ -363,7 +363,7 @@ bool morphologicallySimilar(const Image& img1, const Image& img2) {
         }
     }
     double similarityRatio = static_cast<double>(similarCount) / totalPixels;
-    return similarityRatio > 0.95;  // Consider morphologically similar if 95% or more pixels match
+    return similarityRatio > 0.8;  // Consider morphologically similar if 95% or more pixels match
 }
 
 Image downscaleImage(const Image& img, int factor) {
@@ -373,7 +373,7 @@ Image downscaleImage(const Image& img, int factor) {
 
     // Ensure the dimensions remain at least 1x1
     if (newWidth < 1 || newHeight < 1) {
-        return img;  // Downscale too aggressive, return original image
+        return badImg;  // Downscale too aggressive, return original image
     }
 
     // Initialize the downscaled image
@@ -411,7 +411,7 @@ Image downscaleImage(const Image& img, int factor) {
     if (morphologicallySimilar(img, reupscaled)) {
         return downscaled;
     } else {
-        return img;  // If morphology changes significantly, return the original image
+        return badImg;  // If morphology changes significantly, return the original image
     }
 }
 
@@ -911,6 +911,7 @@ Image extend2(Image_ img, Image_ room) {
   //ham
   //#pragma omp parallel for
   for (int i = 0; i < ret.h; ++i) {
+    // #pragma omp parallel for
     for (int j = 0; j < ret.w; ++j) {
       const int x = j+d.x;
       const int y = i+d.y;
@@ -1257,8 +1258,8 @@ Image replaceTemplate(Image_ in, Image_ need_, Image_ marked_, int overlapping =
   }
 
   Image ret = in;
-  //ham
-  //#pragma omp parallel for
+  //hamsie
+//   #pragma omp parallel for
   for (int r = 0; r < rots; ++r) {
     Image_ need = needr[r];
     Image_ marked = markedr[r];
@@ -1308,10 +1309,9 @@ Image swapTemplate(Image_ in, Image_ a, Image_ b, int rigids = 0) {
     br[r] = rigid(b,r);
   }
   Image done = hull0(in), ret = in;
-  //ham
-  //#pragma omp parallel for
+  //hamsie
+  #pragma omp parallel for
   for (int k : {0,1}) {
-    //#pragma omp parallel for
     for (int r = 0; r < rots; ++r) {
       Image_ need = k ? ar[r] : br[r];
       Image_ to   = k ? br[r] : ar[r];
@@ -1413,7 +1413,7 @@ Image erosion(Image_ img) {
 }
 
 Image detectCrossPattern(Image_ img, unsigned int size = 3) {
-    if (img.h < size || img.w < size || size < 3) return img;
+    if (img.h < size || img.w < size || size < 3) return badImg;
 
     Image pattern = {{0, 0}, img.sz, std::vector<char>(img.h * img.w, 0)};
     int mid = size / 2;
@@ -1439,7 +1439,7 @@ Image detectCrossPattern(Image_ img, unsigned int size = 3) {
     return pattern;
 }
 Image detectHorizontalStripes(Image_ img, unsigned int size = 2) {
-    if (img.h < size) return img;
+    if (img.h < size) return badImg;
 
     Image pattern = {{0, 0}, img.sz, std::vector<char>(img.h * img.w, 0)};
     for (int i = 0; i <= img.h - size; ++i) {
@@ -1462,7 +1462,7 @@ Image detectHorizontalStripes(Image_ img, unsigned int size = 2) {
     return pattern;
 }
 Image detectVerticalStripes(Image_ img, unsigned int size = 2) {
-    if (img.w < size) return img;
+    if (img.w < size) return badImg;
 
     Image pattern = {{0, 0}, img.sz, std::vector<char>(img.h * img.w, 0)};
     for (int j = 0; j <= img.w - size; ++j) {
@@ -1536,7 +1536,7 @@ Image detectTranslationPattern(Image_ img) {
 
     if (bestR == h && bestS == w) {
         // No repeating pattern found
-        return img;
+        return badImg;
     }
 
     // Create the pattern image
@@ -1558,7 +1558,7 @@ Image enforceRotationalSymmetry90(Image_ img) {
 
     if (h != w) {
         // Rotation symmetry requires a square image
-        return img;
+        return badImg;
     }
 
     int n = h; // Since h == w
@@ -1642,7 +1642,7 @@ Image detectTranslation1DPattern(Image_ img) {
 
     if (possibleShifts.empty()) {
         // No repeating pattern found
-        return img;
+        return badImg;
     }
 
     // Choose the shift with the minimal absolute sum
@@ -1677,7 +1677,7 @@ Image detectTranslation1DPattern(Image_ img) {
 }
 
 Image detectDiagonalPattern(Image_ img, unsigned int size = 2) {
-    if (img.h < size || img.w < size) return img;
+    if (img.h < size || img.w < size) return badImg;
 
     Image pattern = {{0, 0}, img.sz, std::vector<char>(img.h * img.w, 0)};
     for (int i = 0; i <= img.h - size; ++i) {
@@ -1701,7 +1701,7 @@ Image detectDiagonalPattern(Image_ img, unsigned int size = 2) {
 }
 
 Image detectCheckerboardPattern(Image_ img, unsigned int size = 2) {
-    if (img.h < size || img.w < size) return img;
+    if (img.h < size || img.w < size) return badImg;
 
     Image pattern = {{0, 0}, img.sz, std::vector<char>(img.h * img.w, 0)};
     for (int i = 0; i <= img.h - size; i += size) {
@@ -1738,7 +1738,7 @@ Image detectCheckerboardPattern(Image_ img, unsigned int size = 2) {
 
 Image repairRotationalSymmetry(const Image& img) {
     if (img.h <= 0 || img.w <= 0) {
-        return img;
+        return badImg;
     }
 
     Image result = img;  // Create a copy of the input image
@@ -1781,7 +1781,7 @@ Image applyColorMapping(const Image_ &img, const std::unordered_map<int, int> &c
     return result;
 }
 Image detectPatterns(Image_ img, unsigned int size = 2) {
-    if(img.h < size || img.w < size) return img;
+    if(img.h < size || img.w < size) return badImg;
 
     Image pattern = {{0,0}, img.sz, vector<char>(img.h * img.w, 0)};
     for (int i = 0; i <= img.h - 2; ++i) {
@@ -2087,7 +2087,7 @@ Image mostCommonShape(Image_ img) {
 Image largestShape(Image_ img) {
     auto shapes = extractConnectedComponents(img);
     if (shapes.empty()) {
-        return img;  // Return an empty image if no shapes are found
+        return badImg;  // Return an empty image if no shapes are found
     }
 
     // Initialize a placeholder for the largest shape
@@ -2170,7 +2170,7 @@ Image mostCommonColorShape(Image_ img) {
 Image smallestShape(Image_ img) {
     auto shapes = extractConnectedComponents(img);
     if (shapes.empty()) {
-        return img;  // Return an empty image if no shapes are found
+        return badImg;  // Return an empty image if no shapes are found
     }
 
     // Initialize with the first non-zero size shape
@@ -2267,7 +2267,7 @@ bool isEnclosed(const Image& shape, const std::vector<Image>& shapes) {
 Image enclosedShapes(Image_ img) {
     auto shapes = extractConnectedComponents(img);
     if (shapes.empty()) {
-        return img;
+        return badImg;
     }
 
     std::vector<Image> enclosedShapes;
@@ -2278,7 +2278,7 @@ Image enclosedShapes(Image_ img) {
     }
 
     if (enclosedShapes.empty()) {
-        return img;
+        return badImg;
     }
 
     return combineShapes(enclosedShapes, img.h, img.w);
@@ -2528,7 +2528,7 @@ Image shiftImage(Image_ img, int direction, int amount, bool expandGrid=false) {
         case 5: dx = amount; dy = amount; break;  // Diagonal Down-Right
         case 6: dx = -amount; dy = -amount; break; // Anti-Diagonal Up-Left
         case 7: dx = -amount; dy = amount; break;  // Anti-Diagonal Down-Left
-        default: return img; // Invalid direction
+        default: return badImg; // Invalid direction
     }
 
     // If expanding the grid, calculate new dimensions
@@ -2973,7 +2973,7 @@ Image rotateSquareFromCenter(const Image& img, int squareSize, int times) {
     // Ensure the square size is valid
     if (squareSize <= 1 || squareSize > img.h || squareSize > img.w) {
         std::cerr << "Invalid square size. It must be greater than 1 and fit within the image dimensions." << std::endl;
-        return img;  // Return the original image if the square size is invalid
+        return badImg;  // Return the original image if the square size is invalid
     }
 
     // Calculate the starting coordinates to center the square
@@ -2984,7 +2984,7 @@ Image rotateSquareFromCenter(const Image& img, int squareSize, int times) {
 
     // Ensure the square region does not exceed image bounds
     if (startX < 0 || startY < 0 || startX + squareSize > img.h || startY + squareSize > img.w) {
-        return img;
+        return badImg;
     }
 
     // Create a copy of the original image to modify
@@ -3000,7 +3000,7 @@ Image rotateSquareFromCenter(const Image& img, int squareSize, int times) {
 Image rotateSquareCorners(const Image& img, int squareSize, int times) {
     // Ensure the square size is valid
     if (squareSize <= 1 || squareSize > img.h || squareSize > img.w) {
-        return img;  // Return the original image if the square size is invalid
+        return badImg;  // Return the original image if the square size is invalid
     }
 
     // Create a copy of the original image to modify
@@ -3027,7 +3027,6 @@ Image reverseSizes(Image_ img) {
     // Extract all shapes from the image
     auto shapes = extractConnectedComponents(img);
     if (shapes.empty()) {
-        std::cout << "No shapes found in the image." << std::endl;
         return badImg;
     }
 
@@ -3213,7 +3212,7 @@ Image upscaleImage(const Image& img, int scaleFactor) {
     // Ensure the upscaled image fits within 30x30
     if (newWidth > MAXSIDE / 2 || newHeight > MAXSIDE / 2) {
         // Return original image if it cannot be upscaled within the 30x30 limit
-        return img;
+        return badImg;
     }
 
     // Create a new image with the upscaled dimensions
@@ -3246,9 +3245,9 @@ Image stretchImage(const Image& img, int stretchFactor, int direction) {
     }
 
     // Ensure the stretched image fits within 30x30
-    if (newWidth > 30 || newHeight > 30) {
+    if (newWidth > MAXSIDE || newHeight > MAXSIDE) {
         // Return the original image if the stretched version exceeds the limit
-        return img;
+        return badImg;
     }
 
     // Create a new image with the stretched dimensions
@@ -3335,7 +3334,7 @@ Image zoomIn(const Image& img, int id) {
             break;
         default:
             // If an unsupported ID is provided, return an empty image
-            return core::empty(img.p, {0, 0});
+            return badImg;
     }
 
     // Create the result image and copy the specified region from the original image
@@ -3774,7 +3773,7 @@ Image cutIntersection(Image_ img) {
 
     // If there are no components, return an empty image
     if (components.empty()) {
-        return img;
+        return badImg;
     }
 
     // Initialize the intersection image with the first component's mask
@@ -3844,6 +3843,6 @@ Image cutFilterByColor(Image_ img, int targetColor) {
     }
 
     // Compose the filtered components back into a single image
-    return !colorFilteredComponents.empty() ? compose(colorFilteredComponents, 0) : core::empty(img.p, img.sz);
+    return !colorFilteredComponents.empty() ? compose(colorFilteredComponents, 0) : badImg;
 }
 

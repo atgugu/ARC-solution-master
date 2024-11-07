@@ -61,6 +61,7 @@ Image getSize0(Image_ img) {
 Image Move(Image img, Image_ p) {
   img.x += p.x;
   img.y += p.y;
+  if(img.x > MAXAREA || img.y > MAXAREA) return badImg;
   return img;
 }
 
@@ -518,7 +519,7 @@ Image center(Image_ img) {
 }
 
 Image transform(Image_ img, int A00, int A01, int A10, int A11) {
-  if (img.w * img.h == 0) return img;  // Return early if empty
+  if (img.w * img.h == 0) return badImg;  // Return early if empty
 
   Image c = center(img);
   point off = point{1 - c.w, 1 - c.h} + (img.p - c.p) * 2;
@@ -594,7 +595,7 @@ Image rigid(Image_ img, int id) {
 }
 
 Image invert(Image img) {
-    if (img.w == 0 || img.h == 0) return img;  // Early return for empty image
+    if (img.w == 0 || img.h == 0) return badImg;  // Early return for empty image
 
     const int mask = core::colMask(img);
     int col = 1;

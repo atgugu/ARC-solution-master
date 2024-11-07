@@ -112,7 +112,7 @@ vector<Candidate> greedyCompose2(Pieces& pieces, vector<Image>& target, vector<p
         img_ind.reserve(n);
         bad_ind.reserve(n);
         active_ind.reserve(n);
-        TinyHashMap seen;
+        // TinyHashMap seen;
         mybitset badi(M), blacki(M);
         
         for (int i = 0; i < n; ++i) {
@@ -299,7 +299,7 @@ vector<Candidate> greedyCompose2(Pieces& pieces, vector<Image>& target, vector<p
         }
     }
 
-    if (print_times) greedy_fill_time.print("Greedy fill time");
+    // if (print_times) greedy_fill_time.print("Greedy fill time");
     return move(rets);
 }
 

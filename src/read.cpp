@@ -8,6 +8,8 @@
 using namespace std;
 #include "utils.hpp"
 #include "read.hpp"
+#include <fstream>  // Include this for file stream usage
+#include <cassert>  // For assert
 
 Sample::Sample(string filename) {
   vector<Image> train_input, train_output;
@@ -141,31 +143,60 @@ Image Sample::readImage() {
   return ret;
 }
 
-
-vector<Sample> readAll(string path, int maxn) { //maxn = -1
-  const string base_path[2] = {"/kaggle/input/abstraction-and-reasoning-challenge/", "./dataset/"};
+vector<Sample> readAll(string path, int maxn) { // maxn = -1
+  const string base_path[1] = {"/home/atgu/Desktop/ARC-solution-master/dataset/"};
 
   int base_pathi = 0;
-  while (!experimental::filesystem::exists(base_path[base_pathi]+path)) {
+  while (!std::experimental::filesystem::exists(base_path[base_pathi] + path)) {
     base_pathi++;
     assert(base_pathi < 2);
   }
 
+  // Collect all JSON file names in the directory
   vector<string> files;
-  for (auto magic_file_type : experimental::filesystem::directory_iterator(base_path[base_pathi]+path)) {
+  for (auto& magic_file_type : std::experimental::filesystem::directory_iterator(base_path[base_pathi] + path)) {
     string name = magic_file_type.path().u8string();
-    if (name.size() >= 5 && name.substr(name.size()-5,5) == ".json")
+    if (name.size() >= 5 && name.substr(name.size() - 5, 5) == ".json")
       files.push_back(name);
   }
-  if (maxn >= 0) files.resize(maxn);
+  if (maxn >= 0 && maxn < files.size()) files.resize(maxn);
+
   vector<Sample> sample;
-  for (string sid : files) {
-    //sample.push_back(Sample(sid));
-    for (Sample s : Sample(sid).split()) {
-      //if (maxn < 0 || sample.size() < maxn)
+  std::map<int, std::vector<int>> index_map; // Map from file index to sample indices
+
+  int sample_index = 0;
+  int file_index = 0;
+  for (const string& sid : files) {
+    vector<Sample> samples_from_file = Sample(sid).split();
+    for (const Sample& s : samples_from_file) {
       sample.push_back(s);
+      index_map[file_index].push_back(sample_index);
+      sample_index++;
     }
+    file_index++;
   }
+
+  std::ofstream map_file("/home/atgu/Desktop/ARC-solution-master/index_map.json");
+  map_file << "{" << std::endl;
+  for (auto it = index_map.begin(); it != index_map.end(); ++it) {
+    int file_idx = it->first;
+    std::vector<int> sample_indices = it->second;
+    map_file << "  \"" << file_idx << "\": [";
+    for (size_t i = 0; i < sample_indices.size(); ++i) {
+      map_file << sample_indices[i];
+      if (i + 1 != sample_indices.size())
+        map_file << ", ";
+    }
+    map_file << "]";
+    auto next_it = it;
+    ++next_it;
+    if (next_it != index_map.end())
+      map_file << ",";
+    map_file << std::endl;
+  }
+  map_file << "}" << std::endl;
+  map_file.close();
+
   return sample;
 }
 
@@ -207,9 +238,18 @@ Writer::~Writer() {
 }
 
 
-void writeAnswersWithScores(const Sample&s, string fn, vector<Image> imgs, vector<double> scores) {
-  FILE*fp = fopen(fn.c_str(), "w");
+void writeAnswersWithScores(const Sample &s, std::string fn, std::vector<Image> imgs, std::vector<double> scores) {
+  // Check if a file with the same name already exists and add an index if needed
+  int index = 0;
+  std::string original_fn = fn;
+  while (std::ifstream(fn.c_str())) {
+    fn = original_fn + "_" + std::to_string(index++);
+  }
+
+  // Open the file in write mode
+  FILE *fp = fopen(fn.c_str(), "w");
   assert(fp);
+
   fprintf(fp, "%s_%d\n", s.id.c_str(), s.id_ind);
   assert(imgs.size() == scores.size());
   if (imgs.empty()) imgs = {dummyImg}, scores = {-1};
@@ -223,14 +263,15 @@ void writeAnswersWithScores(const Sample&s, string fn, vector<Image> imgs, vecto
     fprintf(fp, "|");
     for (int i = 0; i < img.h; ++i) {
       for (int j = 0; j < img.w; ++j) {
-	int c = img(i,j);
-	assert(c >= 0 && c <= 9);
-	fprintf(fp, "%d", c);
+        int c = img(i, j);
+        assert(c >= 0 && c <= 9);
+        fprintf(fp, "%d", c);
       }
       fprintf(fp, "|");
     }
     fprintf(fp, " %.20f", score);
     fprintf(fp, "\n");
   }
+  
   fclose(fp);
 }

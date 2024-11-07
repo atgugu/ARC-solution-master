@@ -18,7 +18,12 @@ int main(int argc, char**argv) {
   int maxdepth = -1;
   if (argc >= 3) {
     maxdepth = atoi(argv[2]);
+  }
+
+  double start_prob = 1.0f;
+  if (argc >= 4) {
+    start_prob = atof(argv[3]);
     //printf("Using max depth %d\n", maxdepth);
   }
-  run(only_sid, maxdepth);
+  run(only_sid, maxdepth, start_prob);
 }

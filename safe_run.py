@@ -22,7 +22,7 @@ start_time = time.time()
 
 
 MEMORY_LIMIT = 8*4096 * 0.95 # MB
-TIME_LIMIT = 12*60*60 * 0.95 # Seconds
+TIME_LIMIT = 12*60*60 * 0.96 # Seconds
 
 
 class Process:
@@ -30,7 +30,7 @@ class Process:
         fn = cmd.replace(' ','_')
         self.fout = open('store/tmp/%s.out'%fn,'w')
         self.ferr = open('store/tmp/%s.err'%fn,'w')
-        print(cmd)
+        # print(cmd)
         sys.stdout.flush()
         self.cmd = cmd
         self.process = Popen(cmd.split(), stdout=self.fout, stderr=self.ferr, shell=False)
@@ -84,7 +84,7 @@ def runAll(cmd_list, threads):
     cmdi = 0
 
     def callback(process, status, timeused, memused):
-        assert(status != RTE)
+        #assert(status != RTE)
         print(exit_names[status], process.cmd, " %.1fs"%timeused, "%.0fMB"%memused)
         sys.stdout.flush()
 
@@ -125,12 +125,45 @@ def runAll(cmd_list, threads):
             break
 
     return ret_stats
+    
+def has_two_high_score_solutions(taski, threshold=2):
+    cands = []
+    for fn in glob("/kaggle/working/absres-c-files/output/answer_%d_*.csv" % taski):
+        if not os.path.isfile(fn):
+            continue  # Skip if file does not exist
+        with open(fn, 'r') as f:
+            t = f.read().strip().split('\n')
+        for cand in t[1:]:
+            img, score = cand.rsplit(' ', 1)
+            cands.append((float(score), img))
+
+    # Filter candidates with scores above the threshold
+    high_score_cands = [img for score, img in cands if score > threshold]
+    # Get unique solutions
+    unique_imgs = set(high_score_cands)
+    # Check if there are two or more unique solutions
+    return len(unique_imgs) >= 2
+
+def filter_tasks_by_score(task_indices, threshold=2):
+    high_score_tasks = []
+    filtered_task_indices = []
+
+    for i in task_indices:
+        if has_two_high_score_solutions(i, threshold=threshold):
+            high_score_tasks.append(i)
+        else:
+            filtered_task_indices.append(i)
+
+    if len(high_score_tasks) > 0:
+        print("High scores for:", high_score_tasks)
+
+    return filtered_task_indices, high_score_tasks
 
 
 
 system("mkdir -p output")
 system("mkdir -p store/tmp")
-system('make -j gen_profile')
+system('make -s gen_profile')
 
 
 if len(sys.argv) == 3:
@@ -143,60 +176,168 @@ else:
     task_list = range(0, ntasks)
     #print("Usage: python %s <start_task> <#tasks>"%sys.argv[0])
 
-#TODO: change back to depth 3/4
-depth2 = []
-for i in range(ntasks):
-    depth2.append(Command("./run %d 2"%i))
-stats2 = runAll(depth2, 4)
+run_list = []
+task_indices = list(range(ntasks))
 
-system('make -j use_profile')
+for i in task_indices:
+    run_list.append(Command("./run %d 1"%i))
+runAll(run_list, 12)
 
-depth22 = []
-for i in range(ntasks):
-    depth22.append(Command("./run %d 22"%i))
-stats22 = runAll(depth22, 4)
+system('make -s use_profile')
 
-depth23 = []
-for i in range(ntasks):
-    depth23.append(Command("./run %d 23"%i))
-stats23 = runAll(depth23, 4)
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 21"%i))
+runAll(run_list, 12)
 
-depth3 = []
-for i in range(ntasks):
-    depth3.append(Command("./run %d 3"%i))
-stats3 = runAll(depth3, 4)
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 31"%i))
+runAll(run_list, 12)
 
-flip3 = []
-for i in range(ntasks):
-    status, t, m = stats3[depth3[i].cmd]
-    flip3.append(Command("./run %d 23"%i, t*2, m*2, 100))
-stats3_flip = runAll(flip3, 4)
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 2"%i))
+runAll(run_list, 12)
 
-flip3 = []
-for i in range(ntasks):
-    status, t, m = stats3[depth3[i].cmd]
-    flip3.append(Command("./run %d 33"%i, t*2, m*2, 100))
-runAll(flip3, 4)
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
 
-os.system('rm src/efficient.cpp')
-os.system('cp fastEfficient/efficient.cpp src/efficient.cpp')
-os.system('make -j save_space')
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 22"%i))
+runAll(run_list, 12)
 
-depth4 = []
-for i in range(ntasks):
-    status, t, m = stats3[depth3[i].cmd]
-    depth4.append(Command("./run %d 4"%i, t*20, m*20, 2))
-stats4 = runAll(depth4, 1)
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
 
-depth24 = []
-for i in range(ntasks):
-    depth24.append(Command("./run %d 24"%i))
-stats24 = runAll(depth24, 1)
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 32"%i))
+runAll(run_list, 12)
+
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
+
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 3"%i))
+runAll(run_list, 4)
+
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
+
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 23"%i))
+runAll(run_list, 4)
+
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
+
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 33"%i))
+runAll(run_list, 4)
+
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
+
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 4 0.05"%i))
+runAll(run_list, 4)
+
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
+
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 24 0.05"%i))
+runAll(run_list, 2)
+
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
+
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 34 0.05"%i))
+runAll(run_list, 2)
+
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
+
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 5 0.025"%i))
+runAll(run_list, 2)
+
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
+
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 25 0.025"%i))
+runAll(run_list, 2)
+
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
 
 depth34 = []
-for i in range(ntasks):
-    depth34.append(Command("./run %d 24"%i))
-stats34 = runAll(depth34, 1)
+for i in task_indices:
+    run_list.append(Command("./run %d 35 0.025"%i))
+runAll(run_list, 2)
+
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
+
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 4 0.05"%i))
+runAll(run_list, 2)
+
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
+
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 24 0.05"%i))
+runAll(run_list, 2)
+
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
+
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 34 0.05"%i))
+runAll(run_list, 2)
+
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
+
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 5 0.025"%i))
+runAll(run_list, 2)
+
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
+
+run_list = []
+for i in task_indices:
+    run_list.append(Command("./run %d 25 0.025"%i))
+runAll(run_list, 2)
+
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
+
+depth34 = []
+for i in task_indices:
+    run_list.append(Command("./run %d 35 0.025"%i))
+runAll(run_list, 2)
+
+filtered_task_indices, high_score_tasks = filter_tasks_by_score(task_indices, threshold=3)
+task_indices = filtered_task_indices
 
 def read(fn):
     f = open(fn)
@@ -229,12 +370,12 @@ for taski in task_list:
     if not best: best.append('|0|')
     combined.append(id+','+' '.join(best))
 
-outf = open('submission_part.csv', 'w')
+outf = open('submission_part2.csv', 'w')
 for line in combined:
     print(line, file=outf)
 outf.close()
-
-outf = open('/kaggle/working/submission_part.csv', 'w')
+# TODO Make json directly here for submission
+outf = open('/kaggle/working/submission_part2.csv', 'w')
 for line in combined:
     print(line, file=outf)
 outf.close()

@@ -34,7 +34,7 @@ count_tasks: src/count_tasks.cpp obj/read.o headers/utils.hpp
 
 # Clean target
 clean:
-	rm -rf obj/*.o run output/* store/*
+	rm -rf obj/*.o run  store/*
 clean_profiles:
 	rm -rf profilerdata/*
 

@@ -7,6 +7,7 @@ using namespace std;
 #include "core_functions.hpp"
 #include "image_functions.hpp"
 #include "image_functions2.hpp"
+#include <fstream>
 
 #include "visu.hpp"
 
@@ -37,7 +38,7 @@ ull hashVec(const vector<int>&vec) {
 }
 
 Pieces makePieces2(vector<DAG>&dag, vector<pair<Image,Image>> train, vector<point> out_sizes) {
-  Timer set_time, piece_time, child_time;
+  // Timer set_time, piece_time, child_time;
 
   Pieces pieces;
 
@@ -53,9 +54,9 @@ Pieces makePieces2(vector<DAG>&dag, vector<pair<Image,Image>> train, vector<poin
   auto add = [&](int d, const vector<int>&v) {
     assert(v.size() == dags);
 
-    set_time.start();
+    // set_time.start();
     auto [memi, inserted] = seen.insert(hashVec(v), (int)mem.size());
-    set_time.stop();
+    // set_time.stop();
 
     if (inserted) {
       for (int i : v) {
@@ -100,7 +101,7 @@ Pieces makePieces2(vector<DAG>&dag, vector<pair<Image,Image>> train, vector<poin
   vector<vector<pair<int,int>>> slow_child(train.size()+1);
   vector<pair<int,vector<int>>> newi_list;
 
-  piece_time.start();
+  // piece_time.start();
   for (int depth = 0; depth < q.size(); ++depth) {
     while (q[depth].size()) {
       int memi = q[depth].front();
@@ -126,7 +127,7 @@ Pieces makePieces2(vector<DAG>&dag, vector<pair<Image,Image>> train, vector<poin
 
       newi_list.clear();
 
-      child_time.start();
+      // child_time.start();
       {
 	for (int i = 0; i <= train.size(); ++i)
 	  dag[i].tiny_node[ind[i]].child.legacy(slow_child[i]);
@@ -160,7 +161,7 @@ Pieces makePieces2(vector<DAG>&dag, vector<pair<Image,Image>> train, vector<poin
 	}
       finish:;
       }
-      child_time.stop();
+      // child_time.stop();
 
       for (auto&[fi, newi] : newi_list) {
 	if (0) {
@@ -195,10 +196,10 @@ Pieces makePieces2(vector<DAG>&dag, vector<pair<Image,Image>> train, vector<poin
       }
     }
   }
-  piece_time.stop();
-  piece_time.print("Piece loop time");
-  set_time.print("Set time");
-  child_time.print("Child looking time");
+  // piece_time.stop();
+  // piece_time.print("Piece loop time");
+  // set_time.print("Set time");
+  // child_time.print("Child looking time");
 
 
   auto lookFor = [&](vector<string> name_list) {
@@ -208,6 +209,7 @@ Pieces makePieces2(vector<DAG>&dag, vector<pair<Image,Image>> train, vector<poin
     int di = 0;
     for (DAG&d : dag) {
       int p = 0;
+      
       for (string name : name_list) {
 	int fi = d.funcs.findfi(name);
 
@@ -216,45 +218,17 @@ Pieces makePieces2(vector<DAG>&dag, vector<pair<Image,Image>> train, vector<poin
 	//assert(it != child.end());
 	int ret = d.tiny_node.getChild(p, fi);
 	assert(ret >= 0);
-	  //auto [fi_, ret] = *it;
-	if (0) {//fi != fi_) {
-	  cout << p << ' ' << di << " / " << train.size() << endl;
-	  /*for (auto [fi,nxti] : child) {
-	    string name = d.funcs.getName(fi);
-	    if (name.substr(0,4) == "Move") {
-	      cout << name << ' ';
-	    }
-	  }
-	  cout << endl;*/
-	}
-	//assert(fi == fi_);
+
 	p = ret;
 	assert(p != -1);
       }
       look_v.push_back(p);
       look_imgs.push_back(d.getImg(p));
-      /*if (n.isvec || n.img[0].sz != given_sizes[di][1]) {
-	cout << "Bad" << endl;
-	}*/
       di++;
     }
     if (!seen.insert(hashVec(look_v),0).second) cout << "Found indices" << endl;
     //exit(0);
   };
-
-  /*if (out_sizes.size()) {
-    lookFor({"compress", "toOrigin"});
-    }*/
-    /*
-    lookFor({"repeat 0 1", "colShape 2", "Move -1 -1", "embed 1"});
-    lookFor({"repeat 0 1", "colShape 2", "Move 1 1", "embed 1"});
-    lookFor({"repeat 0 1", "smear 4", "colShape 1"});
-    }*/
-  /*lookFor({"filterCol 1", "interior", "colShape 2"});
-    lookFor({"cut", "pickNotMaxes 11", "composeGrowing", "colShape 3", "embed 1"});
-    lookFor({"filterCol 5", "makeBorder", "colShape 1", "embed 1"});
-    lookFor({});
-  */
 
   if (out_sizes.size() && print_nodes) {
     int nodes = 0;

@@ -92,8 +92,7 @@ struct DAG {
   vector<int> binary;
   int add(const State&nxt, bool force = false);
   Image getImg(int nodei);
-  void build();
-  
+    void build();
   void buildBinary();
   void initial(Image_ test_in, const vector<pair<Image,Image>>&train, vector<point> sizes, int ti);
   // void benchmark();

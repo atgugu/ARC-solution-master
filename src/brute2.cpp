@@ -23,6 +23,7 @@ using namespace std;
 #include <fstream>
 
 extern int MAXDEPTH, print_nodes, NUMFUNCS;
+extern double START_PROB;
 extern unsigned int SEED;
 static std::random_device rd;
 static std::mt19937 rng(rd());
@@ -146,14 +147,14 @@ int Functions3::findfi(string name) {
   int fi = find(names.begin(), names.end(), name)-names.begin();
   if (fi == names.size()) {
     cerr << name << " is not a known function" << endl;
-    assert(0);
+    assert(0); 
   }
   return fi;
 }
 
 
 Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, int> &colorMap) {
-  Functions3 funcs;    
+  Functions3 funcs;
 
   double prob = 1.0f;
   // Unary
@@ -197,15 +198,13 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
     if(uni_dist(rng) <= prob) funcs.add("pickNotMaxes "+to_string(id), 8,
 	      [id](vImage_ v) {return pickNotMaxes(v,id);});
 
-  prob = 0.8f;
   for (int id = 2; id <= 3; ++id)
     if(uni_dist(rng) <= prob) funcs.add("upscaleImage "+to_string(id), 8,
 	      [id](Image_ img) {return upscaleImage(img, id);});
-  
-  // TODO: study how can we sample based on heuristics
-  prob = 0.2;
-  if(MAXDEPTH > 20) prob = 0.01;
-  
+        
+  if(MAXDEPTH >= 40) prob = START_PROB * 1.0;
+  if(MAXDEPTH >= 50) prob /= 1.0;
+  //////////////
   if(uni_dist(rng) <= prob) funcs.add("insideMarked", 10, insideMarked);
 
   if(uni_dist(rng) <= prob) funcs.add("border", 9, border);
@@ -215,12 +214,17 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
     if(uni_dist(rng) <= prob) funcs.add("rigid "+to_string(i), 8,
 	      [i](Image_ img) {return rigid(img, i);});
 
-  if(uni_dist(rng) <= prob) funcs.add("compress", 8, [](Image_ img) {return compress(img);});
+  if(uni_dist(rng) <= prob) funcs.add("compress", 7, [](Image_ img) {return compress(img);});
   if(uni_dist(rng) <= prob) funcs.add("splitCols", 7, [](Image_ img) {return splitCols(img);});
 
   if(uni_dist(rng) <= prob) funcs.add("splitAll",     8, splitAll);
   if(uni_dist(rng) <= prob) funcs.add("splitColumns", 8, splitColumns);
   if(uni_dist(rng) <= prob) funcs.add("splitRows",    8, splitRows);
+
+  // TODO: study how can we sample based on heuristics
+  // prob = 0.2;
+  
+  if(MAXDEPTH >= 40) prob = START_PROB;
   
   // prob /= 2;
 
@@ -278,12 +282,12 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
   //   [i, j](Image_ img) {return shiftImage(img, i, j, false);});
   // prob /= 2;
 
-  if(uni_dist(rng) <= prob) funcs.add("dilate1", 8, dilate1, prob*2);
-  if(uni_dist(rng) <= prob) funcs.add("erode1", 8, erode1, prob*2);
-  if(uni_dist(rng) <= prob) funcs.add("dilate2", 8, dilate2);
-  if(uni_dist(rng) <= prob) funcs.add("erode2", 8, erode2);
-  if(uni_dist(rng) <= prob) funcs.add("dilate3", 9, dilate3);
-  if(uni_dist(rng) <= prob) funcs.add("erode3", 9, erode3);
+  if(uni_dist(rng) <= prob) funcs.add("dilate1", 5, dilate1);
+  if(uni_dist(rng) <= prob) funcs.add("erode1", 5, erode1);
+  if(uni_dist(rng) <= prob) funcs.add("dilate2", 10, dilate2);
+  if(uni_dist(rng) <= prob) funcs.add("erode2", 10, erode2);
+  if(uni_dist(rng) <= prob) funcs.add("dilate3", 10, dilate3);
+  if(uni_dist(rng) <= prob) funcs.add("erode3", 10, erode3);
 
   if(uni_dist(rng) <= prob) funcs.add("morphOpening", 8, morphOpening);
   if(uni_dist(rng) <= prob) funcs.add("morphClosing", 8, morphClosing);
@@ -387,79 +391,80 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
   for (int times = 1; times < 4; ++times)
   for (int id = 2; id < 6; ++id)
     if(uni_dist(rng) <= prob) funcs.add("rotateSquareCorners "+to_string(id) + to_string(times), 10,
-	      [id, times](Image_ img) {return rotateSquareCorners(img,id, times);},  prob);
+	      [id, times](Image_ img) {return rotateSquareCorners(img,id, times);});
 
   for (int times = 1; times < 4; ++times)
   for (int id = 2; id < 6; ++id)
     if(uni_dist(rng) <= prob) funcs.add("rotateSquareFromCenter "+to_string(id) + to_string(times), 10,
-	      [id, times](Image_ img) {return rotateSquareFromCenter(img,id, times);},  prob);
+	      [id, times](Image_ img) {return rotateSquareFromCenter(img,id, times);});
 
   for (int id = 3; id < 5; ++id)
     if(uni_dist(rng) <= prob) funcs.add("denseRegionShape "+to_string(id), 10,
-	      [id](Image_ img) {return denseRegionShape(img,id);},  prob);
+	      [id](Image_ img) {return denseRegionShape(img,id);});
 
   for (int id = 0; id < 5; ++id)
     if(uni_dist(rng) <= prob) funcs.add("connect "+to_string(id), 10,
-	      [id](Image_ img) {return connect(img,id);},  prob);
+	      [id](Image_ img) {return connect(img,id);});
 
   for (int id = 1; id < 4; ++id)
     if(uni_dist(rng) <= prob) funcs.add("removeNoise "+to_string(id), 10,
-	      [id](Image_ img) {return removeNoise(img,id);},  prob);
+	      [id](Image_ img) {return removeNoise(img,id);});
 
   for (int id = 0; id < 6; ++id)
     if(uni_dist(rng) <= prob) funcs.add("rearrangeShapes "+to_string(id), 8,
-	      [id](Image_ img) {return rearrangeShapes(img,id);},  prob);
+	      [id](Image_ img) {return rearrangeShapes(img,id);});
 
   for (int id : {0,1})
     if(uni_dist(rng) <= prob) funcs.add("spreadCols "+to_string(id), 10,
-	      [id](Image_ img) {return spreadCols(img, id);},  prob);
+	      [id](Image_ img) {return spreadCols(img, id);});
 
   for (int id = 0; id < 4; ++id)
     if(uni_dist(rng) <= prob) funcs.add("half "+to_string(id), 8,
-	      [id](Image_ img) {return half(img, id);},  prob);
+	      [id](Image_ img) {return half(img, id);});
 
   for (int id = 1; id < 5; ++id)
     if(uni_dist(rng) <= prob) funcs.add("zoomIn "+to_string(id), 8,
-	      [id](Image_ img) {return zoomIn(img, id);},  prob);
+	      [id](Image_ img) {return zoomIn(img, id);});
 
   for (int id = 2; id <= 3; ++id)
     if(uni_dist(rng) <= prob) funcs.add("downscaleImage "+to_string(id), 10,
-	      [id](Image_ img) {return downscaleImage(img, id);},  prob);
+	      [id](Image_ img) {return downscaleImage(img, id);});
 
   for (int id = 2; id <= 4; ++id)
     if(uni_dist(rng) <= prob) funcs.add("stretchImageH "+to_string(id), 8,
-	      [id](Image_ img) {return stretchImage(img, id, 0);},  prob);
+	      [id](Image_ img) {return stretchImage(img, id, 0);});
 
   for (int id = 2; id <= 4; ++id)
     if(uni_dist(rng) <= prob) funcs.add("stretchImageV "+to_string(id), 8,
-	      [id](Image_ img) {return stretchImage(img, id, 1);},  prob);
+	      [id](Image_ img) {return stretchImage(img, id, 1);});
 
-  for (int id = 0; id <= 4; ++id)
-    if(uni_dist(rng) <= prob) funcs.add("shuffleRows "+to_string(id), 8,
-	      [id](Image_ img) {return shuffleRowsOrColumns(img,true, id);},  prob);
+  // for (int id = 0; id <= 4; ++id)
+  //   if(uni_dist(rng) <= prob) funcs.add("shuffleRows "+to_string(id), 8,
+	//       [id](Image_ img) {return shuffleRowsOrColumns(img,true, id);});
 
-  for (int id = 0; id <= 4; ++id)
-    if(uni_dist(rng) <= prob) funcs.add("shuffleColumns "+to_string(id), 8,
-	      [id](Image_ img) {return shuffleRowsOrColumns(img,false, id);},  prob);
+  // for (int id = 0; id <= 4; ++id)
+  //   if(uni_dist(rng) <= prob) funcs.add("shuffleColumns "+to_string(id), 8,
+	//       [id](Image_ img) {return shuffleRowsOrColumns(img,false, id);});
 
     if(uni_dist(rng) <= prob) funcs.add("makeBorder", 8,
-	    [](Image_ img) {return makeBorder(img, 1);},  prob);
+	    [](Image_ img) {return makeBorder(img, 1);});
 
   for (int id : {0,1})
     if(uni_dist(rng) <= prob) funcs.add("makeBorder2 "+to_string(id), 8,
-	      [id](Image_ img) {return makeBorder2(img, id);},  prob);
+	      [id](Image_ img) {return makeBorder2(img, id);});
 
   for (int id = -3; id < 3; ++id)
     if(uni_dist(rng) <= prob) funcs.add("circularShiftColumn "+to_string(id), 10,
-	      [id](Image_ img) {return circularShift(img, false, id);},  prob);
+	      [id](Image_ img) {return circularShift(img, false, id);});
 
     for (int id = -3; id < 3; ++id)
     if(uni_dist(rng) <= prob) funcs.add("circularShiftRow "+to_string(id), 10,
-	      [id](Image_ img) {return circularShift(img, true, id);},  prob);
+	      [id](Image_ img) {return circularShift(img, true, id);});
 
   for (int id = 0; id < 4; ++id)
     if(uni_dist(rng) <= prob) funcs.add("diagonalGravity "+to_string(id), 10,
 	      [id](Image_ img) {return diagonalGravity(img,id);});
+
   // for (int ammount = 0; ammount < 3; ++ammount)
   // for (int id = 0; id < 8; ++id)
   //   if(uni_dist(rng) <= prob) funcs.add("shiftImageCrop "+to_string(id), 5,
@@ -472,11 +477,11 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
 
   // Binary
 
-  if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 1",  10, [](Image_ a, Image_ b) {return repeat(a,b,1);},  prob);
-  if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 2",  10, [](Image_ a, Image_ b) {return repeat(a,b,2);},  prob);
-  if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 3",  10, [](Image_ a, Image_ b) {return repeat(a,b,3);},  prob);
-  if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 4",  10, [](Image_ a, Image_ b) {return repeat(a,b,4);},  prob);
-  if(uni_dist(rng) <= prob) funcs.add(sizes, "extend2",  10, [](Image_ a, Image_ b) {return extend2(a,b);},  prob);
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 1",  10, [](Image_ a, Image_ b) {return repeat(a,b,1);});
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 2",  10, [](Image_ a, Image_ b) {return repeat(a,b,2);});
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 3",  10, [](Image_ a, Image_ b) {return repeat(a,b,3);});
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 4",  10, [](Image_ a, Image_ b) {return repeat(a,b,4);});
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "extend2",  10, [](Image_ a, Image_ b) {return extend2(a,b);});
 
   // if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 5",  10, [](Image_ a, Image_ b) {return repeat(a,b,5);});
   // if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 6",  10, [](Image_ a, Image_ b) {return repeat(a,b,6);});
@@ -484,17 +489,17 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
   // if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 8",  10, [](Image_ a, Image_ b) {return repeat(a,b,8);});
   // if(uni_dist(rng) <= prob) funcs.add(sizes, "repeat 9",  10, [](Image_ a, Image_ b) {return repeat(a,b,9);});
 
-  if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 0",  10, [](Image_ a, Image_ b) {return mirror(a,b);},  prob);
-  if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 1",  10, [](Image_ a, Image_ b) {return mirror(a,b,1);},  prob);
-  if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 2",  10, [](Image_ a, Image_ b) {return mirror(a,b,2);},  prob);
-  if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 3",  10, [](Image_ a, Image_ b) {return mirror(a,b,3);},  prob);
-  if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 4",  10, [](Image_ a, Image_ b) {return mirror(a,b,4);},  prob);
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 0",  10, [](Image_ a, Image_ b) {return mirror(a,b);});
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 1",  10, [](Image_ a, Image_ b) {return mirror(a,b,1);});
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 2",  10, [](Image_ a, Image_ b) {return mirror(a,b,2);});
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 3",  10, [](Image_ a, Image_ b) {return mirror(a,b,3);});
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 4",  10, [](Image_ a, Image_ b) {return mirror(a,b,4);});
   // if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 5",  10, [](Image_ a, Image_ b) {return mirror(a,b,5);});
   // if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 6",  10, [](Image_ a, Image_ b) {return mirror(a,b,6);});
   // if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 7",  10, [](Image_ a, Image_ b) {return mirror(a,b,7);});
   // if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 8",  10, [](Image_ a, Image_ b) {return mirror(a,b,8);});
   // if(uni_dist(rng) <= prob) funcs.add(sizes, "mirror 9",  10, [](Image_ a, Image_ b) {return mirror(a,b,9);});
-  if(uni_dist(rng) <= prob) funcs.add(sizes, "ringSmear",  10, [](Image_ a, Image_ b) {return ringSmear(a,b);},  prob);
+  if(uni_dist(rng) <= prob) funcs.add(sizes, "ringSmear",  10, [](Image_ a, Image_ b) {return ringSmear(a,b);});
   // crash
   // if(uni_dist(rng) <= prob) funcs.add(sizes, "diagonalSmear1",  10, [](Image_ a, Image_ b) {return diagonalSmear(a,b,1);});
   // if(uni_dist(rng) <= prob) funcs.add(sizes, "diagonalSmear2",  10, [](Image_ a, Image_ b) {return diagonalSmear(a,b,2);});
@@ -505,7 +510,7 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
 
   for (int id = 0; id < 4; ++id)
     if(uni_dist(rng) <= prob) funcs.add("gravity "+to_string(id), 10,
-	      [id](Image_ img) {return gravity(img,id);},  prob);
+	      [id](Image_ img) {return gravity(img,id);});
 
   //if(uni_dist(rng) <= prob) funcs.add("smear",    [](Image_ a, Image_ b) {return smear(a,b,6);});
 
@@ -844,6 +849,7 @@ std::unordered_map<int, int> getColorMapping(const std::vector<std::pair<Image, 
 
     return colorMap;
 }
+
 vector<DAG> brutePieces2(Image_ test_in, const vector<pair<Image,Image>>&train, vector<point> out_sizes) {
   const size_t trainsize = train.size();
   vector<DAG> dag(trainsize+1);

@@ -48,6 +48,6 @@ struct Timer {
   }
   void print(const string& label) {
     auto [cnt,sum,std] = read();
-    printf("%5.1f ± %4.1f ms - %s\n", sum*1e3, std*1e3, label.c_str());
+    // printf("%5.1f ± %4.1f ms - %s\n", sum*1e3, std*1e3, label.c_str());
   }
 };

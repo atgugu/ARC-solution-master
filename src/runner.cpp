@@ -52,12 +52,14 @@ void writeVerdict(int si, string sid, int verdict) {
 }
 
 int MAXDEPTH = -1; //Argument
+double START_PROB = 0.2;
 int NUMFUNCS = 200;
 int MAXSIDE = 100, MAXAREA = 40*40, MAXPIXELS = 40*40*5; //Just default values
 unsigned int SEED = 4;
 int print_times = 0, print_mem = 0, print_nodes = 0;
 
-void run(int only_sid = -1, int arg = -1) {
+void run(int only_sid = -1, int arg = -1, double start_prob = 1.0f) {
+    START_PROB = start_prob;
     // Default argument processing and feature flag setup
     int no_norm   = (arg >= 10 && arg < 20);
     int add_flips = (arg >= 20 && arg < 40);
