@@ -357,12 +357,12 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
 	      [id](Image_ img) {return cutFilterByColor(img,id);},  prob);
   }
 
-  if(uni_dist(rng) <= prob) funcs.add("mostCommonShape", 10, mostCommonShape,  prob);
-  if(uni_dist(rng) <= prob) funcs.add("largestShape", 10, largestShape,  prob);
-  if(uni_dist(rng) <= prob) funcs.add("smallestShape", 10, smallestShape,  prob);
-  if(uni_dist(rng) <= prob) funcs.add("mostCommonColorShape", 10, mostCommonColorShape,  prob);
-  if(uni_dist(rng) <= prob) funcs.add("enclosedShapes", 10, enclosedShapes,  prob);
-  if(uni_dist(rng) <= prob) funcs.add("symmetricShape", 10, symmetricShape,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("mostCommonShape", 10, mostCommonShape);
+  if(uni_dist(rng) <= prob) funcs.add("largestShape", 10, largestShape);
+  if(uni_dist(rng) <= prob) funcs.add("smallestShape", 10, smallestShape);
+  if(uni_dist(rng) <= prob) funcs.add("mostCommonColorShape", 10, mostCommonColorShape);
+  if(uni_dist(rng) <= prob) funcs.add("enclosedShapes", 10, enclosedShapes);
+  if(uni_dist(rng) <= prob) funcs.add("symmetricShape", 10, symmetricShape);
 
   // if(uni_dist(rng) <= prob) funcs.add("repairRotationalSymmetry", 10, repairRotationalSymmetry);
 
@@ -371,18 +371,18 @@ Functions3 initFuncs3(const vector<point>&sizes, const std::unordered_map<int, i
   //   if(uni_dist(rng) <= prob) funcs.add("compressPatches "+to_string(id), 10,
 	//       [id](Image_ img) {return compressPatches(img,id);});
 
-  if(uni_dist(rng) <= prob) funcs.add("compress2", 10, compress2,  prob);
-  if(uni_dist(rng) <= prob) funcs.add("compress3", 10, compress3,  prob);
-  if(uni_dist(rng) <= prob) funcs.add("compressH", 10, [](Image_ img) { return compressHV(img, true); },  prob);
-  if(uni_dist(rng) <= prob) funcs.add("compressV", 10, [](Image_ img) { return compressHV(img, false); },  prob);
-  if(uni_dist(rng) <= prob) funcs.add("outlineShapes", 10, outlineShapes,  prob);
-  if(uni_dist(rng) <= prob) funcs.add("diagonalBridge", 10, diagonalBridge,  prob);
-  if(uni_dist(rng) <= prob) funcs.add("fillIslands", 10, fillIslands,  prob);
-  if(uni_dist(rng) <= prob) funcs.add("reverseSizes", 10, reverseSizes,  prob);
-  if(uni_dist(rng) <= prob) funcs.add("compressSymmetry", 10, compressSymmetry,  prob);
-  if(uni_dist(rng) <= prob) funcs.add("bridgeGaps", 10, bridgeGaps,  prob);
-  if(uni_dist(rng) <= prob) funcs.add("connectNearestShapes", 10, connectNearestShapes,  prob);
-  if(uni_dist(rng) <= prob) funcs.add("connectFarthestShapes", 10, connectFarthestShapes,  prob);
+  if(uni_dist(rng) <= prob) funcs.add("compress2", 10, compress2);
+  if(uni_dist(rng) <= prob) funcs.add("compress3", 10, compress3);
+  if(uni_dist(rng) <= prob) funcs.add("compressH", 10, [](Image_ img) { return compressHV(img, true); });
+  if(uni_dist(rng) <= prob) funcs.add("compressV", 10, [](Image_ img) { return compressHV(img, false); });
+  if(uni_dist(rng) <= prob) funcs.add("outlineShapes", 10, outlineShapes);
+  if(uni_dist(rng) <= prob) funcs.add("diagonalBridge", 10, diagonalBridge);
+  if(uni_dist(rng) <= prob) funcs.add("fillIslands", 10, fillIslands);
+  if(uni_dist(rng) <= prob) funcs.add("reverseSizes", 10, reverseSizes);
+  if(uni_dist(rng) <= prob) funcs.add("compressSymmetry", 10, compressSymmetry);
+  if(uni_dist(rng) <= prob) funcs.add("bridgeGaps", 10, bridgeGaps);
+  if(uni_dist(rng) <= prob) funcs.add("connectNearestShapes", 10, connectNearestShapes);
+  if(uni_dist(rng) <= prob) funcs.add("connectFarthestShapes", 10, connectFarthestShapes);
 
   for (int times = 1; times < 4; ++times)
   for (int id = 2; id < 6; ++id)
